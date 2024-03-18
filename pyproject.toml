@@ -1,0 +1,30 @@
+[project]
+name = "Solana-Test-Suite"
+description = "Tests client targets against Solana"
+authors = [
+  { name = "Manik Jain", email = "mjain@jumptrading.com"}
+]
+dynamic = ['readme', 'version']
+requires-python = ">=3.11"
+dependencies = [
+#   "ruamel.yaml>=0.18.5",
+    "typer~=0.9.0",
+    "protobuf~=3.19.0",
+]
+
+[project.scripts]
+solana-test-suite = "test_suite.test_suite:app"
+
+[project.optional-dependencies]
+dev = [
+  "build>=0.10.0",
+]
+
+[build-system]
+requires = ['setuptools', 'setuptools_scm[toml]']
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.md"], content-type = "text/markdown"}
+
+[tool.setuptools_scm]
