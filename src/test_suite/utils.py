@@ -1,6 +1,21 @@
+import base58
 import test_suite.invoke_pb2 as pb
 import ctypes
 from ctypes import c_uint64, c_int, POINTER
+
+
+def decode_bytes(instruction_effects: pb.InstrEffects):
+    """
+    Decode any base58 fields in-place into human-readable format.
+
+    Args:
+        - instruction_effects (pb.InstrEffects): Instruction effects (will be modified).
+    """
+    for i in range(len(instruction_effects.modified_accounts)):
+        instruction_effects.modified_accounts[i].address = base58.b58encode(instruction_effects.modified_accounts[i].address)
+        instruction_effects.modified_accounts[i].data = base58.b58encode(instruction_effects.modified_accounts[i].data)
+        instruction_effects.modified_accounts[i].owner = base58.b58encode(instruction_effects.modified_accounts[i].owner)
+
 
 def process_instruction(
     library: ctypes.CDLL,
@@ -45,4 +60,6 @@ def process_instruction(
     output_object = pb.InstrEffects()
     output_object.ParseFromString(output_data)
 
+    # Decode the bytes and return the object
+    decode_bytes(output_object)
     return output_object
