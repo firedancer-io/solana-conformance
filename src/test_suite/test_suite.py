@@ -12,11 +12,11 @@ app = typer.Typer(help="Computes Solana instruction effects from plaintext instr
 
 @app.command()
 def run_tests(
-    input_folder: Path = typer.Option(
+    input_dir: Path = typer.Option(
         Path("instruction_context"),
-        "--input-folder",
+        "--input-dir",
         "-i",
-        help="Input folder containing instruction context messages in human-readable format"
+        help="Input directory containing instruction context messages in human-readable format"
     ),
     solana_shared_library: Path = typer.Option(
         Path("libsolfuzz_agave.so"),
@@ -30,62 +30,64 @@ def run_tests(
         "-t",
         help="Shared object (.so) target file paths"
     ),
-    verbose: bool = typer.Option(
-        False,
-        "--verbose",
-        "-v",
-        help="Enable verbose output"
+    output_dir: Path = typer.Option(
+        Path("test_results"),
+        "--output-dir",
+        "-o",
+        help="Output directory for test results"
     )
 ):
+    # Create the output directory, if necessary
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     passed = 0
     failed = 0
     skipped = 0
 
-    file1 = open("solana.txt", "w")
-    file2 = open("firedancer.txt", "w")
-
     # Load in and initialize shared libraries
-    libraries = []
+    target_libraries = {}
     for target in [solana_shared_library] + shared_libraries:
         lib = ctypes.CDLL(target)
         lib.sol_compat_init()
-        libraries.append(lib)
+        target_libraries[target] = lib
+
+        # Make log output directories for each shared library
+        log_dir = output_dir / target.stem
+        log_dir.mkdir(parents=True, exist_ok=True)
 
     # Iterate through input messages
-    for file in input_folder.iterdir():
+    for file in input_dir.iterdir():
+        # Read in human-readable Protobuf messages
         with open(file) as f:
-            # Read in human-readable Protobuf messages
             instruction_context = text_format.Parse(f.read(), pb.InstrContext())
 
-        # Fetch ground truth through Solana program
-        ground_truth_result = process_instruction(libraries[0], instruction_context)
+        # Capture results from each target
+        execution_results = {}
 
-        if ground_truth_result == None:
+        for target, lib in target_libraries.items():
+            # Fetch result through shared library
+            result = process_instruction(lib, instruction_context)
+            execution_results[target] = result
+
+        # Skip the test case if the input is invalid
+        if execution_results[solana_shared_library] is None:
             skipped += 1
             continue
 
-        # Iterate through shared libraries and get results
-        results = []
-        for lib in libraries[1:]:
-            # Fetch result through shared library
-            result = process_instruction(lib, instruction_context)
-            results.append(result)
+        # Log execution results
+        for target, result in execution_results.items():
+            with open(output_dir / target.stem / (file.name + ".txt"), "w") as f:
+                f.write(str(result))
 
         # Compare results
-        test_case_passed = all(result == ground_truth_result for result in results)
+        test_case_passed = all(result == execution_results[solana_shared_library] for result in execution_results.values())
 
         if test_case_passed:
             passed += 1
         else:
-            file1.write(str(result) + f"-{passed}-"*20 + "\n")
-            file2.write(str(ground_truth_result) + "-"*20 + "\n")
             failed += 1
 
     print(f"Passed: {passed}, Failed: {failed}, Skipped: {skipped}")
-
-
-    file1.close()
-    file2.close()
 
 
 if __name__ == "__main__":
