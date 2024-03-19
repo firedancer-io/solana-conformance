@@ -1,8 +1,6 @@
-import base58
 from typing import List
 import typer
 import ctypes
-
 from pathlib import Path
 from google.protobuf import text_format
 import test_suite.invoke_pb2 as pb
@@ -117,17 +115,22 @@ def run_tests(
     # Iterate through input messages
     for file in input_dir.iterdir():
         # Optionally read in binary-encoded Protobuf messages
-        if use_binary:
-            with open(file, "rb") as f:
-                instruction_context = pb.InstrContext()
-                instruction_context.ParseFromString(f.read())
-        else:
-            # Read in human-readable Protobuf messages
-            with open(file) as f:
-                instruction_context = text_format.Parse(f.read(), pb.InstrContext())
+        try:
+            if use_binary:
+                with open(file, "rb") as f:
+                    instruction_context = pb.InstrContext()
+                    instruction_context.ParseFromString(f.read())
+            else:
+                # Read in human-readable Protobuf messages
+                with open(file) as f:
+                    instruction_context = text_format.Parse(f.read(), pb.InstrContext())
 
-            # Decode base58 encoded, human-readable fields
-            decode_input(instruction_context)
+                # Decode base58 encoded, human-readable fields
+                decode_input(instruction_context)
+        except:
+            # Unable to read message, skip and continue
+            skipped += 1
+            continue
 
         # Capture results from each target
         execution_results = {}
