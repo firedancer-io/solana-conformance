@@ -88,6 +88,12 @@ def run_tests(
         "--output-dir",
         "-o",
         help="Output directory for test results"
+    ),
+    use_binary: bool = typer.Option(
+        False,
+        "--use-binary",
+        "-b",
+        help="Enable if using standard Protobuf binary-encoded instruction context messages"
     )
 ):
     # Create the output directory, if necessary
@@ -110,12 +116,18 @@ def run_tests(
 
     # Iterate through input messages
     for file in input_dir.iterdir():
-        # Read in human-readable Protobuf messages
-        with open(file) as f:
-            instruction_context = text_format.Parse(f.read(), pb.InstrContext())
+        # Optionally read in binary-encoded Protobuf messages
+        if use_binary:
+            with open(file, "rb") as f:
+                instruction_context = pb.InstrContext()
+                instruction_context.ParseFromString(f.read())
+        else:
+            # Read in human-readable Protobuf messages
+            with open(file) as f:
+                instruction_context = text_format.Parse(f.read(), pb.InstrContext())
 
-        # Decode base58 encoded, human-readable fields
-        decode_input(instruction_context)
+            # Decode base58 encoded, human-readable fields
+            decode_input(instruction_context)
 
         # Capture results from each target
         execution_results = {}
