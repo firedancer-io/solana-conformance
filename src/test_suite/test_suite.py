@@ -55,7 +55,8 @@ def consolidate_logs(
                 if current_log_file: current_log_file.close()
                 current_log_file = open(output_dir / lib / f"{log_files[i].stem}.txt", "w")
 
-            # Write log contents + separators
+            # Write test case name + log contents + separators
+            current_log_file.write(log_files[i].stem + ":\n")
             current_log_file.write(log_files[i].read_text())
             current_log_file.write("\n" + "-"*LOG_FILE_SEPARATOR_LENGTH + "\n")
 
