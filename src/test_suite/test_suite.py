@@ -158,7 +158,7 @@ def decode_protobuf(
         Path("readable_instruction_context"),
         "--output-dir",
         "-o",
-        help="Output directory for decoded, human-readable instruction context messages"
+        help="Output directory for base58-encoded, human-readable instruction context messages"
     )
 ):
     # Create the output directory, if necessary
