@@ -8,7 +8,58 @@ import test_suite.invoke_pb2 as pb
 
 from test_suite.utils import process_instruction
 
+LOG_FILE_SEPARATOR_LENGTH = 20
+
 app = typer.Typer(help="Computes Solana instruction effects from plaintext instruction context protobuf messages.")
+
+
+@app.command()
+def consolidate_logs(
+    input_dir: Path = typer.Option(
+        Path("test_results"),
+        "--input-dir",
+        "-i",
+        help="Input directory containing test results"
+    ),
+    output_dir: Path = typer.Option(
+        Path("consolidated_logs"),
+        "--output-dir",
+        "-o",
+        help="Output directory for consolidated logs"
+    ),
+    chunk_size: int = typer.Option(
+        10000,
+        "--chunk-size",
+        "-c",
+        help="Number of test results per file"
+    )
+):
+    # Create the output directory, if necessary
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Iterate through each library
+    for lib_dir in filter(lambda x: x.is_dir(), input_dir.iterdir()):
+        # Make the lib output directory
+        lib = lib_dir.stem
+        (output_dir / lib).mkdir(parents=True, exist_ok=True)
+
+        # Grab all log files
+        log_files = sorted(list(lib_dir.glob("*.txt")))
+
+        current_log_file = None
+
+        for i in range(len(log_files)):
+            # Open a new log file every chunk_size test cases
+            if i % chunk_size == 0:
+                if current_log_file: current_log_file.close()
+                current_log_file = open(output_dir / lib / f"{log_files[i].stem}.txt", "w")
+
+            # Write log contents + separators
+            current_log_file.write(log_files[i].read_text())
+            current_log_file.write("\n" + "-"*LOG_FILE_SEPARATOR_LENGTH + "\n")
+
+        if current_log_file: current_log_file.close()
+
 
 @app.command()
 def run_tests(
