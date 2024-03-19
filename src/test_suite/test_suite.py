@@ -1,3 +1,4 @@
+import base58
 from typing import List
 import typer
 import ctypes
@@ -6,7 +7,7 @@ from pathlib import Path
 from google.protobuf import text_format
 import test_suite.invoke_pb2 as pb
 
-from test_suite.utils import process_instruction
+from test_suite.utils import process_instruction, decode_input, encode_input
 
 LOG_FILE_SEPARATOR_LENGTH = 20
 
@@ -64,7 +65,7 @@ def consolidate_logs(
 @app.command()
 def run_tests(
     input_dir: Path = typer.Option(
-        Path("instruction_context"),
+        Path("readable_instruction_context"),
         "--input-dir",
         "-i",
         help="Input directory containing instruction context messages in human-readable format"
@@ -112,6 +113,9 @@ def run_tests(
         with open(file) as f:
             instruction_context = text_format.Parse(f.read(), pb.InstrContext())
 
+        # Decode base58 encoded, human-readable fields
+        decode_input(instruction_context)
+
         # Capture results from each target
         execution_results = {}
 
@@ -139,6 +143,44 @@ def run_tests(
             failed += 1
 
     print(f"Passed: {passed}, Failed: {failed}, Skipped: {skipped}")
+
+
+@app.command()
+def decode_protobuf(
+    input_dir: Path = typer.Option(
+        Path("raw_instruction_context"),
+        "--input-dir",
+        "-i",
+        help="Input directory containing instruction context messages in binary format"
+    ),
+    output_dir: Path = typer.Option(
+        Path("readable_instruction_context"),
+        "--output-dir",
+        "-o",
+        help="Output directory for decoded, human-readable instruction context messages"
+    )
+):
+    # Create the output directory, if necessary
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Iterate through each binary-encoded message
+    for file in input_dir.iterdir():
+        try:
+            instruction_context = pb.InstrContext()
+
+            # Read in the message
+            with open(file, "rb") as f:
+                content = f.read()
+                instruction_context.ParseFromString(content)
+
+            # Encode bytes fields into base58
+            encode_input(instruction_context)
+
+            # Output the human-readable message
+            with open(output_dir / file.name, "w") as f:
+                f.write(instruction_context.__str__())
+        except Exception as e:
+            print(f"Could not read {file.stem}: {e}")
 
 
 if __name__ == "__main__":

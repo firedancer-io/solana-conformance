@@ -3,10 +3,45 @@ import test_suite.invoke_pb2 as pb
 import ctypes
 from ctypes import c_uint64, c_int, POINTER
 
-
-def decode_bytes(instruction_effects: pb.InstrEffects):
+def decode_input(instruction_context: pb.InstrContext):
     """
-    Decode any base58 fields in-place into human-readable format.
+    Decode any base58 fields of InstrContext in-place into bytes.
+
+    Args:
+        - instruction_context (pb.InstrContext): Instruction context (will be modified).
+    """
+    instruction_context.program_id = base58.b58decode(instruction_context.program_id)
+    instruction_context.loader_id = base58.b58decode(instruction_context.loader_id)
+
+    for i in range(len(instruction_context.accounts)):
+        instruction_context.accounts[i].address = base58.b58decode(instruction_context.accounts[i].address)
+        instruction_context.accounts[i].data = base58.b58decode(instruction_context.accounts[i].data)
+        instruction_context.accounts[i].owner = base58.b58decode(instruction_context.accounts[i].owner)
+
+    instruction_context.data = base58.b58decode(instruction_context.data)
+
+
+def encode_input(instruction_context: pb.InstrContext):
+    """
+    Encode any base58 fields of InstrContext in-place into binary, digestable format.
+
+    Args:
+        - instruction_context (pb.InstrContext): Instruction context (will be modified).
+    """
+    instruction_context.program_id = base58.b58encode(instruction_context.program_id)
+    instruction_context.loader_id = base58.b58encode(instruction_context.loader_id)
+
+    for i in range(len(instruction_context.accounts)):
+        instruction_context.accounts[i].address = base58.b58encode(instruction_context.accounts[i].address)
+        instruction_context.accounts[i].data = base58.b58encode(instruction_context.accounts[i].data)
+        instruction_context.accounts[i].owner = base58.b58encode(instruction_context.accounts[i].owner)
+
+    instruction_context.data = base58.b58encode(instruction_context.data)
+
+
+def encode_output(instruction_effects: pb.InstrEffects):
+    """
+    Encode any base58 fields of InstrEffects in-place into human-readable format.
 
     Args:
         - instruction_effects (pb.InstrEffects): Instruction effects (will be modified).
@@ -60,6 +95,6 @@ def process_instruction(
     output_object = pb.InstrEffects()
     output_object.ParseFromString(output_data)
 
-    # Decode the bytes and return the object
-    decode_bytes(output_object)
+    # Encode the bytes and return the object
+    encode_output(output_object)
     return output_object
