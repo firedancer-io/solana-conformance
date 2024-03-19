@@ -2,6 +2,11 @@ import base58
 import test_suite.invoke_pb2 as pb
 import ctypes
 from ctypes import c_uint64, c_int, POINTER
+from google.protobuf import text_format
+from pathlib import Path
+from test_suite.globals import target_libraries
+from itertools import repeat
+from multiprocessing import Pool
 
 def decode_input(instruction_context: pb.InstrContext):
     """
@@ -52,6 +57,33 @@ def encode_output(instruction_effects: pb.InstrEffects):
         instruction_effects.modified_accounts[i].owner = base58.b58encode(instruction_effects.modified_accounts[i].owner)
 
 
+def execute_single_library_on_single_test(target: str, file: Path, serialized_instruction_context: str) -> tuple[str, str | None]:
+    """
+    Execute a single target on a single test file containing an instruction context message.
+
+    Args:
+        - target (str): Target library name.
+        - file (Path): Path to instruction context message.
+        - serialized_instruction_context (str): String-serialized instruction context message.
+
+    Returns:
+        - tuple[str, str | None]: Test file name serialized instruction effects.
+    """
+    global target_libraries
+
+    # Get the library corresponing to target
+    library = target_libraries[target]
+
+    # Deserialize instruction context message
+    instruction_context = pb.InstrContext()
+    instruction_context.ParseFromString(serialized_instruction_context)
+
+    # Execute through each target library
+    instruction_effects = process_instruction(library, instruction_context)
+
+    return file.stem, instruction_effects.SerializeToString() if instruction_effects else None
+
+
 def process_instruction(
     library: ctypes.CDLL,
     instruction_context: pb.InstrContext
@@ -98,3 +130,31 @@ def process_instruction(
     # Encode the bytes and return the object
     encode_output(output_object)
     return output_object
+
+
+def raising_starmap(f, f_args, f_kwargs):
+    assert f_args is None or f_kwargs is None or len(f_args) == len(f_kwargs)
+    if f_args is None:
+        f_args = repeat(tuple())
+    elif f_kwargs is None:
+        f_kwargs = repeat({})
+
+    pool = Pool()
+
+    def reraise(e):
+        pool.terminate()
+        raise e
+
+    arg_and_kwargs = list(zip(f_args, f_kwargs))
+    promises = [ pool.apply_async(f, args, kwargs, error_callback=reraise) for args, kwargs in arg_and_kwargs ]
+
+    pool.close()
+    print(pool._state)
+    pool.join()
+
+
+    if "TERMINATE" == pool._state:
+        raise Exception(f"Error in raising starmap call to {f.__name__}")
+
+    print(f"{len(promises)}/{len(arg_and_kwargs)} {f.__name__} calls succeeded.")
+    return [ promise.get() for promise in promises ]
