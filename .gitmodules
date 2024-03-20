@@ -1,0 +1,11 @@
+[submodule "impl/firedancer"]
+	path = impl/firedancer
+	url = https://github.com/firedancer-io/firedancer
+[submodule "impl/agave-v1.17"]
+	path = impl/agave-v1.17
+	url = https://github.com/firedancer-io/solfuzz-agave
+	branch = agave-v1.17
+[submodule "impl/agave-v2.0"]
+	path = impl/agave-v2.0
+	url = https://github.com/firedancer-io/solfuzz-agave
+	branch = agave-v2.0
