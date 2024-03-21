@@ -2,11 +2,11 @@ import base58
 import test_suite.invoke_pb2 as pb
 import ctypes
 from ctypes import c_uint64, c_int, POINTER
-from google.protobuf import text_format
 from pathlib import Path
 from test_suite.globals import target_libraries
-from itertools import repeat
-from multiprocessing import Pool
+from multiprocessing import Process, Queue
+import time
+
 
 def decode_input(instruction_context: pb.InstrContext):
     """
@@ -132,29 +132,52 @@ def process_instruction(
     return output_object
 
 
-def raising_starmap(f, f_args, f_kwargs):
-    assert f_args is None or f_kwargs is None or len(f_args) == len(f_kwargs)
-    if f_args is None:
-        f_args = repeat(tuple())
-    elif f_kwargs is None:
-        f_kwargs = repeat({})
+def worker_ping(last_response):
+    """
+    Ping the main process to let it know that it's healthy.
 
-    pool = Pool()
-
-    def reraise(e):
-        pool.terminate()
-        raise e
-
-    arg_and_kwargs = list(zip(f_args, f_kwargs))
-    promises = [ pool.apply_async(f, args, kwargs, error_callback=reraise) for args, kwargs in arg_and_kwargs ]
-
-    pool.close()
-    print(pool._state)
-    pool.join()
+    Args:
+        - last_response (ctypes.Value): Last response time.
+    """
+    with last_response.get_lock():
+        last_response.value = int(time.time())
 
 
-    if "TERMINATE" == pool._state:
-        raise Exception(f"Error in raising starmap call to {f.__name__}")
+def process_task(target: str, tasks_queue: Queue, results_queue: Queue, last_response):
+    """
+    (Multiprocessing process) Pulls tasks from the queues and executes them through a given library.
 
-    print(f"{len(promises)}/{len(arg_and_kwargs)} {f.__name__} calls succeeded.")
-    return [ promise.get() for promise in promises ]
+    Args:
+        - target (str): Target library name.
+        - tasks_queue (Queue): Queue of tasks to execute.
+        - results_queue (Queue): Queue of results.
+        - last_response (Value): Last response time.
+    """
+    while True:
+        # Ping before getting element
+        worker_ping(last_response)
+
+        element = tasks_queue.get()
+        if element is None:
+            break
+
+        # Ping after getting element
+        worker_ping(last_response)
+
+        # Execute the task
+        file, serialized_instruction_context = element
+        result = execute_single_library_on_single_test(target, file, serialized_instruction_context)
+
+        # Ping after retrieving result
+        worker_ping(last_response)
+
+        results_queue.put(result)
+
+    # Sentinel value to signal end of process
+    results_queue.put(None)
+
+
+def start_process(target, tasks_queue, results_queue, last_response):
+    p = Process(target=process_task, args=(target, tasks_queue, results_queue, last_response))
+    p.start()
+    return p

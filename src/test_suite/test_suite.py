@@ -1,16 +1,19 @@
-from functools import partial
+import time
 from typing import List
 import typer
 import ctypes
-from multiprocessing import Pool, Process
+from multiprocessing import Queue, Value
+import queue
 from pathlib import Path
 from google.protobuf import text_format
 import test_suite.invoke_pb2 as pb
 
-from test_suite.utils import process_instruction, decode_input, encode_input, execute_single_library_on_single_test, raising_starmap
+from test_suite.utils import decode_input, encode_input, start_process
 from test_suite.globals import target_libraries
 
 LOG_FILE_SEPARATOR_LENGTH = 20
+NUM_PROCESSES = 8
+PROCESS_TIMEOUT = 30
 
 app = typer.Typer(help="Computes Solana instruction effects from plaintext instruction context protobuf messages.")
 
@@ -143,30 +146,79 @@ def run_tests(
             skipped += 1
             continue
 
+    execution_contexts += [None] * NUM_PROCESSES
+
     execution_results_per_file = {}  # file -> target -> execution result
     for target in target_libraries:
-        # Use a partial to fix the first argument of execution call (prevents unnecessary duplication of execution contexts)
-        execute_partial = partial(execute_single_library_on_single_test, target)
+        # For process health monitoring
+        last_response = [Value(ctypes.c_uint32, int(time.time())) for _ in range(NUM_PROCESSES)]
 
-        # Use a multiprocessing pool to run instructions. This prevents the main Python process from terminating from core dumps
-        # and parallelizes instruction execution
-        # target_results = []
-        # for context in execution_contexts:
-        #     p = Process(target=execute_partial, args=context)
+        processes = [None for _ in range(NUM_PROCESSES)]
+        processes_finished = [False for _ in range(NUM_PROCESSES)]
+        current_context_index = 0
+        target_results = []
 
-        #     p.start()
-        #     p.join()
+        task_queue = Queue()
+        result_queue = Queue()
 
-        #     import random
-        #     if random.random() < 0.5:
-        #         print("HERE")
-        #     else:
-        #         print("THERE")
+        while not all(processes_finished):
+            print(current_context_index, "/", len(execution_contexts))
+            for i in range(NUM_PROCESSES):
+                # Skip over this process if its already done
+                if processes_finished[i]: continue
 
-        with Pool(processes=4) as pool:
-            target_results = list(pool.starmap(execute_partial, execution_contexts))
+                # Case 1: Process does not exist / is already killed
+                # Create a new process and result queue
+                if processes[i] is None:
+                    # Avoid spinning up new processes if there are no more tasks
+                    if current_context_index >= len(execution_contexts):
+                        processes_finished[i] = True
+                        continue
 
-        # target_results = raising_starmap(f=execute_partial, f_args=execution_contexts, f_kwargs=None)
+                    # Add a new task to the queue
+                    task_queue.put(execution_contexts[current_context_index])
+                    current_context_index += 1
+
+                    # Update heartbeat time
+                    with last_response[i].get_lock():
+                        last_response[i].value = int(time.time())
+
+
+                    processes[i] = start_process(target, task_queue, result_queue, last_response[i])
+                    continue
+
+                # Case 2: Process has a result available
+                # Take the result and add a new task to the queue
+                try:
+                    result = result_queue.get_nowait()
+
+                    if result == None:
+                        # Lol Python multiprocessing is so dumb - queues have to be emptied before the process
+                        # can be joined, so I'm terminating the process since we don't need it anymore and
+                        # to avoid deadlock
+                        processes_finished[i] = True
+                        processes[i].terminate()
+                        processes[i].join()
+                        continue
+
+                    target_results.append(result)
+                    task_queue.put(execution_contexts[current_context_index])
+                    current_context_index += 1
+                except queue.Empty:
+                    pass
+
+                # Case 3: Process is not responsive
+                # Kill the process
+                current_time = time.time()
+                with last_response[i].get_lock():
+                    last_response_time = last_response[i].value
+                if current_time - last_response_time > PROCESS_TIMEOUT:
+                    processes[i].terminate()
+                    processes[i].join()
+                    processes[i] = None
+                    continue
+
+                # If it gets down here, the process is still running as normal
 
         for file_name, serialized_instruction_effects in target_results:
             if file_name not in execution_results_per_file:
@@ -183,7 +235,7 @@ def run_tests(
 
     for file_name, target_results in execution_results_per_file.items():
         # Skip the test case if Solana couldn't process the input
-        if target_results[solana_shared_library] is None:
+        if solana_shared_library not in target_results or target_results[solana_shared_library] is None:
             skipped += 1
             continue
 
@@ -201,55 +253,6 @@ def run_tests(
             failed += 1
 
     print(f"Passed: {passed}, Failed: {failed}, Skipped: {skipped}")
-
-
-    # # Iterate through input messages
-    # for file in input_dir.iterdir():
-    #     # Optionally read in binary-encoded Protobuf messages
-    #     try:
-    #         if use_binary:
-    #             with open(file, "rb") as f:
-    #                 instruction_context = pb.InstrContext()
-    #                 instruction_context.ParseFromString(f.read())
-    #         else:
-    #             # Read in human-readable Protobuf messages
-    #             with open(file) as f:
-    #                 instruction_context = text_format.Parse(f.read(), pb.InstrContext())
-
-    #             # Decode base58 encoded, human-readable fields
-    #             decode_input(instruction_context)
-    #     except:
-    #         # Unable to read message, skip and continue
-    #         skipped += 1
-    #         continue
-
-    #     # Capture results from each target
-    #     execution_results = {}
-
-    #     for target, lib in target_libraries.items():
-    #         # Fetch result through shared library
-    #         result = process_instruction(lib, instruction_context)
-    #         execution_results[target] = result
-
-    #     # Skip the test case if the input is invalid
-    #     if execution_results[solana_shared_library] is None:
-    #         skipped += 1
-    #         continue
-
-    #     # Log execution results
-    #     for target, result in execution_results.items():
-    #         with open(output_dir / target.stem / (file.stem + ".txt"), "w") as f:
-    #             f.write(str(result))
-
-    #     # Compare results
-    #     test_case_passed = all(result == execution_results[solana_shared_library] for result in execution_results.values())
-
-    #     if test_case_passed:
-    #         passed += 1
-    #     else:
-    #         failed += 1
-
-    # print(f"Passed: {passed}, Failed: {failed}, Skipped: {skipped}")
 
 
 @app.command()
