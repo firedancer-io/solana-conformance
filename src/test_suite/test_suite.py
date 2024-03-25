@@ -1,16 +1,17 @@
+from collections import Counter
 from typing import List
 import typer
 import ctypes
-from multiprocessing import Queue
+from multiprocessing import Pool
 from pathlib import Path
 from google.protobuf import text_format
 import test_suite.invoke_pb2 as pb
+from test_suite.utils import encode_input, generate_test_cases, process_single_test_case, build_test_results
+import test_suite.globals as globals
 
-from test_suite.utils import decode_input, encode_input, start_process
-from test_suite.globals import target_libraries
+import resource
 
 LOG_FILE_SEPARATOR_LENGTH = 20
-NUM_PROCESSES = 4
 PROCESS_TIMEOUT = 30
 
 app = typer.Typer(help="Computes Solana instruction effects from plaintext instruction context protobuf messages.")
@@ -91,141 +92,55 @@ def run_tests(
         "-o",
         help="Output directory for test results"
     ),
-    use_binary: bool = typer.Option(
-        False,
-        "--use-binary",
-        "-b",
-        help="Enable if using standard Protobuf binary-encoded instruction context messages"
-    ),
-    verbose: bool = typer.Option(
-        False,
-        "--verbose",
-        "-v",
-        help="Enable verbose output"
+    num_processes: int = typer.Option(
+        4,
+        "--num-processes",
+        "-n",
+        help="Number of processes to use"
     )
 ):
-    # Specify globals
-    global target_libraries
-
-    # Create the output directory, if necessary
-    output_dir.mkdir(parents=True, exist_ok=True)
-
     # Add Solana library to shared libraries
     shared_libraries = [solana_shared_library] + shared_libraries
 
-    # Statistic tracking
-    passed = 0
-    failed = 0
-    skipped = 0
-
-    # Load in context for instruction execution
-    execution_contexts = []
-
-    # Iterate through input messages
-    for file in input_dir.iterdir():
-        # Optionally read in binary-encoded Protobuf messages
-        try:
-            if use_binary:
-                # Read in binary Protobuf messages
-                with open(file, "rb") as f:
-                    instruction_context = pb.InstrContext()
-                    instruction_context.ParseFromString(f.read())
-            else:
-                # Read in human-readable Protobuf messages
-                with open(file) as f:
-                    instruction_context = text_format.Parse(f.read(), pb.InstrContext())
-
-                # Decode base58 encoded, human-readable fields
-                decode_input(instruction_context)
-
-            # Serialize instruction context to string (pickleable)
-            execution_contexts.append((file, instruction_context.SerializeToString(deterministic=True)))
-        except KeyboardInterrupt:
-            # Handle CTRL-C
-            return
-        except:
-            # Unable to read message, skip and continue
-            skipped += 1
-            continue
-
-    execution_results_per_file = {}  # file -> target -> execution result
+    # Specify globals and initialize the libraries
+    globals.output_dir = output_dir
+    globals.solana_shared_library = solana_shared_library
     for target in shared_libraries:
         # Load in and initialize shared libraries
         lib = ctypes.CDLL(target)
         lib.sol_compat_init()
-        target_libraries[target] = lib
+        globals.target_libraries[target] = lib
 
         # Make log output directories for each shared library
         log_dir = output_dir / target.stem
         log_dir.mkdir(parents=True, exist_ok=True)
 
-        # Keep track of which tasks we've completed and which results we've received
-        tasks_queue = Queue()
-        results_queue = Queue()
-        target_results = []
+    # Create the output directory, if necessary
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Add tasks to queue
-        for task in execution_contexts:
-            tasks_queue.put(task)
+    # Generate the test cases in parallel from files on disk
+    print("Reading test files...")
+    with Pool(processes=num_processes) as pool:
+        execution_contexts = list(pool.imap_unordered(generate_test_cases, input_dir.iterdir()))
 
-        # Add sentinel values to signal end of tasks
-        for _ in range(NUM_PROCESSES):
-            tasks_queue.put(None)
+    # Process the test cases in parallel through shared libraries
+    print("Executing tests...")
+    with Pool(processes=num_processes) as pool:
+        execution_results = list(pool.imap_unordered(process_single_test_case, execution_contexts))
 
-        # Keep track of which processes are spun up and finished
-        processes = [start_process(target, tasks_queue, results_queue) for _ in range(NUM_PROCESSES)]
+    # Process the test results in parallel
+    print("Building test results...")
+    with Pool(processes=num_processes) as pool:
+        test_case_results = pool.imap_unordered(build_test_results, execution_results)
+        counts = Counter(test_case_results)
+        passed = counts[1]
+        failed = counts[-1]
+        skipped = counts[0]
 
-        # Read results until all processes finish tasks
-        num_nones = 0
-        num_tests_finished = 0
-        while num_nones < NUM_PROCESSES:
-            # Read a result from the queue
-            result = results_queue.get()
-            if result is None:
-                num_nones += 1
-                continue
+    peak_memory_usage_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    print(f"Peak Memory Usage: {peak_memory_usage_kb / 1024} MB")
 
-            num_tests_finished += 1
-            if verbose: print(f"Finished running {num_tests_finished} / {len(execution_contexts)} tasks for {target.stem}")
-            target_results.append(result)
-
-        # Join all processes
-        for process in processes:
-            process.join()
-
-        # Build results per file and per target
-        for file_name, serialized_instruction_effects in target_results:
-            if file_name not in execution_results_per_file:
-                execution_results_per_file[file_name] = {}
-
-            # Read the serialized output message if it exists
-            if serialized_instruction_effects is None:
-                instruction_effects = None
-            else:
-                instruction_effects = pb.InstrEffects()
-                instruction_effects.ParseFromString(serialized_instruction_effects)
-
-            # Store the execution results for each file-target pair
-            execution_results_per_file[file_name][target] = instruction_effects
-
-    for file_name, target_results in execution_results_per_file.items():
-        # Log execution results
-        for target in shared_libraries:
-            # Library did not respond here, could be a terminated process
-            if target not in target_results:
-                target_results[target] = None
-
-            with open(output_dir / target.stem / (file_name + ".txt"), "w") as f:
-                f.write(str(result))
-
-        # Compare results
-        test_case_passed = all(result == target_results[solana_shared_library] for result in target_results.values())
-
-        if test_case_passed:
-            passed += 1
-        else:
-            failed += 1
-
+    print(f"Total test cases: {passed + failed + skipped}")
     print(f"Passed: {passed}, Failed: {failed}, Skipped: {skipped}")
 
 
