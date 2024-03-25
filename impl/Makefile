@@ -27,6 +27,7 @@ lib/libsolfuzz_firedancer.so:
 	ln -sf ../firedancer/build/sancov/lib/libfd_exec_sol_compat.so lib/libsolfuzz_firedancer_sancov.so
 	$(MAKE) -C firedancer -j --output-sync=target CC=clang build/native/clang/lib/libfd_exec_sol_compat.so
 	ln -sf ../firedancer/build/native/clang/lib/libfd_exec_sol_compat.so lib/libsolfuzz_firedancer.so
+	ln -sf ../firedancer/build/native/clang/lib/libfd_ballet.a lib/libfd_ballet.a
 
 .PHONY: clean
 clean:

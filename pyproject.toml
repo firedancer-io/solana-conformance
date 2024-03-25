@@ -19,10 +19,11 @@ solana-test-suite = "test_suite.test_suite:app"
 [project.optional-dependencies]
 dev = [
   "build>=0.10.0",
+  "Cython>=3.0.9"
 ]
 
 [build-system]
-requires = ['setuptools', 'setuptools_scm[toml]']
+requires = ['setuptools', "wheel", "Cython", 'setuptools_scm[toml]']
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
