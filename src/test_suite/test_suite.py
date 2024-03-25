@@ -261,8 +261,10 @@ def decode_protobuf(
             encode_input(instruction_context)
 
             # Output the human-readable message
-            with open(output_dir / file.name, "w") as f:
-                f.write(text_format.MessageToString(instruction_context))
+            text = text_format.MessageToString(instruction_context)
+            if len(text) > 0:
+                with open(output_dir / file.name, "w") as f:
+                    f.write(text)
         except Exception as e:
             print(f"Could not read {file.stem}: {e}")
 
