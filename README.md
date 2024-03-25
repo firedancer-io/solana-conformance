@@ -21,7 +21,7 @@ Each target must contain a `sol_compat_instr_execute_v1` function that takes in 
 Before running tests, `InstrContext` messages may be converted into Protobuf's text format, with all `bytes` fields base58-encoded (for human readability). Run the following command to do this:
 
 ```sh
-solana-test-suite decode_protobuf --input-dir <input_dir> --output-dir <output_dir>
+solana-test-suite decode-protobuf --input-dir <input_dir> --output-dir <output_dir>
 ```
 
 | Argument       | Description                                                                                   |
@@ -56,7 +56,7 @@ solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_targ
 After running tests, it may be helpful to squash log files together to compare multiple outputs side-by-side via `vimdiff`. To do so:
 
 ```sh
-solana-test-suite consolidate_logs --input-dir <input_dir> --output-dir <output_dir> --chunk-size <chunk_size>
+solana-test-suite consolidate-logs --input-dir <input_dir> --output-dir <output_dir> --chunk-size <chunk_size>
 ```
 
 | Argument        | Description                                                                                         |
