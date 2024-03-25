@@ -25,8 +25,8 @@ lib/libsolfuzz_firedancer.so:
 	[ ! -f firedancer/opt/lib/libssl.a ] && firedancer/deps.sh fetch install || true
 	$(MAKE) -C firedancer -j --output-sync=target CC=clang EXTRAS=fuzz BUILDDIR=sancov build/sancov/lib/libfd_exec_sol_compat.so
 	ln -sf ../firedancer/build/sancov/lib/libfd_exec_sol_compat.so lib/libsolfuzz_firedancer_sancov.so
-	$(MAKE) -C firedancer -j --output-sync=target build/native/gcc/lib/libfd_exec_sol_compat.so
-	ln -sf ../firedancer/build/native/gcc/lib/libfd_exec_sol_compat.so lib/libsolfuzz_firedancer.so
+	$(MAKE) -C firedancer -j --output-sync=target CC=clang build/native/clang/lib/libfd_exec_sol_compat.so
+	ln -sf ../firedancer/build/native/clang/lib/libfd_exec_sol_compat.so lib/libsolfuzz_firedancer.so
 
 .PHONY: clean
 clean:
