@@ -10,7 +10,8 @@ dependencies = [
     "base58~=2.1.0",
     "loguru~=0.7.0",
     "protobuf~=3.19.0",
-    "typer~=0.9.0"
+    "typer~=0.9.0",
+    "Cython>=3.0.9"
 ]
 
 [project.scripts]
@@ -19,7 +20,6 @@ solana-test-suite = "test_suite.test_suite:app"
 [project.optional-dependencies]
 dev = [
   "build>=0.10.0",
-  "Cython>=3.0.9"
 ]
 
 [build-system]

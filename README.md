@@ -7,7 +7,10 @@ This tool allows for validation of targets (e.g. Firedancer) against Solana Agav
 Clone this repository and run:
 
 ```sh
+nix-shell --pure
+make -C impl
 pip install .
+python setup.py build_ext --inplace
 ```
 
 ## Protobuf
@@ -38,7 +41,7 @@ Optionally, instruction context messages may also be left in the original Protob
 To run the test suite, use the following command:
 
 ```sh
-solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_target.so> --target <firedancer> [--target <target_2> ...] --output-dir <log_output_dir> [--use-binary]
+solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_target.so> --target <firedancer> [--target <target_2> ...] --output-dir <log_output_dir> --num-processes <num_processes>
 ```
 
 | Argument        | Description                                                                                         |
@@ -47,7 +50,7 @@ solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_targ
 | `--solana-target` | Path to Solana Agave shared object (.so) target file            |
 | `--target`      | Additional shared object (.so) target file paths  |
 | `--output-dir`  | Log output directory for test results |
-| `--use-binary`  | Enable if using standard Protobuf binary-encoded instruction context messages |
+| `--num-processes`  | Number of processes to use |
 
 **Note:** Each `.so` target file name should be unique.
 
