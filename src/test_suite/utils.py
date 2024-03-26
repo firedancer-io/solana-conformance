@@ -75,26 +75,6 @@ def encode_output(instruction_effects: pb.InstrEffects):
             instruction_effects.modified_accounts[i].owner = superbased58.encode_32(instruction_effects.modified_accounts[i].owner)
 
 
-def execute_single_library_on_single_test(target: str, serialized_instruction_context: str) -> str | None:
-    """
-    Execute a single target on a single test file containing an instruction context message.
-
-    Args:
-        - target (str): Target library name.
-        - serialized_instruction_context (str): String-serialized instruction context message.
-
-    Returns:
-        - str | None: Serialized instruction effects, if they exist.
-    """
-    # Get the library corresponing to target
-    library = globals.target_libraries[target]
-
-    # Execute through each target library
-    instruction_effects = process_instruction(library, serialized_instruction_context)
-
-    return instruction_effects.SerializeToString(deterministic=True) if instruction_effects else None
-
-
 def process_instruction(
     library: ctypes.CDLL,
     serialized_instruction_context: str
@@ -141,7 +121,7 @@ def process_instruction(
     return output_object
 
 
-def generate_test_cases(test_file: Path) -> tuple[Path, str]:
+def generate_test_cases(test_file: Path) -> tuple[Path, str | None]:
     """
     Reads in test files and generates Protobuf objects for each test case.
 
@@ -177,21 +157,20 @@ def generate_test_cases(test_file: Path) -> tuple[Path, str]:
     return test_file, instruction_context.SerializeToString(deterministic=True)
 
 
-def process_single_test_case(execution_context: tuple[Path, str]):
+def process_single_test_case(file: Path, serialized_instruction_context: str | None) -> tuple[str, dict[str, str | None] | None]:
     """
     Process a single execution context (file, serialized instruction context) through
     all target libraries and returns serialized instruction effects. This
     function is called by processes.
 
     Args:
-        - execution_context (tuple[Path, str]): Tuple of file and serialized instruction context.
+        - file (Path): File containing serialized instruction context.
+        - serialized_instruction_context (str | None): Serialized instruction context.
 
     Returns:
         - tuple[str, dict[str, str | None] | None]: Tuple of file stem and dictionary of target library names
             and instruction effects.
     """
-    file, serialized_instruction_context = execution_context
-
     # Mark as skipped if instruction context doesn't exist
     if serialized_instruction_context is None:
         return file.stem, None
@@ -199,23 +178,93 @@ def process_single_test_case(execution_context: tuple[Path, str]):
     # Execute test case on each target library
     results = {}
     for target in globals.target_libraries:
-        result = execute_single_library_on_single_test(target, serialized_instruction_context)
+        instruction_effects = process_instruction(globals.target_libraries[target], serialized_instruction_context)
+        result = instruction_effects.SerializeToString(deterministic=True) if instruction_effects else None
         results[target] = result
 
     return file.stem, results
 
 
-def build_test_results(execution_result: tuple[Path, dict[str, str | None]]):
+def merge_results_over_iterations(results: tuple) -> tuple[str, dict]:
     """
-    Builds the results of test execution and return a dictionary of results per file and per target.
+    Merge results over separate iterations for a single test case.
 
     Args:
-        - execution_result (tuple[Path, dict[str, str | None] | None]): Tuple of file and target results.
+        - results (tuple): Tuple of (file stem, result for each target) for each iteration for a single test case.
 
     Returns:
-
+        - tuple[str, dict]: Tuple of file stem and merged results over all iterations for single test case.
     """
-    file_stem, results = execution_result
+    file = None
+    merged_results = {}
+    for target in globals.target_libraries:
+        merged_results[target] = {}
+
+        for iteration in range(globals.n_iterations):
+            file_stem, execution_result = results[iteration]
+            file = file_stem
+
+            if execution_result is None:
+                merged_results[target][iteration] = None
+                continue
+
+            merged_results[target][iteration] = execution_result[target]
+
+    return file, merged_results
+
+
+def check_consistency_in_results(file_stem: Path, results: dict) -> dict[str, bool]:
+    """
+    Check consistency for all target libraries over all iterations for a test case.
+
+    Args:
+        - file_stem (Path): File stem of the test case.
+        - execution_results (dict): Dictionary of target library names and serialized instruction effects.
+
+    Returns:
+        - dict[str, bool]: For each target name, 1 if passed, -1 if failed, 0 if skipped.
+    """
+    if results is None:
+        return {target: 0 for target in globals.target_libraries}
+
+    results_per_target = {}
+    for target in globals.target_libraries:
+        protobuf_structures = {}
+        for iteration in range(globals.n_iterations):
+            # Create a Protobuf struct to compare and output, if applicable
+            protobuf_struct = None
+            if results[target][iteration]:
+                # Turn bytes into human readable fields
+                protobuf_struct = pb.InstrEffects()
+                protobuf_struct.ParseFromString(results[target][iteration])
+                encode_output(protobuf_struct)
+
+            protobuf_structures[iteration] = protobuf_struct
+
+            # Write output Protobuf struct to logs
+            with open(globals.output_dir / target.stem / str(iteration) / (file_stem + ".txt"), "w") as f:
+                if protobuf_struct:
+                    f.write(text_format.MessageToString(protobuf_struct))
+                else:
+                    f.write(str(None))
+
+        test_case_passed = all(protobuf_structures[iteration] == protobuf_structures[0] for iteration in range(globals.n_iterations))
+        results_per_target[target] = 1 if test_case_passed else -1
+
+    return results_per_target
+
+
+def build_test_results(file_stem: Path, results: dict[str, str | None]) -> int:
+    """
+    Build a single result of single test execution and returns whether the test passed or failed.
+
+    Args:
+        - file_stem (Path): File stem of the test case.
+        - results (dict[str, str | None]): Dictionary of target library names and serialized instruction effects.
+
+    Returns:
+        - int: 1 if passed, -1 if failed, 0 if skipped.
+    """
     if results is None:
         # Mark as skipped (0)
         return 0
