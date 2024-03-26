@@ -8,7 +8,6 @@ from google.protobuf import text_format
 import test_suite.invoke_pb2 as pb
 from test_suite.utils import encode_input, generate_test_cases, process_single_test_case, build_test_results
 import test_suite.globals as globals
-
 import resource
 
 LOG_FILE_SEPARATOR_LENGTH = 20

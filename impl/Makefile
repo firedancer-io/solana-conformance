@@ -27,10 +27,12 @@ lib/libsolfuzz_firedancer.so:
 	ln -sf ../firedancer/build/sancov/lib/libfd_exec_sol_compat.so lib/libsolfuzz_firedancer_sancov.so
 	$(MAKE) -C firedancer -j --output-sync=target CC=clang build/native/clang/lib/libfd_exec_sol_compat.so
 	ln -sf ../firedancer/build/native/clang/lib/libfd_exec_sol_compat.so lib/libsolfuzz_firedancer.so
+	ln -sf ../firedancer/build/native/clang/lib/libfd_ballet.a lib/libfd_ballet.a
 
 .PHONY: clean
 clean:
 	find lib -name '*.so' -delete || true
+	find lib -name '*.a' -delete || true
 	[ -d agave-v1.17 ] && $(MAKE) -C agave-v1.17 clean || true
 	[ -d agave-v2.0 ] && $(MAKE) -C agave-v2.0 clean || true
 	[ -d firedancer ] && rm -rf firedancer/opt && $(MAKE) -C firedancer distclean || true
