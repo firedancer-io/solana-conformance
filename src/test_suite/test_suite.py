@@ -89,7 +89,7 @@ def check_consistency(
         2,
         "--num-iterations",
         "-n",
-        help="Number of consistency iterations to run"
+        help="Number of consistency iterations to run for each library"
     ),
     num_processes: int = typer.Option(
         4,
