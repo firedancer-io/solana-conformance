@@ -69,3 +69,20 @@ solana-test-suite consolidate-logs --input-dir <input_dir> --output-dir <output_
 | `--chunk-size`  | Number of test results per file |
 
 By default, log files are arranged lexicographically based on the test case file name. Each chunked log file is named based on the first test case in that file.
+
+
+### Validation
+
+Used to detect potential memory corruption issues / inconsistent outputs. The program will run each supplied library `num-iteration` times on the entire test suite. Use the following:
+
+```sh
+solana-test-suite check-consistency --input-dir <input_dir> --target <firedancer> [--target <target_2> ...] --output-dir <log_output_dir> --num-iterations <num_iterations> --num-processes <num_processes>
+```
+
+| Argument          | Description                                              |
+|-------------------|----------------------------------------------------------|
+| `--input-dir`     | Input directory containing instruction context messages in a human-readable format |
+| `--target`        | Additional shared object (.so) target file paths          |
+| `--output-dir`    | Log output directory for test results                     |
+| `--num-iterations`| Number of consistency iterations to run for each library  |
+| `--num-processes` | Number of processes to use                                |
