@@ -5,14 +5,13 @@ import ctypes
 from multiprocessing import Pool
 from pathlib import Path
 from google.protobuf import text_format
+from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
 import test_suite.invoke_pb2 as pb
-from test_suite.utils import check_consistency_in_results, encode_input, generate_test_cases, initialize_process_output_buffers, merge_results_over_iterations, process_single_test_case, build_test_results, OUTPUT_BUFFER_SIZE
+from test_suite.codec_utils import encode_input
+from test_suite.multiprocessing_utils import check_consistency_in_results, generate_test_cases, initialize_process_output_buffers, merge_results_over_iterations, process_single_test_case, build_test_results, OUTPUT_BUFFER_SIZE
 import test_suite.globals as globals
 import resource
 
-
-LOG_FILE_SEPARATOR_LENGTH = 20
-PROCESS_TIMEOUT = 30
 
 app = typer.Typer(help="Validate instruction effects from clients using instruction context Protobuf messages.")
 
@@ -170,14 +169,14 @@ def check_consistency(
     peak_memory_usage_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     print(f"Peak Memory Usage: {peak_memory_usage_kb / 1024} MB")
 
-    print("-"*20)
+    print("-"*LOG_FILE_SEPARATOR_LENGTH)
 
     for library in globals.target_libraries:
         results = library_results[library]
         print(f"{library} results")
         print(f"Total test cases: {sum(results.values())}")
         print(f"Passed: {results['passed']}, Failed: {results['failed']}, Skipped: {results['skipped']}")
-        print("-"*20)
+        print("-"*LOG_FILE_SEPARATOR_LENGTH)
 
 
 @app.command()
