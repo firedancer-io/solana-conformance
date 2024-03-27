@@ -8,6 +8,9 @@ from google.protobuf import text_format
 import superbased58
 
 
+OUTPUT_BUFFER_SIZE = 32 * 1024
+
+
 def decode_input(instruction_context: pb.InstrContext):
     """
     Decode InstrContext fields in-place into human-readable format.
@@ -99,12 +102,16 @@ def process_instruction(
     ]
     library.sol_compat_instr_execute_v1.restype = c_int
 
-    # Prepare input data
+    # Prepare input data and output buffers
     in_data = serialized_instruction_context
     in_ptr = (ctypes.c_uint8 * len(in_data))(*in_data)
     in_sz = len(in_data)
-    out_sz = ctypes.c_uint64(32 * 1024)  # Assume output size, adjust if necessary
+    out_sz = ctypes.c_uint64(OUTPUT_BUFFER_SIZE)
     out_ptr = (ctypes.c_uint8 * out_sz.value)()
+
+    # Randomize the output buffer
+    if globals.output_buffer_random_bytes is not None:
+        out_ptr = (ctypes.c_uint8 * out_sz.value)(*globals.output_buffer_random_bytes)
 
     # Call the function
     result = library.sol_compat_instr_execute_v1(out_ptr, ctypes.byref(out_sz), in_ptr, in_sz)

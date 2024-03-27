@@ -6,9 +6,11 @@ from multiprocessing import Pool
 from pathlib import Path
 from google.protobuf import text_format
 import test_suite.invoke_pb2 as pb
-from test_suite.utils import check_consistency_in_results, encode_input, generate_test_cases, merge_results_over_iterations, process_single_test_case, build_test_results
+from test_suite.utils import check_consistency_in_results, encode_input, generate_test_cases, merge_results_over_iterations, process_single_test_case, build_test_results, OUTPUT_BUFFER_SIZE
 import test_suite.globals as globals
 import resource
+import os
+
 
 LOG_FILE_SEPARATOR_LENGTH = 20
 PROCESS_TIMEOUT = 30
@@ -96,6 +98,12 @@ def check_consistency(
         "--num-processes",
         "-p",
         help="Number of processes to use"
+    ),
+    randomize_output_buffer: bool = typer.Option(
+        False,
+        "--randomize-output-buffer",
+        "-r",
+        help="Randomizes bytes in output buffer before shared library execution"
     )
 ):
     # Initialize globals
@@ -113,6 +121,10 @@ def check_consistency(
     results_per_iteration = []
     for iteration in range(globals.n_iterations):
         print(f"Starting iteration {iteration}...")
+        # Generate random bytes for output buffer
+        if randomize_output_buffer:
+            globals.output_buffer_random_bytes = os.urandom(OUTPUT_BUFFER_SIZE)
+
         # Use the target libraries global map to store shared libraries
         for target in shared_libraries:
             lib = ctypes.CDLL(target)

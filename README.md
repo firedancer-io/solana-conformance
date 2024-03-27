@@ -79,10 +79,11 @@ Used to detect potential memory corruption issues / inconsistent outputs. The pr
 solana-test-suite check-consistency --input-dir <input_dir> --target <firedancer> [--target <target_2> ...] --output-dir <log_output_dir> --num-iterations <num_iterations> --num-processes <num_processes>
 ```
 
-| Argument          | Description                                              |
-|-------------------|----------------------------------------------------------|
-| `--input-dir`     | Input directory containing instruction context messages in a human-readable format |
-| `--target`        | Additional shared object (.so) target file paths          |
-| `--output-dir`    | Log output directory for test results                     |
-| `--num-iterations`| Number of consistency iterations to run for each library  |
-| `--num-processes` | Number of processes to use                                |
+| Argument                   | Description                                                                                                              |
+|----------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| `--input-dir`              | Input directory containing instruction context messages in a human-readable format                                       |
+| `--target`                 | Additional shared object (.so) target file paths                                                                         |
+| `--output-dir`             | Log output directory for test results                                                                                    |
+| `--num-iterations`         | Number of consistency iterations to run for each library                                                                 |
+| `--num-processes`          | Number of processes to use                                                                                               |
+| `--randomize-output-buffer`| Randomizes bytes in output buffer before shared library execution                                                        |
