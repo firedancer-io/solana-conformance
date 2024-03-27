@@ -1,6 +1,6 @@
 # Solana Test Suite
 
-This tool allows for validation of targets (e.g. Firedancer) against Solana Agave by running it against a series of predefined tests. It takes either binary or human-readable Protobuf messages as inputs and runs them through the specified targets.
+This tool allows for validation of targets (e.g. Firedancer) against Solana Agave by running it against a series of predefined tests. It takes either binary or human-readable Protobuf messages as inputs and runs them through the specified targets. It also includes functionality to validate targets for other issues, such as memory corruption.
 
 ## Installation
 
@@ -51,6 +51,7 @@ solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_targ
 | `--target`      | Additional shared object (.so) target file paths  |
 | `--output-dir`  | Log output directory for test results |
 | `--num-processes`  | Number of processes to use |
+| `--randomize-output-buffer`| Randomizes bytes in output buffer before shared library execution                                                        |
 
 **Note:** Each `.so` target file name should be unique.
 
@@ -79,10 +80,11 @@ Used to detect potential memory corruption issues / inconsistent outputs. The pr
 solana-test-suite check-consistency --input-dir <input_dir> --target <firedancer> [--target <target_2> ...] --output-dir <log_output_dir> --num-iterations <num_iterations> --num-processes <num_processes>
 ```
 
-| Argument          | Description                                              |
-|-------------------|----------------------------------------------------------|
-| `--input-dir`     | Input directory containing instruction context messages in a human-readable format |
-| `--target`        | Additional shared object (.so) target file paths          |
-| `--output-dir`    | Log output directory for test results                     |
-| `--num-iterations`| Number of consistency iterations to run for each library  |
-| `--num-processes` | Number of processes to use                                |
+| Argument                   | Description                                                                                                              |
+|----------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| `--input-dir`              | Input directory containing instruction context messages in a human-readable format                                       |
+| `--target`                 | Additional shared object (.so) target file paths                                                                         |
+| `--output-dir`             | Log output directory for test results                                                                                    |
+| `--num-iterations`         | Number of consistency iterations to run for each library                                                                 |
+| `--num-processes`          | Number of processes to use                                                                                               |
+| `--randomize-output-buffer`| Randomizes bytes in output buffer before shared library execution                                                        |
