@@ -7,7 +7,10 @@ This tool allows for validation of targets (e.g. Firedancer) against Solana Agav
 Clone this repository and run:
 
 ```sh
-source install.sh
+nix-shell --pure
+make -C impl
+pip install .
+python setup.py build_ext --inplace
 ```
 
 ## Protobuf
@@ -85,10 +88,3 @@ solana-test-suite check-consistency --input-dir <input_dir> --target <firedancer
 | `--num-iterations`         | Number of consistency iterations to run for each library                                                                 |
 | `--num-processes`          | Number of processes to use                                                                                               |
 | `--randomize-output-buffer`| Randomizes bytes in output buffer before shared library execution                                                        |
-
-
-### Uninstalling
-
-```sh
-source clean.sh
-```
