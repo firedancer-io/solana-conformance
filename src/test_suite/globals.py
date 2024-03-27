@@ -13,4 +13,4 @@ n_iterations = 0
 output_dir = None
 
 # Fill output buffer with random bytes
-output_buffer_random_bytes = None
+output_buffer_pointer = None

@@ -6,16 +6,15 @@ from multiprocessing import Pool
 from pathlib import Path
 from google.protobuf import text_format
 import test_suite.invoke_pb2 as pb
-from test_suite.utils import check_consistency_in_results, encode_input, generate_test_cases, merge_results_over_iterations, process_single_test_case, build_test_results, OUTPUT_BUFFER_SIZE
+from test_suite.utils import check_consistency_in_results, encode_input, generate_test_cases, initialize_process_output_buffers, merge_results_over_iterations, process_single_test_case, build_test_results, OUTPUT_BUFFER_SIZE
 import test_suite.globals as globals
 import resource
-import os
 
 
 LOG_FILE_SEPARATOR_LENGTH = 20
 PROCESS_TIMEOUT = 30
 
-app = typer.Typer(help="Computes Solana instruction effects from plaintext instruction context protobuf messages.")
+app = typer.Typer(help="Validate instruction effects from clients using instruction context Protobuf messages.")
 
 
 @app.command()
@@ -121,9 +120,6 @@ def check_consistency(
     results_per_iteration = []
     for iteration in range(globals.n_iterations):
         print(f"Starting iteration {iteration}...")
-        # Generate random bytes for output buffer
-        if randomize_output_buffer:
-            globals.output_buffer_random_bytes = os.urandom(OUTPUT_BUFFER_SIZE)
 
         # Use the target libraries global map to store shared libraries
         for target in shared_libraries:
@@ -138,7 +134,7 @@ def check_consistency(
 
         # Process the test cases in parallel through shared libraries for n interations
         print("Executing tests...")
-        with Pool(processes=num_processes) as pool:
+        with Pool(processes=num_processes, initializer=initialize_process_output_buffers, initargs=(randomize_output_buffer,)) as pool:
             execution_results = pool.starmap(process_single_test_case, execution_contexts)
             results_per_iteration.append(execution_results)
 
@@ -193,7 +189,7 @@ def run_tests(
         help="Input directory containing instruction context messages"
     ),
     solana_shared_library: Path = typer.Option(
-        Path("impl/lib/libsolfuzz_agave.so.2.0"),
+        Path("impl/lib/libsolfuzz_agave_v2.0.so"),
         "--solana-target",
         "-s",
         help="Solana (or ground truth) shared object (.so) target file path"
@@ -215,6 +211,12 @@ def run_tests(
         "--num-processes",
         "-p",
         help="Number of processes to use"
+    ),
+    randomize_output_buffer: bool = typer.Option(
+        False,
+        "--randomize-output-buffer",
+        "-r",
+        help="Randomizes bytes in output buffer before shared library execution"
     )
 ):
     # Add Solana library to shared libraries
@@ -245,7 +247,9 @@ def run_tests(
 
     # Process the test cases in parallel through shared libraries
     print("Executing tests...")
-    with Pool(processes=num_processes) as pool:
+    with Pool(processes=num_processes,
+              initializer=initialize_process_output_buffers,
+              initargs=(randomize_output_buffer,)) as pool:
         execution_results = pool.starmap(process_single_test_case, execution_contexts)
 
     # Process the test results in parallel

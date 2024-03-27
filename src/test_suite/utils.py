@@ -6,6 +6,7 @@ from pathlib import Path
 import test_suite.globals as globals
 from google.protobuf import text_format
 import superbased58
+import os
 
 
 OUTPUT_BUFFER_SIZE = 32 * 1024
@@ -107,21 +108,16 @@ def process_instruction(
     in_ptr = (ctypes.c_uint8 * len(in_data))(*in_data)
     in_sz = len(in_data)
     out_sz = ctypes.c_uint64(OUTPUT_BUFFER_SIZE)
-    out_ptr = (ctypes.c_uint8 * out_sz.value)()
-
-    # Randomize the output buffer
-    if globals.output_buffer_random_bytes is not None:
-        out_ptr = (ctypes.c_uint8 * out_sz.value)(*globals.output_buffer_random_bytes)
 
     # Call the function
-    result = library.sol_compat_instr_execute_v1(out_ptr, ctypes.byref(out_sz), in_ptr, in_sz)
+    result = library.sol_compat_instr_execute_v1(globals.output_buffer_pointer, ctypes.byref(out_sz), in_ptr, in_sz)
 
     # Result == 0 means execution failed
     if result == 0:
         return None
 
     # Process the output
-    output_data = bytearray(out_ptr[:out_sz.value])
+    output_data = bytearray(globals.output_buffer_pointer[:out_sz.value])
     output_object = pb.InstrEffects()
     output_object.ParseFromString(output_data)
 
@@ -300,3 +296,17 @@ def build_test_results(file_stem: Path, results: dict[str, str | None]) -> int:
 
     # 1 = passed, -1 = failed
     return 1 if test_case_passed else -1
+
+
+def initialize_process_output_buffers(randomize_output_buffer: bool):
+    """
+    Initialize shared memory and pointers for output buffers for each process.
+
+    Args:
+        - randomize_output_buffer (bool): Whether to randomize output buffer.
+    """
+    globals.output_buffer_pointer = (ctypes.c_uint8 * OUTPUT_BUFFER_SIZE)()
+
+    if randomize_output_buffer:
+        output_buffer_random_bytes = os.urandom(OUTPUT_BUFFER_SIZE)
+        globals.output_buffer_pointer = (ctypes.c_uint8 * OUTPUT_BUFFER_SIZE)(*output_buffer_random_bytes)
