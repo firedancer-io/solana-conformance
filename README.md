@@ -2,6 +2,10 @@
 
 This tool allows for validation of targets (e.g. Firedancer) against Solana Agave by running it against a series of predefined tests. It takes either binary or human-readable Protobuf messages as inputs and runs them through the specified targets. It also includes functionality to validate targets for other issues, such as memory corruption.
 
+## Requirements
+
+This tool only works on RHEL8.
+
 ## Installation
 
 Clone this repository and run:
