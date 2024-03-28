@@ -2,15 +2,16 @@
 
 This tool allows for validation of targets (e.g. Firedancer) against Solana Agave by running it against a series of predefined tests. It takes either binary or human-readable Protobuf messages as inputs and runs them through the specified targets. It also includes functionality to validate targets for other issues, such as memory corruption.
 
+## Requirements
+
+This tool only works on RHEL8.
+
 ## Installation
 
 Clone this repository and run:
 
 ```sh
-nix-shell --pure
-make -C impl
-pip install .
-python setup.py build_ext --inplace
+source install.sh
 ```
 
 ## Protobuf
@@ -88,3 +89,10 @@ solana-test-suite check-consistency --input-dir <input_dir> --target <firedancer
 | `--num-iterations`         | Number of consistency iterations to run for each library                                                                 |
 | `--num-processes`          | Number of processes to use                                                                                               |
 | `--randomize-output-buffer`| Randomizes bytes in output buffer before shared library execution                                                        |
+
+
+### Uninstalling
+
+```sh
+source clean.sh
+```
