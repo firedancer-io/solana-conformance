@@ -54,9 +54,9 @@ def process_instruction(
     return output_object
 
 
-def generate_test_cases(test_file: Path) -> tuple[Path, str | None]:
+def generate_test_case(test_file: Path) -> tuple[Path, str | None]:
     """
-    Reads in test files and generates Protobuf objects for each test case.
+    Reads in test files and generates a Protobuf object for a test case.
 
     Args:
         - test_file (Path): Path to the file containing serialized instruction contexts.

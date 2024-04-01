@@ -8,12 +8,54 @@ from google.protobuf import text_format
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
 import test_suite.invoke_pb2 as pb
 from test_suite.codec_utils import encode_input
-from test_suite.multiprocessing_utils import check_consistency_in_results, generate_test_cases, initialize_process_output_buffers, merge_results_over_iterations, process_single_test_case, build_test_results, OUTPUT_BUFFER_SIZE
+from test_suite.multiprocessing_utils import check_consistency_in_results, generate_test_case, initialize_process_output_buffers, merge_results_over_iterations, process_single_test_case, build_test_results
 import test_suite.globals as globals
 import resource
+import subprocess
+import tempfile
 
 
 app = typer.Typer(help="Validate instruction effects from clients using instruction context Protobuf messages.")
+
+
+@app.command()
+def debug_instruction(
+    input_dir: Path = typer.Option(
+        Path("corpus8"),
+        "--input-dir",
+        "-i",
+        help="Input directory containing instruction context messages"
+    ),
+    executable_path: Path = typer.Option(
+        Path("impl/firedancer/build/native/gcc/bin/fdtestsuite"),
+        "--executable-path",
+        "-e",
+        help="Path to the binary executable to debug"
+    )
+):
+    test_files = input_dir.iterdir()
+    # Use a temporary directory to store the binary files
+    with tempfile.TemporaryDirectory(prefix="temp_binary_files") as bin_file_directory:
+        # Decode the files and write them to binary (since they may be in text format)
+        for file in test_files:
+            print("-"*LOG_FILE_SEPARATOR_LENGTH)
+            print(f"Processing {file.name}...")
+            _, instruction_context = generate_test_case(file)
+            if instruction_context is None:
+                print(f"Unable to read {file.name}, skipping...")
+                continue
+
+            bin_file_path = Path(bin_file_directory) / file.name
+            print(bin_file_path)
+
+            # Write binary file to temp dir
+            with open(bin_file_path, "wb") as f:
+                f.write(instruction_context)
+
+            # Run GDB with a subprocess
+            subprocess.run(["gdb", "--args", *map(str, [executable_path, bin_file_path])])
+
+    print("Finished!")
 
 
 @app.command()
@@ -114,7 +156,7 @@ def check_consistency(
     # Generate the test cases in parallel from files on disk
     print("Reading test files...")
     with Pool(processes=num_processes) as pool:
-        execution_contexts = pool.map(generate_test_cases, input_dir.iterdir())
+        execution_contexts = pool.map(generate_test_case, input_dir.iterdir())
 
     results_per_iteration = []
     for iteration in range(globals.n_iterations):
@@ -242,7 +284,7 @@ def run_tests(
     # Generate the test cases in parallel from files on disk
     print("Reading test files...")
     with Pool(processes=num_processes) as pool:
-        execution_contexts = pool.map(generate_test_cases, input_dir.iterdir())
+        execution_contexts = pool.map(generate_test_case, input_dir.iterdir())
 
     # Process the test cases in parallel through shared libraries
     print("Executing tests...")
