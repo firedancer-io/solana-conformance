@@ -12,6 +12,8 @@ lib/libsolfuzz_agave_v1.17.so:
 	ln -sf ../agave-v1.17/target/x86_64-unknown-linux-gnu/release/libsolfuzz_agave.so lib/libsolfuzz_agave_sancov_v1.17.so
 	TERM=dumb cd agave-v1.17 && cargo build --release --lib
 	ln -sf ../agave-v1.17/target/release/libsolfuzz_agave.so lib/libsolfuzz_agave_v1.17.so
+	cargo build --manifest-path agave-v1.17/Cargo.toml --bin agave_compat
+	ln -sf ../agave-v1.17/target/debug/agave_compat lib/agave_compat_v1.17
 
 lib/libsolfuzz_agave_v2.0.so:
 	mkdir -p lib
@@ -19,6 +21,8 @@ lib/libsolfuzz_agave_v2.0.so:
 	ln -sf ../agave-v2.0/target/x86_64-unknown-linux-gnu/release/libsolfuzz_agave.so lib/libsolfuzz_agave_sancov_v2.0.so
 	TERM=dumb cd agave-v2.0 && cargo build --release --lib
 	ln -sf ../agave-v2.0/target/release/libsolfuzz_agave.so lib/libsolfuzz_agave_v2.0.so
+	cargo build --manifest-path agave-v2.0/Cargo.toml --bin agave_compat
+	ln -sf ../agave-v2.0/target/debug/agave_compat lib/agave_compat_v2.0
 
 lib/libsolfuzz_firedancer.so:
 	mkdir -p lib
@@ -28,11 +32,14 @@ lib/libsolfuzz_firedancer.so:
 	$(MAKE) -C firedancer -j --output-sync=target CC=clang build/native/clang/lib/libfd_exec_sol_compat.so
 	ln -sf ../firedancer/build/native/clang/lib/libfd_exec_sol_compat.so lib/libsolfuzz_firedancer.so
 	ln -sf ../firedancer/build/native/clang/lib/libfd_ballet.a lib/libfd_ballet.a
+	$(MAKE) -C firedancer -j --output-sync=target build/native/gcc/bin/fdtestsuite
+	ln -sf ../firedancer/build/native/gcc/bin/fdtestsuite lib/firedancer
 
 .PHONY: clean
 clean:
 	find lib -name '*.so' -delete || true
 	find lib -name '*.a' -delete || true
+	rm lib/agave_compat_v1.17 lib/agave_compat_v2.0 lib/firedancer || true
 	[ -d agave-v1.17 ] && $(MAKE) -C agave-v1.17 clean || true
 	[ -d agave-v2.0 ] && $(MAKE) -C agave-v2.0 clean || true
 	[ -d firedancer ] && rm -rf firedancer/opt && $(MAKE) -C firedancer distclean || true

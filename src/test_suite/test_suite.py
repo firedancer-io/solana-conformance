@@ -27,33 +27,40 @@ def debug_instruction(
         help="Input directory containing instruction context messages"
     ),
     executable_path: Path = typer.Option(
-        Path("impl/firedancer/build/native/gcc/bin/fdtestsuite"),
+        Path("impl/lib/firedancer"),
         "--executable-path",
         "-e",
         help="Path to the binary executable to debug"
+    ),
+    debugger: str = typer.Option(
+        "gdb",
+        "--debugger",
+        "-d",
+        help="Debugger to use (e.g., gdb, rust-gdb)"
     )
 ):
-    test_files = input_dir.iterdir()
+    # Sort the files for deterministic order
+    test_files = sorted(input_dir.iterdir())
+
     # Use a temporary directory to store the binary files
     with tempfile.TemporaryDirectory(prefix="temp_binary_files") as bin_file_directory:
         # Decode the files and write them to binary (since they may be in text format)
         for file in test_files:
             print("-"*LOG_FILE_SEPARATOR_LENGTH)
-            print(f"Processing {file.name}...")
+            print(f"Processing file '{file.name}'...")
             _, instruction_context = generate_test_case(file)
             if instruction_context is None:
                 print(f"Unable to read {file.name}, skipping...")
                 continue
 
             bin_file_path = Path(bin_file_directory) / file.name
-            print(bin_file_path)
 
             # Write binary file to temp dir
             with open(bin_file_path, "wb") as f:
                 f.write(instruction_context)
 
             # Run GDB with a subprocess
-            subprocess.run(["gdb", "--args", *map(str, [executable_path, bin_file_path])])
+            subprocess.run([debugger, "--args", *map(str, [executable_path, bin_file_path])])
 
     print("Finished!")
 

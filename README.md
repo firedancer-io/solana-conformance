@@ -47,7 +47,7 @@ solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_targ
 
 | Argument        | Description                                                                                         |
 |-----------------|-----------------------------------------------------------------------------------------------------|
-| `--input-dir`   | Input directory containing instruction context messages in a human-readable format |
+| `--input-dir`   | Input directory containing instruction context messages |
 | `--solana-target` | Path to Solana Agave shared object (.so) target file            |
 | `--target`      | Additional shared object (.so) target file paths  |
 | `--output-dir`  | Log output directory for test results |
@@ -55,6 +55,24 @@ solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_targ
 | `--randomize-output-buffer`| Randomizes bytes in output buffer before shared library execution                                                        |
 
 **Note:** Each `.so` target file name should be unique.
+
+
+### Debugging
+
+For failing test cases, it may be useful to analyze what could have differed between Solana and Firedancer. You can execute a Protobuf message (human-readable or binary) through the desired client as such:
+
+```sh
+solana-test-suite debug-instruction --input-dir <input_dir> --executable-path <executable_path> --debugger <gdb,rust-gdb,etc>
+```
+
+| Argument        | Description                                                                                         |
+|-----------------|-----------------------------------------------------------------------------------------------------|
+| `--input-dir`   | Input directory containing instruction context messages in a human-readable format |
+| `--executable-path`      | Path to the binary executable to debug  |
+| `--debugger`  | Debugger to use (e.g., gdb, rust-gdb) |
+
+Recommended usage is opening two terminals side by side, and running the above command on both with one having `--executable-path` for Solana (`impl/lib/agave_compat_v2.0`) and another for Firedancer (`impl/lib/firedancer`), and then stepping through the debugger for each corresponding test case.
+
 
 ### Analysis
 
@@ -83,7 +101,7 @@ solana-test-suite check-consistency --input-dir <input_dir> --target <firedancer
 
 | Argument                   | Description                                                                                                              |
 |----------------------------|--------------------------------------------------------------------------------------------------------------------------|
-| `--input-dir`              | Input directory containing instruction context messages in a human-readable format                                       |
+| `--input-dir`              | Input directory containing instruction context messages                                       |
 | `--target`                 | Additional shared object (.so) target file paths                                                                         |
 | `--output-dir`             | Log output directory for test results                                                                                    |
 | `--num-iterations`         | Number of consistency iterations to run for each library                                                                 |
