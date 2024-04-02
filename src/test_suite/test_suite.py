@@ -2,7 +2,8 @@ from collections import Counter
 from typing import List
 import typer
 import ctypes
-from multiprocessing import Pool
+import multiprocessing
+from multiprocessing import Pool, Pipe
 from pathlib import Path
 from google.protobuf import text_format
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
@@ -10,6 +11,7 @@ import test_suite.invoke_pb2 as pb
 from test_suite.codec_utils import encode_input
 from test_suite.multiprocessing_utils import check_consistency_in_results, generate_test_case, initialize_process_output_buffers, merge_results_over_iterations, process_single_test_case, build_test_results
 import test_suite.globals as globals
+from test_suite.debugger import debug_host
 import resource
 import subprocess
 import tempfile
@@ -20,43 +22,32 @@ app = typer.Typer(help="Validate instruction effects from clients using instruct
 
 @app.command()
 def debug_instruction(
-    input_dir: Path = typer.Option(
-        Path("corpus8"),
-        "--input-dir",
+    file: Path = typer.Option(
+        None,
+        "--input",
         "-i",
-        help="Input directory containing instruction context messages"
+        help="Input file"
     ),
-    executable_path: Path = typer.Option(
-        Path("impl/firedancer/build/native/gcc/bin/fdtestsuite"),
+    shared_library: Path = typer.Option(
+        Path("impl/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so"),
         "--executable-path",
         "-e",
         help="Path to the binary executable to debug"
+    ),
+    debugger: str = typer.Option(
+        "gdb",
+        "--debugger",
+        "-d",
+        help="Debugger to use (gdb, rust-gdb)"
     )
 ):
-    test_files = input_dir.iterdir()
-    # Use a temporary directory to store the binary files
-    with tempfile.TemporaryDirectory(prefix="temp_binary_files") as bin_file_directory:
-        # Decode the files and write them to binary (since they may be in text format)
-        for file in test_files:
-            print("-"*LOG_FILE_SEPARATOR_LENGTH)
-            print(f"Processing {file.name}...")
-            _, instruction_context = generate_test_case(file)
-            if instruction_context is None:
-                print(f"Unable to read {file.name}, skipping...")
-                continue
+    # Decode the file and reencode as binary (since it may be in text format)
+    print("-"*LOG_FILE_SEPARATOR_LENGTH)
+    print(f"Processing {file.name}...")
+    _, instruction_context = generate_test_case(file)
+    assert instruction_context is not None, f"Unable to read {file.name}"
 
-            bin_file_path = Path(bin_file_directory) / file.name
-            print(bin_file_path)
-
-            # Write binary file to temp dir
-            with open(bin_file_path, "wb") as f:
-                f.write(instruction_context)
-
-            # Run GDB with a subprocess
-            subprocess.run(["gdb", "--args", *map(str, [executable_path, bin_file_path])])
-
-    print("Finished!")
-
+    debug_host(shared_library, instruction_context, gdb=debugger)
 
 @app.command()
 def consolidate_logs(

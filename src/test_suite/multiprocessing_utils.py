@@ -228,7 +228,7 @@ def build_test_results(file_stem: Path, results: dict[str, str | None]) -> int:
     return 1 if test_case_passed else -1
 
 
-def initialize_process_output_buffers(randomize_output_buffer: bool):
+def initialize_process_output_buffers(randomize_output_buffer = False):
     """
     Initialize shared memory and pointers for output buffers for each process.
 
