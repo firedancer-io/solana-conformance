@@ -1,4 +1,3 @@
-import pytest
 import base58
 import superbased58
 import os
