@@ -321,6 +321,12 @@ def decode_protobuf(
         "-o",
         help="Output directory for base58-encoded, human-readable instruction context messages",
     ),
+    check_decode_results: bool = typer.Option(
+        False,
+        "--check-results",
+        "-c",
+        help="Validate binary and human readable messages are identical",
+    ),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output"
     ),
@@ -346,12 +352,22 @@ def decode_protobuf(
         # Encode the input fields to be human readable
         instruction_context = pb.InstrContext()
         instruction_context.ParseFromString(serialized_instruction_context)
-        instruction_context.DiscardUnknownFields()
         encode_input(instruction_context)
 
         with open(output_dir / file.name, "w") as f:
-            f.write(text_format.MessageToString(instruction_context))
+            f.write(
+                text_format.MessageToString(
+                    instruction_context, print_unknown_fields=False
+                )
+            )
         written += 1
+
+        # Validate the binary and human-readable messages are the same
+        if check_decode_results:
+            readable_instruction_context = text_format.Parse(
+                (output_dir / file.name).read_text(), pb.InstrContext()
+            )
+            assert readable_instruction_context == instruction_context, file.name
 
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
     print(f"{total} total files seen")

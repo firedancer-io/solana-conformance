@@ -25,13 +25,15 @@ Each target must contain a `sol_compat_instr_execute_v1` function that takes in 
 Before running tests, `InstrContext` messages may be converted into Protobuf's text format, with all `bytes` fields base58-encoded (for human readability). Run the following command to do this:
 
 ```sh
-solana-test-suite decode-protobuf --input-dir <input_dir> --output-dir <output_dir>
+solana-test-suite decode-protobuf --input-dir <input_dir> --output-dir <output_dir> [--check-results] [verbose]
 ```
 
 | Argument       | Description                                                                                   |
 |----------------|-----------------------------------------------------------------------------------------------|
 | `--input-dir`  | Input directory containing instruction context messages in binary format                      |
 | `--output-dir` | Output directory for encoded, human-readable instruction context messages                     |
+| `--check-results` | Validate binary and human readable messages are identical                    |
+| `--verbose` | Enable verbose output              |
 
 
 Optionally, instruction context messages may also be left in the original Protobuf binary-encoded format.
@@ -42,7 +44,7 @@ Optionally, instruction context messages may also be left in the original Protob
 To run the test suite, use the following command:
 
 ```sh
-solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_target.so> --target <firedancer> [--target <target_2> ...] --output-dir <log_output_dir> --num-processes <num_processes>
+solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_target.so> --target <firedancer> [--target <target_2> ...] --output-dir <log_output_dir> --num-processes <num_processes> [--randomize-output-buffer]
 ```
 
 | Argument        | Description                                                                                         |
@@ -96,7 +98,7 @@ By default, log files are arranged lexicographically based on the test case file
 Used to detect potential memory corruption issues / inconsistent outputs. The program will run each supplied library `num-iteration` times on the entire test suite. Use the following:
 
 ```sh
-solana-test-suite check-consistency --input-dir <input_dir> --target <firedancer> [--target <target_2> ...] --output-dir <log_output_dir> --num-iterations <num_iterations> --num-processes <num_processes>
+solana-test-suite check-consistency --input-dir <input_dir> --target <firedancer> [--target <target_2> ...] --output-dir <log_output_dir> --num-iterations <num_iterations> --num-processes <num_processes> [--randomize-output-buffer]
 ```
 
 | Argument                   | Description                                                                                                              |
