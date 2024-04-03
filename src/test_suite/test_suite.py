@@ -2,8 +2,7 @@ from collections import Counter
 from typing import List
 import typer
 import ctypes
-import multiprocessing
-from multiprocessing import Pool, Pipe
+from multiprocessing import Pool
 from pathlib import Path
 from google.protobuf import text_format
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
@@ -20,8 +19,6 @@ from test_suite.multiprocessing_utils import (
 import test_suite.globals as globals
 from test_suite.debugger import debug_host
 import resource
-
-from test_suite.validation_utils import is_valid
 
 
 app = typer.Typer(
