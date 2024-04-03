@@ -20,8 +20,8 @@ from test_suite.multiprocessing_utils import (
 import test_suite.globals as globals
 from test_suite.debugger import debug_host
 import resource
-import subprocess
-import tempfile
+
+from test_suite.validation_utils import is_valid
 
 
 app = typer.Typer(
@@ -42,12 +42,12 @@ def debug_instruction(
         "gdb", "--debugger", "-d", help="Debugger to use (gdb, rust-gdb)"
     ),
 ):
-    # Decode the file and reencode as binary (since it may be in text format)
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
     print(f"Processing {file.name}...")
+
+    # Decode the file and pass it into GDB
     _, instruction_context = generate_test_case(file)
     assert instruction_context is not None, f"Unable to read {file.name}"
-
     debug_host(shared_library, instruction_context, gdb=debugger)
 
 
@@ -321,32 +321,41 @@ def decode_protobuf(
         "-o",
         help="Output directory for base58-encoded, human-readable instruction context messages",
     ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output"
+    ),
 ):
     # Create the output directory, if necessary
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Keep track of how many files were (un)successfully written
+    written = 0
+    total = 0
+
     # Iterate through each binary-encoded message
     for file in input_dir.iterdir():
-        try:
-            instruction_context = pb.InstrContext()
+        total += 1
+        _, serialized_instruction_context = generate_test_case(file)
 
-            # Read in the message
-            with open(file, "rb") as f:
-                content = f.read()
-                instruction_context.ParseFromString(content)
+        # Skip if input is invalid
+        if serialized_instruction_context is None:
+            if verbose:
+                print(f"Could not validate message: {file.stem}")
+            continue
 
-            # Encode bytes fields into base58
-            encode_input(instruction_context)
+        # Encode the input fields to be human readable
+        instruction_context = pb.InstrContext()
+        instruction_context.ParseFromString(serialized_instruction_context)
+        instruction_context.DiscardUnknownFields()
+        encode_input(instruction_context)
 
-            # Output the human-readable message
-            text = text_format.MessageToString(instruction_context)
-            if len(text) > 0:
-                with open(output_dir / file.name, "w") as f:
-                    f.write(text)
-            else:
-                print(f"{file.stem} is empty")
-        except Exception as e:
-            print(f"Could not read {file.stem}: {e}")
+        with open(output_dir / file.name, "w") as f:
+            f.write(text_format.MessageToString(instruction_context))
+        written += 1
+
+    print("-" * LOG_FILE_SEPARATOR_LENGTH)
+    print(f"{total} total files seen")
+    print(f"{written} files successfully written")
 
 
 if __name__ == "__main__":
