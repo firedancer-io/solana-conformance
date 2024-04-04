@@ -4,7 +4,11 @@ from multiprocessing import Pipe
 import signal
 import subprocess
 import os
-from test_suite.multiprocessing_utils import initialize_process_output_buffers, process_instruction
+from test_suite.multiprocessing_utils import (
+    initialize_process_output_buffers,
+    process_instruction,
+)
+
 
 def debug_target(shared_library, test_input, pipe):
     initialize_process_output_buffers()
@@ -43,7 +47,9 @@ def debug_host(shared_library, instruction_context, gdb):
 
     # Spawn the Python interpreter
     pipe, child_pipe = Pipe()
-    target = multiprocessing.Process(target=debug_target, args=(shared_library, instruction_context, child_pipe))
+    target = multiprocessing.Process(
+        target=debug_target, args=(shared_library, instruction_context, child_pipe)
+    )
     target.start()
     # Wait for a signal that the child process is ready
     assert pipe.recv() == "started"

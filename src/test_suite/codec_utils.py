@@ -12,17 +12,27 @@ def decode_input(instruction_context: pb.InstrContext):
         - instruction_context (pb.InstrContext): Instruction context (will be modified).
     """
     if instruction_context.program_id:
-        instruction_context.program_id = superbased58.decode_32(instruction_context.program_id)
+        instruction_context.program_id = superbased58.decode_32(
+            instruction_context.program_id
+        )
     if instruction_context.loader_id:
-        instruction_context.loader_id = superbased58.decode_32(instruction_context.loader_id)
+        instruction_context.loader_id = superbased58.decode_32(
+            instruction_context.loader_id
+        )
 
     for i in range(len(instruction_context.accounts)):
         if instruction_context.accounts[i].address:
-            instruction_context.accounts[i].address = superbased58.decode_32(instruction_context.accounts[i].address)
+            instruction_context.accounts[i].address = superbased58.decode_32(
+                instruction_context.accounts[i].address
+            )
         if instruction_context.accounts[i].data:
-            instruction_context.accounts[i].data = base64.b64decode(instruction_context.accounts[i].data)
+            instruction_context.accounts[i].data = base64.b64decode(
+                instruction_context.accounts[i].data
+            )
         if instruction_context.accounts[i].owner:
-            instruction_context.accounts[i].owner = superbased58.decode_32(instruction_context.accounts[i].owner)
+            instruction_context.accounts[i].owner = superbased58.decode_32(
+                instruction_context.accounts[i].owner
+            )
 
     if instruction_context.data:
         instruction_context.data = base64.b64decode(instruction_context.data)
@@ -37,17 +47,27 @@ def encode_input(instruction_context: pb.InstrContext):
         - instruction_context (pb.InstrContext): Instruction context (will be modified).
     """
     if instruction_context.program_id:
-        instruction_context.program_id = superbased58.encode_32(instruction_context.program_id)
+        instruction_context.program_id = superbased58.encode_32(
+            instruction_context.program_id
+        )
     if instruction_context.loader_id:
-        instruction_context.loader_id = superbased58.encode_32(instruction_context.loader_id)
+        instruction_context.loader_id = superbased58.encode_32(
+            instruction_context.loader_id
+        )
 
     for i in range(len(instruction_context.accounts)):
         if instruction_context.accounts[i].address:
-            instruction_context.accounts[i].address = superbased58.encode_32(instruction_context.accounts[i].address)
+            instruction_context.accounts[i].address = superbased58.encode_32(
+                instruction_context.accounts[i].address
+            )
         if instruction_context.accounts[i].data:
-            instruction_context.accounts[i].data = base64.b64encode(instruction_context.accounts[i].data)
+            instruction_context.accounts[i].data = base64.b64encode(
+                instruction_context.accounts[i].data
+            )
         if instruction_context.accounts[i].owner:
-            instruction_context.accounts[i].owner = superbased58.encode_32(instruction_context.accounts[i].owner)
+            instruction_context.accounts[i].owner = superbased58.encode_32(
+                instruction_context.accounts[i].owner
+            )
 
     if instruction_context.data:
         instruction_context.data = base64.b64encode(instruction_context.data)
@@ -63,8 +83,14 @@ def encode_output(instruction_effects: pb.InstrEffects):
     """
     for i in range(len(instruction_effects.modified_accounts)):
         if instruction_effects.modified_accounts[i].address:
-            instruction_effects.modified_accounts[i].address = superbased58.encode_32(instruction_effects.modified_accounts[i].address)
+            instruction_effects.modified_accounts[i].address = superbased58.encode_32(
+                instruction_effects.modified_accounts[i].address
+            )
         if instruction_effects.modified_accounts[i].data:
-            instruction_effects.modified_accounts[i].data = base64.b64encode(instruction_effects.modified_accounts[i].data)
+            instruction_effects.modified_accounts[i].data = base64.b64encode(
+                instruction_effects.modified_accounts[i].data
+            )
         if instruction_effects.modified_accounts[i].owner:
-            instruction_effects.modified_accounts[i].owner = superbased58.encode_32(instruction_effects.modified_accounts[i].owner)
+            instruction_effects.modified_accounts[i].owner = superbased58.encode_32(
+                instruction_effects.modified_accounts[i].owner
+            )
