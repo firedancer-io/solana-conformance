@@ -10,8 +10,7 @@ import os
 
 
 def process_instruction(
-    library: ctypes.CDLL,
-    serialized_instruction_context: str
+    library: ctypes.CDLL, serialized_instruction_context: str
 ) -> pb.InstrEffects | None:
     """
     Process an instruction through a provided shared library and return the result.
@@ -27,9 +26,9 @@ def process_instruction(
     # Define argument and return types
     library.sol_compat_instr_execute_v1.argtypes = [
         POINTER(ctypes.c_uint8),  # out_ptr
-        POINTER(c_uint64),        # out_psz
+        POINTER(c_uint64),  # out_psz
         POINTER(ctypes.c_uint8),  # in_ptr
-        c_uint64                  # in_sz
+        c_uint64,  # in_sz
     ]
     library.sol_compat_instr_execute_v1.restype = c_int
 
@@ -40,14 +39,16 @@ def process_instruction(
     out_sz = ctypes.c_uint64(OUTPUT_BUFFER_SIZE)
 
     # Call the function
-    result = library.sol_compat_instr_execute_v1(globals.output_buffer_pointer, ctypes.byref(out_sz), in_ptr, in_sz)
+    result = library.sol_compat_instr_execute_v1(
+        globals.output_buffer_pointer, ctypes.byref(out_sz), in_ptr, in_sz
+    )
 
     # Result == 0 means execution failed
     if result == 0:
         return None
 
     # Process the output
-    output_data = bytearray(globals.output_buffer_pointer[:out_sz.value])
+    output_data = bytearray(globals.output_buffer_pointer[: out_sz.value])
     output_object = pb.InstrEffects()
     output_object.ParseFromString(output_data)
 
@@ -90,7 +91,9 @@ def generate_test_case(test_file: Path) -> tuple[Path, str | None]:
     return test_file, instruction_context.SerializeToString(deterministic=True)
 
 
-def process_single_test_case(file: Path, serialized_instruction_context: str | None) -> tuple[str, dict[str, str | None] | None]:
+def process_single_test_case(
+    file: Path, serialized_instruction_context: str | None
+) -> tuple[str, dict[str, str | None] | None]:
     """
     Process a single execution context (file, serialized instruction context) through
     all target libraries and returns serialized instruction effects. This
@@ -111,8 +114,14 @@ def process_single_test_case(file: Path, serialized_instruction_context: str | N
     # Execute test case on each target library
     results = {}
     for target in globals.target_libraries:
-        instruction_effects = process_instruction(globals.target_libraries[target], serialized_instruction_context)
-        result = instruction_effects.SerializeToString(deterministic=True) if instruction_effects else None
+        instruction_effects = process_instruction(
+            globals.target_libraries[target], serialized_instruction_context
+        )
+        result = (
+            instruction_effects.SerializeToString(deterministic=True)
+            if instruction_effects
+            else None
+        )
         results[target] = result
 
     return file.stem, results
@@ -175,13 +184,22 @@ def check_consistency_in_results(file_stem: Path, results: dict) -> dict[str, bo
             protobuf_structures[iteration] = protobuf_struct
 
             # Write output Protobuf struct to logs
-            with open(globals.output_dir / target.stem / str(iteration) / (file_stem + ".txt"), "w") as f:
+            with open(
+                globals.output_dir
+                / target.stem
+                / str(iteration)
+                / (file_stem + ".txt"),
+                "w",
+            ) as f:
                 if protobuf_struct:
                     f.write(text_format.MessageToString(protobuf_struct))
                 else:
                     f.write(str(None))
 
-        test_case_passed = all(protobuf_structures[iteration] == protobuf_structures[0] for iteration in range(globals.n_iterations))
+        test_case_passed = all(
+            protobuf_structures[iteration] == protobuf_structures[0]
+            for iteration in range(globals.n_iterations)
+        )
         results_per_target[target] = 1 if test_case_passed else -1
 
     return results_per_target
@@ -222,13 +240,16 @@ def build_test_results(file_stem: Path, results: dict[str, str | None]) -> int:
             else:
                 f.write(str(None))
 
-    test_case_passed = all(protobuf_structures[globals.solana_shared_library] == result for result in protobuf_structures.values())
+    test_case_passed = all(
+        protobuf_structures[globals.solana_shared_library] == result
+        for result in protobuf_structures.values()
+    )
 
     # 1 = passed, -1 = failed
     return 1 if test_case_passed else -1
 
 
-def initialize_process_output_buffers(randomize_output_buffer = False):
+def initialize_process_output_buffers(randomize_output_buffer=False):
     """
     Initialize shared memory and pointers for output buffers for each process.
 
@@ -239,4 +260,6 @@ def initialize_process_output_buffers(randomize_output_buffer = False):
 
     if randomize_output_buffer:
         output_buffer_random_bytes = os.urandom(OUTPUT_BUFFER_SIZE)
-        globals.output_buffer_pointer = (ctypes.c_uint8 * OUTPUT_BUFFER_SIZE)(*output_buffer_random_bytes)
+        globals.output_buffer_pointer = (ctypes.c_uint8 * OUTPUT_BUFFER_SIZE)(
+            *output_buffer_random_bytes
+        )
