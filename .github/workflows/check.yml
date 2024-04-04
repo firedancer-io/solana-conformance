@@ -1,0 +1,14 @@
+name: Check
+on:
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - run: pip install black
+      - uses: actions/checkout@v4
+      - run: black --check src/test_suite --exclude '_pb2\.py'
+      # TODO add further checks here
