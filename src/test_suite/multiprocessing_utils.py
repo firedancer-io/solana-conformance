@@ -1,6 +1,7 @@
 from test_suite.constants import OUTPUT_BUFFER_SIZE
 import test_suite.invoke_pb2 as pb
 from test_suite.codec_utils import encode_output, decode_input
+from test_suite.validation_utils import is_valid
 import ctypes
 from ctypes import c_uint64, c_int, POINTER
 from pathlib import Path
@@ -77,7 +78,7 @@ def generate_test_case(test_file: Path) -> tuple[Path, str | None]:
             with open(test_file) as f:
                 instruction_context = text_format.Parse(f.read(), pb.InstrContext())
 
-            # Decode base58 encoded, human-readable fields
+            # Decode into digestable fields
             decode_input(instruction_context)
         except:
             # Unable to read message, skip and continue
@@ -86,6 +87,13 @@ def generate_test_case(test_file: Path) -> tuple[Path, str | None]:
     if instruction_context is None:
         # Unreadable file, skip it
         return test_file, None
+
+    # Validate the message
+    if not is_valid(instruction_context):
+        return test_file, None
+
+    # Discard unknown fields
+    instruction_context.DiscardUnknownFields()
 
     # Serialize instruction context to string (pickleable)
     return test_file, instruction_context.SerializeToString(deterministic=True)
