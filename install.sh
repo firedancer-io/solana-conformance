@@ -6,4 +6,3 @@ source test_suite_env/bin/activate
 make -j -C impl
 pip install .
 protoc --python_out=src/test_suite invoke.proto
-python setup.py build_ext --inplace

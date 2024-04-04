@@ -4,14 +4,15 @@ description = "Tests client targets against Solana"
 authors = [
   { name = "Manik Jain", email = "mjain@jumptrading.com"}
 ]
-dynamic = ['readme', 'version']
+dynamic = ['version']
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "base58~=2.1.0",
-    "loguru~=0.7.0",
-    "protobuf~=3.19.0",
-    "typer~=0.9.0",
-    "Cython>=3.0.9"
+  "fd58~=0.1.0",
+  "loguru~=0.7.0",
+  "protobuf~=3.19.0",
+  "typer~=0.9.0",
+  "Cython>=3.0.9"
 ]
 
 [project.scripts]
@@ -32,10 +33,5 @@ dev = [
 ]
 
 [build-system]
-requires = ['setuptools', "wheel", "Cython", 'setuptools_scm[toml]']
+requires = ['setuptools']
 build-backend = "setuptools.build_meta"
-
-[tool.setuptools.dynamic]
-readme = {file = ["README.md"], content-type = "text/markdown"}
-
-[tool.setuptools_scm]
