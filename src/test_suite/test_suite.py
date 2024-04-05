@@ -7,12 +7,13 @@ from pathlib import Path
 from google.protobuf import text_format
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
 import test_suite.invoke_pb2 as pb
-from test_suite.codec_utils import encode_input
+from test_suite.codec_utils import encode_input, encode_output
 from test_suite.multiprocessing_utils import (
     check_consistency_in_results,
     generate_test_case,
     initialize_process_output_buffers,
     merge_results_over_iterations,
+    process_instruction,
     process_single_test_case,
     build_test_results,
 )
@@ -24,6 +25,39 @@ import resource
 app = typer.Typer(
     help="Validate instruction effects from clients using instruction context Protobuf messages."
 )
+
+
+@app.command()
+def execute_single_instruction(
+    file: Path = typer.Option(None, "--input", "-i", help="Input file"),
+    shared_library: Path = typer.Option(
+        Path("impl/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so"),
+        "--target",
+        "-t",
+        help="Shared object (.so) target file path to execute",
+    ),
+    randomize_output_buffer: bool = typer.Option(
+        False,
+        "--randomize-output-buffer",
+        "-r",
+        help="Randomizes bytes in output buffer before shared library execution",
+    ),
+):
+    _, instruction_context = generate_test_case(file)
+    assert instruction_context is not None, f"Unable to read {file.name}"
+
+    # Initialize output buffers and shared library
+    initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
+    lib = ctypes.CDLL(shared_library)
+    lib.sol_compat_init()
+
+    # Execute and cleanup
+    instruction_effects = process_instruction(lib, instruction_context)
+    lib.sol_compat_fini()
+
+    # Print human-readable output
+    encode_output(instruction_effects)
+    print(instruction_effects)
 
 
 @app.command()
