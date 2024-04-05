@@ -59,12 +59,26 @@ solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_targ
 **Note:** Each `.so` target file name should be unique.
 
 
+### Single instruction
+
+You can pick out a single test case and run it to view the instruction effects via output with the following command:
+
+```sh
+solana-test-suite debug-instruction --input-dir <input_dir> --target <shared_lib>
+```
+
+| Argument        | Description                                                                                         |
+|-----------------|-----------------------------------------------------------------------------------------------------|
+| `--input`      | Input file |
+| `--target`      | Shared object (.so) target file path to debug  |
+
+
 ### Debugging
 
 For failing test cases, it may be useful to analyze what could have differed between Solana and Firedancer. You can execute a Protobuf message (human-readable or binary) through the desired client as such:
 
 ```sh
-solana-test-suite debug-instruction --input-dir <input_dir> --executable-path <executable_path> --debugger <gdb,rust-gdb,etc>
+solana-test-suite debug-instruction --input-dir <input_dir> --target <shared_lib> --debugger <gdb,rust-gdb,etc>
 ```
 
 | Argument        | Description                                                                                         |
