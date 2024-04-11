@@ -224,7 +224,8 @@ def build_test_results(file_stem: Path, results: dict[str, str | None]) -> int:
     Returns:
         - int: 1 if passed, -1 if failed, 0 if skipped.
     """
-    if results is None:
+    # If no results or Agave rejects input, mark case as skipped
+    if results is None or results[globals.solana_shared_library] is None:
         # Mark as skipped (0)
         return 0
 

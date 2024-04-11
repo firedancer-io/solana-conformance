@@ -1,4 +1,5 @@
 from collections import Counter
+import shutil
 from typing import List
 import typer
 import ctypes
@@ -56,7 +57,9 @@ def execute_single_instruction(
     lib.sol_compat_fini()
 
     # Print human-readable output
-    encode_output(instruction_effects)
+    if instruction_effects:
+        encode_output(instruction_effects)
+
     print(instruction_effects)
 
 
@@ -64,7 +67,7 @@ def execute_single_instruction(
 def debug_instruction(
     file: Path = typer.Option(None, "--input", "-i", help="Input file"),
     shared_library: Path = typer.Option(
-        Path("impl/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so"),
+        Path("impl/lib/libsolfuzz_firedancer.so"),
         "--target",
         "-t",
         help="Shared object (.so) target file path to debug",
@@ -101,6 +104,8 @@ def consolidate_logs(
     ),
 ):
     # Create the output directory, if necessary
+    if output_dir.exists():
+        shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Iterate through each library
@@ -170,6 +175,8 @@ def check_consistency(
     globals.n_iterations = num_iterations
 
     # Create the output directory, if necessary
+    if globals.output_dir.exists():
+        shutil.rmtree(globals.output_dir)
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
     # Generate the test cases in parallel from files on disk
@@ -291,6 +298,8 @@ def run_tests(
     globals.solana_shared_library = solana_shared_library
 
     # Create the output directory, if necessary
+    if globals.output_dir.exists():
+        shutil.rmtree(globals.output_dir)
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
     # Initialize shared libraries
@@ -363,6 +372,8 @@ def decode_protobuf(
     ),
 ):
     # Create the output directory, if necessary
+    if output_dir.exists():
+        shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Keep track of how many files were (un)successfully written

@@ -39,6 +39,7 @@ message EpochContext {
 // On "real" ledgers, it is created during the slot boundary.
 message SlotContext {}
 
+// TODO: Include return data within the transaction context.
 message TxnContext {}
 
 message InstrAcct {
@@ -94,6 +95,8 @@ message InstrEffects {
   repeated AcctState modified_accounts = 3;
 
   uint64 cu_avail = 4;
+
+  bytes return_data = 5;
 }
 
 // An instruction processing test fixture.
