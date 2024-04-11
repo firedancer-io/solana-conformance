@@ -1,4 +1,5 @@
 from collections import Counter
+import shutil
 from typing import List
 import typer
 import ctypes
@@ -103,6 +104,8 @@ def consolidate_logs(
     ),
 ):
     # Create the output directory, if necessary
+    if output_dir.exists():
+        shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Iterate through each library
@@ -172,6 +175,8 @@ def check_consistency(
     globals.n_iterations = num_iterations
 
     # Create the output directory, if necessary
+    if globals.output_dir.exists():
+        shutil.rmtree(globals.output_dir)
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
     # Generate the test cases in parallel from files on disk
@@ -293,6 +298,8 @@ def run_tests(
     globals.solana_shared_library = solana_shared_library
 
     # Create the output directory, if necessary
+    if globals.output_dir.exists():
+        shutil.rmtree(globals.output_dir)
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
     # Initialize shared libraries
@@ -365,6 +372,8 @@ def decode_protobuf(
     ),
 ):
     # Create the output directory, if necessary
+    if output_dir.exists():
+        shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Keep track of how many files were (un)successfully written
