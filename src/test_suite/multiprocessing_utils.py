@@ -242,13 +242,6 @@ def build_test_results(file_stem: Path, results: dict[str, str | None]) -> int:
 
         protobuf_structures[target] = protobuf_struct
 
-        # Write output Protobuf struct to logs
-        with open(globals.output_dir / target.stem / (file_stem + ".txt"), "w") as f:
-            if protobuf_struct:
-                f.write(text_format.MessageToString(protobuf_struct))
-            else:
-                f.write(str(None))
-
     test_case_passed = all(
         protobuf_structures[globals.solana_shared_library] == result
         for result in protobuf_structures.values()
