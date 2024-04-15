@@ -86,58 +86,6 @@ def debug_instruction(
 
 
 @app.command()
-def consolidate_logs(
-    input_dir: Path = typer.Option(
-        Path("test_results"),
-        "--input-dir",
-        "-i",
-        help="Input directory containing test results",
-    ),
-    output_dir: Path = typer.Option(
-        Path("consolidated_logs"),
-        "--output-dir",
-        "-o",
-        help="Output directory for consolidated logs",
-    ),
-    chunk_size: int = typer.Option(
-        10000, "--chunk-size", "-c", help="Number of test results per file"
-    ),
-):
-    # Create the output directory, if necessary
-    if output_dir.exists():
-        shutil.rmtree(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Iterate through each library
-    for lib_dir in filter(lambda x: x.is_dir(), input_dir.iterdir()):
-        # Make the lib output directory
-        lib = lib_dir.stem
-        (output_dir / lib).mkdir(parents=True, exist_ok=True)
-
-        # Grab all log files
-        log_files = sorted(list(lib_dir.glob("*.txt")))
-
-        current_log_file = None
-
-        for i in range(len(log_files)):
-            # Open a new log file every chunk_size test cases
-            if i % chunk_size == 0:
-                if current_log_file:
-                    current_log_file.close()
-                current_log_file = open(
-                    output_dir / lib / f"{log_files[i].stem}.txt", "w"
-                )
-
-            # Write test case name + log contents + separators
-            current_log_file.write(log_files[i].stem + ":\n")
-            current_log_file.write(log_files[i].read_text())
-            current_log_file.write("\n" + "-" * LOG_FILE_SEPARATOR_LENGTH + "\n")
-
-        if current_log_file:
-            current_log_file.close()
-
-
-@app.command()
 def check_consistency(
     input_dir: Path = typer.Option(
         Path("corpus8"),
@@ -289,6 +237,9 @@ def run_tests(
         "-r",
         help="Randomizes bytes in output buffer before shared library execution",
     ),
+    log_chunk_size: int = typer.Option(
+        10000, "--chunk-size", "-c", help="Number of test results per file"
+    ),
 ):
     # Add Solana library to shared libraries
     shared_libraries = [solana_shared_library] + shared_libraries
@@ -335,6 +286,40 @@ def run_tests(
         passed = counts[1]
         failed = counts[-1]
         skipped = counts[0]
+
+    print("Logging results...")
+    counter = 0
+    target_log_files = {target: None for target in shared_libraries}
+    for file, result in execution_results:
+        if result is None:
+            continue
+
+        for target, serialized_instruction_effects in result.items():
+            if counter % log_chunk_size == 0:
+                if target_log_files[target]:
+                    target_log_files[target].close()
+                target_log_files[target] = open(
+                    globals.output_dir / target.stem / (file + ".txt"), "w"
+                )
+
+            target_log_files[target].write(file + ":\n")
+
+            if serialized_instruction_effects is None:
+                target_log_files[target].write(str(None))
+            else:
+                instruction_effects = pb.InstrEffects()
+                instruction_effects.ParseFromString(serialized_instruction_effects)
+                target_log_files[target].write(
+                    text_format.MessageToString(instruction_effects)
+                )
+            target_log_files[target].write(
+                "\n" + "-" * LOG_FILE_SEPARATOR_LENGTH + "\n"
+            )
+        counter += 1
+
+    for target in shared_libraries:
+        if target_log_files[target]:
+            target_log_files[target].close()
 
     print("Cleaning up...")
     for target in shared_libraries:

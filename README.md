@@ -44,7 +44,7 @@ Optionally, instruction context messages may also be left in the original Protob
 To run the test suite, use the following command:
 
 ```sh
-solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_target.so> --target <firedancer> [--target <target_2> ...] --output-dir <log_output_dir> --num-processes <num_processes> [--randomize-output-buffer]
+solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_target.so> --target <firedancer> [--target <target_2> ...] --output-dir <log_output_dir> --num-processes <num_processes> --chunk-size <chunk_size> [--randomize-output-buffer]
 ```
 
 | Argument        | Description                                                                                         |
@@ -55,6 +55,7 @@ solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_targ
 | `--output-dir`  | Log output directory for test results |
 | `--num-processes`  | Number of processes to use |
 | `--randomize-output-buffer`| Randomizes bytes in output buffer before shared library execution                                                        |
+| `--chunk-size`  | Number of test results per log file |
 
 **Note:** Each `.so` target file name should be unique.
 
@@ -88,23 +89,6 @@ solana-test-suite debug-instruction --input-dir <input_dir> --target <shared_lib
 | `--debugger`  | Debugger to use (gdb, rust-gdb) |
 
 Recommended usage is opening two terminals side by side, and running the above command on both with one having `--executable-path` for Solana (`impl/lib/libsolfuzz_agave_v2.0.so`) and another for Firedancer (`impl/lib/libsolfuzz_firedancer.so`), and then stepping through the debugger for each corresponding test case.
-
-
-### Analysis
-
-After running tests, it may be helpful to squash log files together to compare multiple outputs side-by-side via `vimdiff`. To do so:
-
-```sh
-solana-test-suite consolidate-logs --input-dir <input_dir> --output-dir <output_dir> --chunk-size <chunk_size>
-```
-
-| Argument        | Description                                                                                         |
-|-----------------|-----------------------------------------------------------------------------------------------------|
-| `--input-dir`   | Input directory containing test results |
-| `--output-dir`  | Output directory for consolidated logs |
-| `--chunk-size`  | Number of test results per file |
-
-By default, log files are arranged lexicographically based on the test case file name. Each chunked log file is named based on the first test case in that file.
 
 
 ### Validation
