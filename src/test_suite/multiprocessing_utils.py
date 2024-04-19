@@ -1,6 +1,6 @@
 from test_suite.constants import OUTPUT_BUFFER_SIZE
 import test_suite.invoke_pb2 as pb
-from test_suite.codec_utils import encode_output, decode_input
+from test_suite.codec_utils import encode_input, encode_output, decode_input
 from test_suite.validation_utils import is_valid
 import ctypes
 from ctypes import c_uint64, c_int, POINTER
@@ -93,6 +93,28 @@ def generate_test_case(test_file: Path) -> tuple[Path, str | None]:
 
     # Serialize instruction context to string (pickleable)
     return test_file, instruction_context.SerializeToString(deterministic=True)
+
+
+def decode_single_test_case(test_file: Path):
+    """
+    Decode a single test case into a human-readable message
+    """
+    _, serialized_instruction_context = generate_test_case(test_file)
+
+    # Skip if input is invalid
+    if serialized_instruction_context is None:
+        return 0
+
+    # Encode the input fields to be human readable
+    instruction_context = pb.InstrContext()
+    instruction_context.ParseFromString(serialized_instruction_context)
+    encode_input(instruction_context)
+
+    with open(globals.output_dir / test_file.name, "w") as f:
+        f.write(
+            text_format.MessageToString(instruction_context, print_unknown_fields=False)
+        )
+    return 1
 
 
 def process_single_test_case(

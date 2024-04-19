@@ -11,6 +11,7 @@ import test_suite.invoke_pb2 as pb
 from test_suite.codec_utils import encode_input, encode_output
 from test_suite.multiprocessing_utils import (
     check_consistency_in_results,
+    decode_single_test_case,
     generate_test_case,
     initialize_process_output_buffers,
     merge_results_over_iterations,
@@ -353,53 +354,23 @@ def decode_protobuf(
         "-c",
         help="Validate binary and human readable messages are identical",
     ),
-    verbose: bool = typer.Option(
-        False, "--verbose", "-v", help="Enable verbose output"
+    num_processes: int = typer.Option(
+        4, "--num-processes", "-p", help="Number of processes to use"
     ),
 ):
+    globals.output_dir = output_dir
+
     # Create the output directory, if necessary
-    if output_dir.exists():
-        shutil.rmtree(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    if globals.output_dir.exists():
+        shutil.rmtree(globals.output_dir)
+    globals.output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Keep track of how many files were (un)successfully written
-    written = 0
-    total = 0
-
-    # Iterate through each binary-encoded message
-    for file in input_dir.iterdir():
-        total += 1
-        _, serialized_instruction_context = generate_test_case(file)
-
-        # Skip if input is invalid
-        if serialized_instruction_context is None:
-            if verbose:
-                print(f"Could not validate message: {file.stem}")
-            continue
-
-        # Encode the input fields to be human readable
-        instruction_context = pb.InstrContext()
-        instruction_context.ParseFromString(serialized_instruction_context)
-        encode_input(instruction_context)
-
-        with open(output_dir / file.name, "w") as f:
-            f.write(
-                text_format.MessageToString(
-                    instruction_context, print_unknown_fields=False
-                )
-            )
-        written += 1
-
-        # Validate the binary and human-readable messages are the same
-        if check_decode_results:
-            readable_instruction_context = text_format.Parse(
-                (output_dir / file.name).read_text(), pb.InstrContext()
-            )
-            assert readable_instruction_context == instruction_context, file.name
+    with Pool(processes=num_processes) as pool:
+        write_results = pool.map(decode_single_test_case, input_dir.iterdir())
 
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
-    print(f"{total} total files seen")
-    print(f"{written} files successfully written")
+    print(f"{len(write_results)} total files seen")
+    print(f"{sum(write_results)} files successfully written")
 
 
 if __name__ == "__main__":
