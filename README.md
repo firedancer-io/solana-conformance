@@ -25,15 +25,14 @@ Each target must contain a `sol_compat_instr_execute_v1` function that takes in 
 Before running tests, `InstrContext` messages may be converted into Protobuf's text format, with all `bytes` fields base58-encoded (for human readability). Run the following command to do this:
 
 ```sh
-solana-test-suite decode-protobuf --input-dir <input_dir> --output-dir <output_dir> [--check-results] [verbose]
+solana-test-suite decode-protobuf --input-dir <input_dir> --output-dir <output_dir> --num-processes <num_processes>
 ```
 
 | Argument       | Description                                                                                   |
 |----------------|-----------------------------------------------------------------------------------------------|
 | `--input-dir`  | Input directory containing instruction context messages in binary format                      |
 | `--output-dir` | Output directory for encoded, human-readable instruction context messages                     |
-| `--check-results` | Validate binary and human readable messages are identical                    |
-| `--verbose` | Enable verbose output              |
+| `--num-processes`  | Number of processes to use |
 
 
 Optionally, instruction context messages may also be left in the original Protobuf binary-encoded format.

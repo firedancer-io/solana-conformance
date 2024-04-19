@@ -8,7 +8,7 @@ from pathlib import Path
 from google.protobuf import text_format
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
 import test_suite.invoke_pb2 as pb
-from test_suite.codec_utils import encode_input, encode_output
+from test_suite.codec_utils import decode_input, encode_input, encode_output
 from test_suite.multiprocessing_utils import (
     check_consistency_in_results,
     decode_single_test_case,
@@ -18,6 +18,7 @@ from test_suite.multiprocessing_utils import (
     process_instruction,
     process_single_test_case,
     build_test_results,
+    prune_execution_result,
 )
 import test_suite.globals as globals
 from test_suite.debugger import debug_host
@@ -54,14 +55,27 @@ def execute_single_instruction(
     lib.sol_compat_init()
 
     # Execute and cleanup
-    instruction_effects = process_instruction(lib, instruction_context)
+    instruction_effects = process_instruction(
+        lib, instruction_context
+    ).SerializeToString(deterministic=True)
+
+    # Prune execution results
+    _, pruned_instruction_effects = prune_execution_result(
+        (file.stem, instruction_context),
+        (file.stem, {shared_library: instruction_effects}),
+    )
+    parsed_instruction_effects = pb.InstrEffects()
+    parsed_instruction_effects.ParseFromString(
+        pruned_instruction_effects[shared_library]
+    )
+
     lib.sol_compat_fini()
 
     # Print human-readable output
-    if instruction_effects:
-        encode_output(instruction_effects)
+    if parsed_instruction_effects:
+        encode_output(parsed_instruction_effects)
 
-    print(instruction_effects)
+    print(parsed_instruction_effects)
 
 
 @app.command()
@@ -279,52 +293,54 @@ def run_tests(
     ) as pool:
         execution_results = pool.starmap(process_single_test_case, execution_contexts)
 
+    print("Pruning results...")
+    # Prune modified accounts that were not actually modified
+    with Pool(processes=num_processes) as pool:
+        pruned_execution_results = pool.starmap(
+            prune_execution_result, zip(execution_contexts, execution_results)
+        )
+
     # Process the test results in parallel
     print("Building test results...")
     with Pool(processes=num_processes) as pool:
-        test_case_results = pool.starmap(build_test_results, execution_results)
-        counts = Counter(test_case_results)
-        passed = counts[1]
-        failed = counts[-1]
-        skipped = counts[0]
+        test_case_results = pool.starmap(build_test_results, pruned_execution_results)
 
     print("Logging results...")
-    counter = 0
+    passed = 0
+    failed = 0
+    skipped = 0
     target_log_files = {target: None for target in shared_libraries}
-    for file, result in execution_results:
-        if result is None:
+    for file_stem, status, stringified_results in test_case_results:
+        if stringified_results is None:
+            skipped += 1
             continue
 
-        for target, serialized_instruction_effects in result.items():
-            if counter % log_chunk_size == 0:
+        for target, string_result in stringified_results.items():
+            if (passed + failed + skipped) % log_chunk_size == 0:
                 if target_log_files[target]:
                     target_log_files[target].close()
                 target_log_files[target] = open(
-                    globals.output_dir / target.stem / (file + ".txt"), "w"
+                    globals.output_dir / target.stem / (file_stem + ".txt"), "w"
                 )
 
-            target_log_files[target].write(file + ":\n")
-
-            if serialized_instruction_effects is None:
-                target_log_files[target].write(str(None))
-            else:
-                instruction_effects = pb.InstrEffects()
-                instruction_effects.ParseFromString(serialized_instruction_effects)
-                encode_output(instruction_effects)
-                target_log_files[target].write(
-                    text_format.MessageToString(instruction_effects)
-                )
             target_log_files[target].write(
-                "\n" + "-" * LOG_FILE_SEPARATOR_LENGTH + "\n"
+                file_stem
+                + ":\n"
+                + string_result
+                + "\n"
+                + "-" * LOG_FILE_SEPARATOR_LENGTH
+                + "\n"
             )
-        counter += 1
 
-    for target in shared_libraries:
-        if target_log_files[target]:
-            target_log_files[target].close()
+        if status == 1:
+            passed += 1
+        elif status == -1:
+            failed += 1
 
     print("Cleaning up...")
     for target in shared_libraries:
+        if target_log_files[target]:
+            target_log_files[target].close()
         globals.target_libraries[target].sol_compat_fini()
 
     peak_memory_usage_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
@@ -347,12 +363,6 @@ def decode_protobuf(
         "--output-dir",
         "-o",
         help="Output directory for base58-encoded, human-readable instruction context messages",
-    ),
-    check_decode_results: bool = typer.Option(
-        False,
-        "--check-results",
-        "-c",
-        help="Validate binary and human readable messages are identical",
     ),
     num_processes: int = typer.Option(
         4, "--num-processes", "-p", help="Number of processes to use"

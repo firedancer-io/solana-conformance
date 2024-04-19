@@ -18,3 +18,25 @@ def is_valid(instruction_context: pb.InstrContext) -> bool:
             return False
 
     return True
+
+
+def check_account_unchanged(acc1: pb.AcctState, acc2: pb.AcctState) -> bool:
+    """
+    Checks whether two account states are equal.
+
+    Args:
+        - acc1 (pb.AcctState): Account state message.
+        - acc2 (pb.AcctState): Account state message.
+
+    Returns:
+        - bool: True if equal, False otherwise.
+    """
+
+    return (
+        acc1.address == acc2.address
+        and acc1.lamports == acc2.lamports
+        and acc1.data == acc2.data
+        and acc1.executable == acc2.executable
+        and acc1.rent_epoch == acc2.rent_epoch
+        and acc1.owner == acc2.owner
+    )
