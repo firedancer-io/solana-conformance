@@ -13,11 +13,8 @@ def is_valid(instruction_context: pb.InstrContext) -> bool:
     if len(instruction_context.program_id) != 32:
         return False
 
-    if len(instruction_context.loader_id) != 32:
-        return False
-
     for account in instruction_context.accounts:
         if not account.address or len(account.address) != 32:
             return False
 
-    return instruction_context.data and instruction_context.instr_accounts
+    return True

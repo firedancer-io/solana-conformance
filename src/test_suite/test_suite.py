@@ -309,6 +309,7 @@ def run_tests(
             else:
                 instruction_effects = pb.InstrEffects()
                 instruction_effects.ParseFromString(serialized_instruction_effects)
+                encode_output(instruction_effects)
                 target_log_files[target].write(
                     text_format.MessageToString(instruction_effects)
                 )

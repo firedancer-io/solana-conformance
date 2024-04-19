@@ -88,10 +88,6 @@ def generate_test_case(test_file: Path) -> tuple[Path, str | None]:
         # Unreadable file, skip it
         return test_file, None
 
-    # Validate the message
-    if not is_valid(instruction_context):
-        return test_file, None
-
     # Discard unknown fields
     instruction_context.DiscardUnknownFields()
 
@@ -225,7 +221,7 @@ def build_test_results(file_stem: Path, results: dict[str, str | None]) -> int:
         - int: 1 if passed, -1 if failed, 0 if skipped.
     """
     # If no results or Agave rejects input, mark case as skipped
-    if results is None or results[globals.solana_shared_library] is None:
+    if results is None:
         # Mark as skipped (0)
         return 0
 
