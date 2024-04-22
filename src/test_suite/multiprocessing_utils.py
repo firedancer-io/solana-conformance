@@ -1,7 +1,8 @@
+from yaml import serialize
 from test_suite.constants import OUTPUT_BUFFER_SIZE
 import test_suite.invoke_pb2 as pb
-from test_suite.codec_utils import encode_output, decode_input
-from test_suite.validation_utils import is_valid
+from test_suite.codec_utils import encode_input, encode_output, decode_input
+from test_suite.validation_utils import check_account_unchanged, is_valid
 import ctypes
 from ctypes import c_uint64, c_int, POINTER
 from pathlib import Path
@@ -56,7 +57,7 @@ def process_instruction(
     return output_object
 
 
-def generate_test_case(test_file: Path) -> tuple[Path, str | None]:
+def generate_test_case(test_file: Path) -> tuple[str, str | None]:
     """
     Reads in test files and generates a Protobuf object for a test case.
 
@@ -64,7 +65,7 @@ def generate_test_case(test_file: Path) -> tuple[Path, str | None]:
         - test_file (Path): Path to the file containing serialized instruction contexts.
 
     Returns:
-        - tuple[Path, str | None]: Tuple of file and serialized instruction context, if exists.
+        - tuple[str, str | None]: Tuple of file stem and serialized instruction context, if exists.
     """
     # Try to read in first as binary-encoded Protobuf messages
     try:
@@ -86,21 +87,45 @@ def generate_test_case(test_file: Path) -> tuple[Path, str | None]:
 
     if instruction_context is None:
         # Unreadable file, skip it
-        return test_file, None
-
-    # Validate the message
-    if not is_valid(instruction_context):
-        return test_file, None
+        return test_file.stem, None
 
     # Discard unknown fields
     instruction_context.DiscardUnknownFields()
 
     # Serialize instruction context to string (pickleable)
-    return test_file, instruction_context.SerializeToString(deterministic=True)
+    return test_file.stem, instruction_context.SerializeToString(deterministic=True)
+
+
+def decode_single_test_case(test_file: Path) -> int:
+    """
+    Decode a single test case into a human-readable message
+
+    Args:
+        - test_file (Path): Path to the file containing serialized instruction contexts.
+
+    Returns:
+        - int: 1 if successfully decoded and written, 0 if skipped.
+    """
+    _, serialized_instruction_context = generate_test_case(test_file)
+
+    # Skip if input is invalid
+    if serialized_instruction_context is None:
+        return 0
+
+    # Encode the input fields to be human readable
+    instruction_context = pb.InstrContext()
+    instruction_context.ParseFromString(serialized_instruction_context)
+    encode_input(instruction_context)
+
+    with open(globals.output_dir / test_file.name, "w") as f:
+        f.write(
+            text_format.MessageToString(instruction_context, print_unknown_fields=False)
+        )
+    return 1
 
 
 def process_single_test_case(
-    file: Path, serialized_instruction_context: str | None
+    file_stem: str, serialized_instruction_context: str | None
 ) -> tuple[str, dict[str, str | None] | None]:
     """
     Process a single execution context (file, serialized instruction context) through
@@ -108,7 +133,7 @@ def process_single_test_case(
     function is called by processes.
 
     Args:
-        - file (Path): File containing serialized instruction context.
+        - file_stem (str): Stem of file containing serialized instruction context.
         - serialized_instruction_context (str | None): Serialized instruction context.
 
     Returns:
@@ -117,7 +142,7 @@ def process_single_test_case(
     """
     # Mark as skipped if instruction context doesn't exist
     if serialized_instruction_context is None:
-        return file.stem, None
+        return file_stem, None
 
     # Execute test case on each target library
     results = {}
@@ -132,7 +157,7 @@ def process_single_test_case(
         )
         results[target] = result
 
-    return file.stem, results
+    return file_stem, results
 
 
 def merge_results_over_iterations(results: tuple) -> tuple[str, dict]:
@@ -163,12 +188,72 @@ def merge_results_over_iterations(results: tuple) -> tuple[str, dict]:
     return file, merged_results
 
 
-def check_consistency_in_results(file_stem: Path, results: dict) -> dict[str, bool]:
+def prune_execution_result(
+    file_serialized_instruction_context: tuple[str, dict],
+    file_serialized_instruction_effects,
+) -> tuple[str, dict]:
+    """
+    Prune execution result to only include actually modified accounts.
+
+    Args:
+        - file_serialized_instruction_context (tuple[str, str]): Tuple of file stem and serialized instruction context.
+        - file_serialized_instruction_effects (tuple[str, dict[str, str | None]]): Tuple of file stem and dictionary of target library names and serialized instruction effects.
+
+    Returns:
+        - tuple[str, dict]: Tuple of file stem and serialized pruned instruction effects for each target.
+    """
+    file_stem, serialized_instruction_context = file_serialized_instruction_context
+    if serialized_instruction_context is None:
+        return file_stem, None
+
+    instruction_context = pb.InstrContext()
+    instruction_context.ParseFromString(serialized_instruction_context)
+
+    file_stem_2, targets_to_serialized_instruction_effects = (
+        file_serialized_instruction_effects
+    )
+    assert file_stem == file_stem_2, f"{file_stem}, {file_stem_2}"
+
+    targets_to_serialized_pruned_instruction_effects = {}
+    for (
+        target,
+        serialized_instruction_effects,
+    ) in targets_to_serialized_instruction_effects.items():
+        if serialized_instruction_effects is None:
+            targets_to_serialized_pruned_instruction_effects[target] = None
+            continue
+
+        instruction_effects = pb.InstrEffects()
+        instruction_effects.ParseFromString(serialized_instruction_effects)
+
+        # O(n^2) because not performance sensitive
+        new_modified_accounts: list[pb.AcctState] = []
+        for modified_account in instruction_effects.modified_accounts:
+            account_unchanged = False
+            for beginning_account_state in instruction_context.accounts:
+                account_unchanged |= check_account_unchanged(
+                    modified_account, beginning_account_state
+                )
+
+            if not account_unchanged:
+                new_modified_accounts.append(modified_account)
+
+        # Assign new modified accounts
+        del instruction_effects.modified_accounts[:]
+        instruction_effects.modified_accounts.extend(new_modified_accounts)
+        targets_to_serialized_pruned_instruction_effects[target] = (
+            instruction_effects.SerializeToString(deterministic=True)
+        )
+
+    return file_stem, targets_to_serialized_pruned_instruction_effects
+
+
+def check_consistency_in_results(file_stem: str, results: dict) -> dict[str, bool]:
     """
     Check consistency for all target libraries over all iterations for a test case.
 
     Args:
-        - file_stem (Path): File stem of the test case.
+        - file_stem (str): File stem of the test case.
         - execution_results (dict): Dictionary of target library names and serialized instruction effects.
 
     Returns:
@@ -213,34 +298,40 @@ def check_consistency_in_results(file_stem: Path, results: dict) -> dict[str, bo
     return results_per_target
 
 
-def build_test_results(file_stem: Path, results: dict[str, str | None]) -> int:
+def build_test_results(file_stem: str, results: dict[str, str | None]) -> int:
     """
     Build a single result of single test execution and returns whether the test passed or failed.
 
     Args:
-        - file_stem (Path): File stem of the test case.
+        - file_stem (str): File stem of the test case.
         - results (dict[str, str | None]): Dictionary of target library names and serialized instruction effects.
 
     Returns:
-        - int: 1 if passed, -1 if failed, 0 if skipped.
+        - tuple[str, int, dict | None]: Tuple of:
+            File stem; 1 if passed, -1 if failed, 0 if skipped
+            Dictionary of target library
+            Names and file-dumpable serialized instruction effects.
     """
+    outputs = {target: "None\n" for target in results}
+
     # If no results or Agave rejects input, mark case as skipped
-    if results is None or results[globals.solana_shared_library] is None:
+    if results is None:
         # Mark as skipped (0)
-        return 0
+        return file_stem, 0, None
 
     # Log execution results
     protobuf_structures = {}
     for target, result in results.items():
         # Create a Protobuf struct to compare and output, if applicable
-        protobuf_struct = None
+        instruction_effects = None
         if result:
             # Turn bytes into human readable fields
-            protobuf_struct = pb.InstrEffects()
-            protobuf_struct.ParseFromString(result)
-            encode_output(protobuf_struct)
+            instruction_effects = pb.InstrEffects()
+            instruction_effects.ParseFromString(result)
+            encode_output(instruction_effects)
+            outputs[target] = text_format.MessageToString(instruction_effects)
 
-        protobuf_structures[target] = protobuf_struct
+        protobuf_structures[target] = instruction_effects
 
     test_case_passed = all(
         protobuf_structures[globals.solana_shared_library] == result
@@ -248,7 +339,7 @@ def build_test_results(file_stem: Path, results: dict[str, str | None]) -> int:
     )
 
     # 1 = passed, -1 = failed
-    return 1 if test_case_passed else -1
+    return file_stem, 1 if test_case_passed else -1, outputs
 
 
 def initialize_process_output_buffers(randomize_output_buffer=False):
