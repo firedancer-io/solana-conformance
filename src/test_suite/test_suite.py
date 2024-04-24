@@ -383,5 +383,68 @@ def decode_protobuf(
     print(f"{sum(write_results)} files successfully written")
 
 
+def minimize_one(lib, test_input, path):
+    orig_feature_cnt = len(test_input.epoch_context.features.features)
+    output = process_instruction(lib, test_input.SerializeToString())
+    assert output is not None
+    reference = hash(bytes(output.SerializeToString(deterministic=True)))
+    feature_idx = len(test_input.epoch_context.features.features) - 1
+    while feature_idx >= 0:
+        removed_feature = test_input.epoch_context.features.features[feature_idx]
+        del test_input.epoch_context.features.features[feature_idx]
+        output2 = process_instruction(lib, test_input.SerializeToString())
+        reference2 = hash(bytes(output2.SerializeToString(deterministic=True)))
+        if reference != reference2:
+            test_input.epoch_context.features.features.extend([removed_feature])
+        feature_idx -= 1
+
+    #orig_acct_cnt = len(test_input.accounts)
+    #while len(test_input.accounts) > 0:
+    #    backup = test_input.accounts[len(test_input.accounts) - 1]
+    #    del test_input.accounts[len(test_input.accounts) - 1]
+    #    output2 = process_instruction(lib, test_input.SerializeToString())
+    #    reference2 = hash(bytes(output2.SerializeToString(deterministic=True)))
+    #    if reference != reference2:
+    #        test_input.accounts.extend([backup])
+    #        break
+
+    rm_feature_cnt = orig_feature_cnt - len(test_input.epoch_context.features.features)
+    #rm_acct_cnt = orig_acct_cnt - len(test_input.accounts)
+    #print(f"{path}: Removed {rm_feature_cnt} features, {rm_acct_cnt} accounts")
+    print(f"{path}: Removed {rm_feature_cnt} features")
+    return bytes(test_input.SerializeToString(deterministic=True))
+
+@app.command()
+def minimize(
+    input_dir: Path = typer.Option(
+        None,
+        "--input-dir",
+        "-i",
+    ),
+    output_dir: Path = typer.Option(
+        None,
+        "--output-dir",
+        "-o",
+    ),
+    target: Path = typer.Option(
+        None,
+        "--target",
+        "-t",
+    ),
+):
+    initialize_process_output_buffers()
+    lib = ctypes.CDLL(target)
+    lib.sol_compat_init()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for input_file in input_dir.iterdir():
+        with open(input_file, "rb") as f:
+            input = pb.InstrContext()
+            input.ParseFromString(f.read())
+        minimized = minimize_one(lib, input, input_file.name)
+        with open(output_dir / input_file.name, "wb") as f:
+            f.write(minimized)
+    lib.sol_compat_fini()
+
+
 if __name__ == "__main__":
     app()
