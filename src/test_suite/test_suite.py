@@ -9,6 +9,7 @@ from google.protobuf import text_format
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
 import test_suite.invoke_pb2 as pb
 from test_suite.codec_utils import decode_input, encode_input, encode_output
+from test_suite.minimize_utils import minimize_single_test_case
 from test_suite.multiprocessing_utils import (
     check_consistency_in_results,
     decode_single_test_case,
@@ -221,6 +222,55 @@ def check_consistency(
 
 
 @app.command()
+def minimize_tests(
+    input_dir: Path = typer.Option(
+        Path("corpus8"),
+        "--input-dir",
+        "-i",
+        help="Input directory containing instruction context messages",
+    ),
+    solana_shared_library: Path = typer.Option(
+        Path("impl/lib/libsolfuzz_agave_v2.0.so"),
+        "--solana-target",
+        "-s",
+        help="Solana (or ground truth) shared object (.so) target file path",
+    ),
+    output_dir: Path = typer.Option(
+        Path("test_results"),
+        "--output-dir",
+        "-o",
+        help="Output directory for test results",
+    ),
+    num_processes: int = typer.Option(
+        4, "--num-processes", "-p", help="Number of processes to use"
+    ),
+):
+    # Specify globals
+    globals.output_dir = output_dir
+    globals.solana_shared_library = solana_shared_library
+
+    # Create the output directory, if necessary
+    if globals.output_dir.exists():
+        shutil.rmtree(globals.output_dir)
+    globals.output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Load in and initialize shared library
+    lib = ctypes.CDLL(globals.solana_shared_library)
+    lib.sol_compat_init()
+    globals.target_libraries[globals.solana_shared_library] = lib
+
+    with Pool(
+        processes=num_processes, initializer=initialize_process_output_buffers
+    ) as pool:
+        minimize_results = pool.map(minimize_single_test_case, input_dir.iterdir())
+
+    lib.sol_compat_fini()
+    print("-" * LOG_FILE_SEPARATOR_LENGTH)
+    print(f"{len(minimize_results)} total files seen")
+    print(f"{sum(minimize_results)} files successfully minimized")
+
+
+@app.command()
 def run_tests(
     input_dir: Path = typer.Option(
         Path("corpus8"),
@@ -381,69 +431,6 @@ def decode_protobuf(
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
     print(f"{len(write_results)} total files seen")
     print(f"{sum(write_results)} files successfully written")
-
-
-def minimize_one(lib, test_input, path):
-    orig_feature_cnt = len(test_input.epoch_context.features.features)
-    output = process_instruction(lib, test_input.SerializeToString())
-    assert output is not None
-    reference = hash(bytes(output.SerializeToString(deterministic=True)))
-    feature_idx = len(test_input.epoch_context.features.features) - 1
-    while feature_idx >= 0:
-        removed_feature = test_input.epoch_context.features.features[feature_idx]
-        del test_input.epoch_context.features.features[feature_idx]
-        output2 = process_instruction(lib, test_input.SerializeToString())
-        reference2 = hash(bytes(output2.SerializeToString(deterministic=True)))
-        if reference != reference2:
-            test_input.epoch_context.features.features.extend([removed_feature])
-        feature_idx -= 1
-
-    #orig_acct_cnt = len(test_input.accounts)
-    #while len(test_input.accounts) > 0:
-    #    backup = test_input.accounts[len(test_input.accounts) - 1]
-    #    del test_input.accounts[len(test_input.accounts) - 1]
-    #    output2 = process_instruction(lib, test_input.SerializeToString())
-    #    reference2 = hash(bytes(output2.SerializeToString(deterministic=True)))
-    #    if reference != reference2:
-    #        test_input.accounts.extend([backup])
-    #        break
-
-    rm_feature_cnt = orig_feature_cnt - len(test_input.epoch_context.features.features)
-    #rm_acct_cnt = orig_acct_cnt - len(test_input.accounts)
-    #print(f"{path}: Removed {rm_feature_cnt} features, {rm_acct_cnt} accounts")
-    print(f"{path}: Removed {rm_feature_cnt} features")
-    return bytes(test_input.SerializeToString(deterministic=True))
-
-@app.command()
-def minimize(
-    input_dir: Path = typer.Option(
-        None,
-        "--input-dir",
-        "-i",
-    ),
-    output_dir: Path = typer.Option(
-        None,
-        "--output-dir",
-        "-o",
-    ),
-    target: Path = typer.Option(
-        None,
-        "--target",
-        "-t",
-    ),
-):
-    initialize_process_output_buffers()
-    lib = ctypes.CDLL(target)
-    lib.sol_compat_init()
-    output_dir.mkdir(parents=True, exist_ok=True)
-    for input_file in input_dir.iterdir():
-        with open(input_file, "rb") as f:
-            input = pb.InstrContext()
-            input.ParseFromString(f.read())
-        minimized = minimize_one(lib, input, input_file.name)
-        with open(output_dir / input_file.name, "wb") as f:
-            f.write(minimized)
-    lib.sol_compat_fini()
 
 
 if __name__ == "__main__":
