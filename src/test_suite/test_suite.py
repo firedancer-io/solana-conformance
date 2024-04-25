@@ -20,6 +20,7 @@ from test_suite.multiprocessing_utils import (
     process_single_test_case,
     build_test_results,
     prune_execution_result,
+    get_feature_pool,
 )
 import test_suite.globals as globals
 from test_suite.debugger import debug_host
@@ -258,6 +259,8 @@ def minimize_tests(
     lib = ctypes.CDLL(globals.solana_shared_library)
     lib.sol_compat_init()
     globals.target_libraries[globals.solana_shared_library] = lib
+
+    globals.feature_pool = get_feature_pool(lib)
 
     with Pool(
         processes=num_processes, initializer=initialize_process_output_buffers

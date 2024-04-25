@@ -1,8 +1,10 @@
 from pathlib import Path
 import test_suite.invoke_pb2 as pb
 import test_suite.globals as globals
-from google.protobuf import text_format
-from test_suite.multiprocessing_utils import generate_test_case, process_instruction
+from test_suite.multiprocessing_utils import (
+    generate_test_case,
+    process_instruction,
+)
 
 
 def minimize_single_test_case(test_file: Path):
@@ -58,6 +60,13 @@ def minimize_single_test_case(test_file: Path):
                 [removed_feature]
             )
         feature_idx -= 1
+
+    features = (
+        list(instruction_context.epoch_context.features.features)
+        + globals.feature_pool.hardcoded
+    )
+    del instruction_context.epoch_context.features.features[:]
+    instruction_context.epoch_context.features.features.extend(sorted(set(features)))
 
     with open(globals.output_dir / test_file.name, "wb") as f:
         f.write(instruction_context.SerializeToString(deterministic=True))

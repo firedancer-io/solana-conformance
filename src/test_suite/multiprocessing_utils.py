@@ -1,10 +1,11 @@
+from dataclasses import dataclass, field
 from yaml import serialize
 from test_suite.constants import OUTPUT_BUFFER_SIZE
 import test_suite.invoke_pb2 as pb
 from test_suite.codec_utils import encode_input, encode_output, decode_input
 from test_suite.validation_utils import check_account_unchanged, is_valid
 import ctypes
-from ctypes import c_uint64, c_int, POINTER
+from ctypes import c_uint64, c_int, POINTER, Structure
 from pathlib import Path
 import test_suite.globals as globals
 from google.protobuf import text_format
@@ -356,3 +357,36 @@ def initialize_process_output_buffers(randomize_output_buffer=False):
         globals.output_buffer_pointer = (ctypes.c_uint8 * OUTPUT_BUFFER_SIZE)(
             *output_buffer_random_bytes
         )
+
+
+@dataclass
+class FeaturePool:
+    supported: list[int] = field(default_factory=list)
+    hardcoded: list[int] = field(default_factory=list)
+
+
+class sol_compat_features_t(Structure):
+    _fields_ = [
+        ("struct_size", c_uint64),
+        ("hardcoded_features", POINTER(c_uint64)),
+        ("hardcoded_feature_cnt", c_uint64),
+        ("supported_features", POINTER(c_uint64)),
+        ("supported_feature_cnt", c_uint64),
+    ]
+
+
+def get_feature_pool(library: ctypes.CDLL) -> FeaturePool:
+    library.sol_compat_get_features_v1.argtypes = None
+    library.sol_compat_get_features_v1.restype = POINTER(sol_compat_features_t)
+
+    result = library.sol_compat_get_features_v1().contents
+    if result.struct_size < 40:
+        raise ValueError("sol_compat_get_features_v1 not supported")
+
+    supported = [
+        result.supported_features[i] for i in range(result.supported_feature_cnt)
+    ]
+    hardcoded = [
+        result.hardcoded_features[i] for i in range(result.hardcoded_feature_cnt)
+    ]
+    return FeaturePool(supported, hardcoded)
