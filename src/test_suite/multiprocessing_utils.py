@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from yaml import serialize
 from test_suite.constants import OUTPUT_BUFFER_SIZE
 import test_suite.invoke_pb2 as pb
 from test_suite.codec_utils import encode_input, encode_output, decode_input
