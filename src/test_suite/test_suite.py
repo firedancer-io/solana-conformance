@@ -7,6 +7,7 @@ from multiprocessing import Pool
 from pathlib import Path
 from google.protobuf import text_format
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
+from test_suite.fixture_utils import create_fixture, write_fixture_to_disk
 import test_suite.invoke_pb2 as pb
 from test_suite.codec_utils import decode_input, encode_input, encode_output
 from test_suite.minimize_utils import minimize_single_test_case
@@ -57,9 +58,12 @@ def execute_single_instruction(
     lib.sol_compat_init()
 
     # Execute and cleanup
-    instruction_effects = process_instruction(
-        lib, instruction_context
-    ).SerializeToString(deterministic=True)
+    instruction_effects = process_instruction(lib, instruction_context)
+
+    if not instruction_effects:
+        return None
+
+    instruction_effects = instruction_effects.SerializeToString(deterministic=True)
 
     # Prune execution results
     _, pruned_instruction_effects = prune_execution_result(
@@ -271,6 +275,78 @@ def minimize_tests(
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
     print(f"{len(minimize_results)} total files seen")
     print(f"{sum(minimize_results)} files successfully minimized")
+
+
+@app.command()
+def create_fixtures(
+    input_dir: Path = typer.Option(
+        Path("corpus8"),
+        "--input-dir",
+        "-i",
+        help="Input directory containing instruction context messages",
+    ),
+    solana_shared_library: Path = typer.Option(
+        Path("impl/lib/libsolfuzz_agave_v2.0.so"),
+        "--solana-target",
+        "-s",
+        help="Solana (or ground truth) shared object (.so) target file path",
+    ),
+    output_dir: Path = typer.Option(
+        Path("test_fixtures"),
+        "--output-dir",
+        "-o",
+        help="Output directory for fixtures",
+    ),
+    num_processes: int = typer.Option(
+        4, "--num-processes", "-p", help="Number of processes to use"
+    ),
+):
+    # Specify globals
+    globals.output_dir = output_dir
+    globals.solana_shared_library = solana_shared_library
+
+    # Create the output directory, if necessary
+    if globals.output_dir.exists():
+        shutil.rmtree(globals.output_dir)
+    globals.output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Initialize shared library
+    globals.solana_shared_library = solana_shared_library
+    lib = ctypes.CDLL(solana_shared_library)
+    lib.sol_compat_init()
+    globals.target_libraries[solana_shared_library] = lib
+
+    # Generate the test cases in parallel from files on disk
+    print("Reading test files...")
+    with Pool(processes=num_processes) as pool:
+        execution_contexts = pool.map(generate_test_case, input_dir.iterdir())
+
+    # Process the test cases in parallel through shared libraries
+    print("Executing tests...")
+    with Pool(
+        processes=num_processes, initializer=initialize_process_output_buffers
+    ) as pool:
+        execution_results = pool.starmap(process_single_test_case, execution_contexts)
+
+    print("Creating fixtures...")
+    # Prune effects and create fixtures
+    with Pool(processes=num_processes) as pool:
+        execution_fixtures = pool.starmap(
+            create_fixture, zip(execution_contexts, execution_results)
+        )
+
+    # Write fixtures to disk
+    print("Writing results to disk...")
+    with Pool(processes=num_processes) as pool:
+        write_results = pool.starmap(write_fixture_to_disk, execution_fixtures)
+
+    # Clean up
+    print("Cleaning up...")
+    lib.sol_compat_fini()
+
+    print("-" * LOG_FILE_SEPARATOR_LENGTH)
+    print(f"{len(write_results)} total files seen")
+    print(f"{sum(write_results)} files successfully written")
 
 
 @app.command()
