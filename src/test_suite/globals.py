@@ -14,3 +14,7 @@ output_dir = None
 
 # Fill output buffer with random bytes
 output_buffer_pointer = None
+
+# A FeaturePool object describing the hardcoded and supported features
+# of the target
+feature_pool = None

@@ -9,6 +9,7 @@ from google.protobuf import text_format
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
 import test_suite.invoke_pb2 as pb
 from test_suite.codec_utils import decode_input, encode_input, encode_output
+from test_suite.minimize_utils import minimize_single_test_case
 from test_suite.multiprocessing_utils import (
     check_consistency_in_results,
     decode_single_test_case,
@@ -19,6 +20,7 @@ from test_suite.multiprocessing_utils import (
     process_single_test_case,
     build_test_results,
     prune_execution_result,
+    get_feature_pool,
 )
 import test_suite.globals as globals
 from test_suite.debugger import debug_host
@@ -218,6 +220,57 @@ def check_consistency(
             f"Passed: {results['passed']}, Failed: {results['failed']}, Skipped: {results['skipped']}"
         )
         print("-" * LOG_FILE_SEPARATOR_LENGTH)
+
+
+@app.command()
+def minimize_tests(
+    input_dir: Path = typer.Option(
+        Path("corpus8"),
+        "--input-dir",
+        "-i",
+        help="Input directory containing instruction context messages",
+    ),
+    solana_shared_library: Path = typer.Option(
+        Path("impl/lib/libsolfuzz_agave_v2.0.so"),
+        "--solana-target",
+        "-s",
+        help="Solana (or ground truth) shared object (.so) target file path",
+    ),
+    output_dir: Path = typer.Option(
+        Path("test_results"),
+        "--output-dir",
+        "-o",
+        help="Output directory for test results",
+    ),
+    num_processes: int = typer.Option(
+        4, "--num-processes", "-p", help="Number of processes to use"
+    ),
+):
+    # Specify globals
+    globals.output_dir = output_dir
+    globals.solana_shared_library = solana_shared_library
+
+    # Create the output directory, if necessary
+    if globals.output_dir.exists():
+        shutil.rmtree(globals.output_dir)
+    globals.output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Load in and initialize shared library
+    lib = ctypes.CDLL(globals.solana_shared_library)
+    lib.sol_compat_init()
+    globals.target_libraries[globals.solana_shared_library] = lib
+
+    globals.feature_pool = get_feature_pool(lib)
+
+    with Pool(
+        processes=num_processes, initializer=initialize_process_output_buffers
+    ) as pool:
+        minimize_results = pool.map(minimize_single_test_case, input_dir.iterdir())
+
+    lib.sol_compat_fini()
+    print("-" * LOG_FILE_SEPARATOR_LENGTH)
+    print(f"{len(minimize_results)} total files seen")
+    print(f"{sum(minimize_results)} files successfully minimized")
 
 
 @app.command()

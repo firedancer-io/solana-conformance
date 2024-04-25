@@ -64,7 +64,7 @@ solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_targ
 You can pick out a single test case and run it to view the instruction effects via output with the following command:
 
 ```sh
-solana-test-suite debug-instruction --input-dir <input_dir> --target <shared_lib>
+solana-test-suite execute-single-instruction --input-dir <input_dir> --target <shared_lib>
 ```
 
 | Argument        | Description                                                                                         |
@@ -88,6 +88,22 @@ solana-test-suite debug-instruction --input-dir <input_dir> --target <shared_lib
 | `--debugger`  | Debugger to use (gdb, rust-gdb) |
 
 Recommended usage is opening two terminals side by side, and running the above command on both with one having `--executable-path` for Solana (`impl/lib/libsolfuzz_agave_v2.0.so`) and another for Firedancer (`impl/lib/libsolfuzz_firedancer.so`), and then stepping through the debugger for each corresponding test case.
+
+
+### Minimizing
+
+Prunes extra fields in the input (e.g. feature set) and produces a minimal test case such that the output does not change.
+
+```sh
+solana-test-suite minimize-tests --input-dir <input_dir> --solana-target <solana_target.so> --output-dir <log_output_dir> --num-processes <num_processes>
+```
+
+| Argument        | Description                                                                                         |
+|-----------------|-----------------------------------------------------------------------------------------------------|
+| `--input-dir`   | Input directory containing instruction context messages |
+| `--solana-target` | Path to Solana Agave shared object (.so) target file            |
+| `--output-dir`  | Log output directory for test results |
+| `--num-processes`  | Number of processes to use |
 
 
 ### Validation
