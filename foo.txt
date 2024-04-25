@@ -1,0 +1,8 @@
+
+#./test_suite_env/bin/solana-test-suite decode-protobuf --input-dir ../test-vectors/instr/inputs/20240425/vote --output-dir foo
+
+#./test_suite_env/bin/solana-test-suite run-tests --input-dir ../test-vectors/instr/inputs/20240425/vote --solana-target ./impl/lib/libsolfuzz_agave_v2.0.so --target ./impl/lib/libsolfuzz_firedancer.so --output-dir foo --num-processes 10
+
+#13a2c7fc13035d31
+
+./test_suite_env/bin/solana-test-suite debug-instruction --input ../test-vectors/instr/inputs/20240425/vote/*13a2c7fc13035d31* --target ./impl/lib/libsolfuzz_firedancer.so --debugger gdb
