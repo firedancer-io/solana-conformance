@@ -64,12 +64,12 @@ solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_targ
 You can pick out a single test case and run it to view the instruction effects via output with the following command:
 
 ```sh
-solana-test-suite execute-single-instruction --input-dir <input_dir> --target <shared_lib>
+solana-test-suite execute-single-instruction --input <input_file> --target <shared_lib>
 ```
 
 | Argument        | Description                                                                                         |
 |-----------------|-----------------------------------------------------------------------------------------------------|
-| `--input`      | Input file |
+| `--input`      | Input file containing instruction context message |
 | `--target`      | Shared object (.so) target file path to debug  |
 
 
@@ -78,16 +78,16 @@ solana-test-suite execute-single-instruction --input-dir <input_dir> --target <s
 For failing test cases, it may be useful to analyze what could have differed between Solana and Firedancer. You can execute a Protobuf message (human-readable or binary) through the desired client as such:
 
 ```sh
-solana-test-suite debug-instruction --input-dir <input_dir> --target <shared_lib> --debugger <gdb,rust-gdb,etc>
+solana-test-suite debug-instruction --input <input_file> --target <shared_lib> --debugger <gdb,rust-gdb,etc>
 ```
 
 | Argument        | Description                                                                                         |
 |-----------------|-----------------------------------------------------------------------------------------------------|
-| `--input`      | Input file |
+| `--input`      | Input file containing instruction context message |
 | `--target`      | Shared object (.so) target file path to debug  |
 | `--debugger`  | Debugger to use (gdb, rust-gdb) |
 
-Recommended usage is opening two terminals side by side, and running the above command on both with one having `--executable-path` for Solana (`impl/lib/libsolfuzz_agave_v2.0.so`) and another for Firedancer (`impl/lib/libsolfuzz_firedancer.so`), and then stepping through the debugger for each corresponding test case.
+Recommended usage is opening two terminals side by side, and running the above command on both with one having `--target` for Solana (`impl/lib/libsolfuzz_agave_v2.0.so`) and another for Firedancer (`impl/lib/libsolfuzz_firedancer.so`), and then stepping through the debugger for each corresponding test case.
 
 
 ### Minimizing
@@ -95,14 +95,30 @@ Recommended usage is opening two terminals side by side, and running the above c
 Prunes extra fields in the input (e.g. feature set) and produces a minimal test case such that the output does not change.
 
 ```sh
-solana-test-suite minimize-tests --input-dir <input_dir> --solana-target <solana_target.so> --output-dir <log_output_dir> --num-processes <num_processes>
+solana-test-suite minimize-tests --input-dir <input_dir> --solana-target <solana_target.so> --output-dir <pruned_ctx_output_dir> --num-processes <num_processes>
 ```
 
 | Argument        | Description                                                                                         |
 |-----------------|-----------------------------------------------------------------------------------------------------|
 | `--input-dir`   | Input directory containing instruction context messages |
 | `--solana-target` | Path to Solana Agave shared object (.so) target file            |
-| `--output-dir`  | Log output directory for test results |
+| `--output-dir`  | Pruned instruction context dumping directory |
+| `--num-processes`  | Number of processes to use |
+
+
+### Creating Fixtures
+
+Create full test fixtures containing both instruction context and effects. Effects are computed by running instruction context through `--solana-target`. Fixtures with `None` values for instruction context/effects are not included.
+
+```sh
+solana-test-suite create-fixtures --input-dir <input_dir> --solana-target <solana_target.so> --output-dir <fixtures_output_dir> --num-processes <num_processes>
+```
+
+| Argument        | Description                                                                                         |
+|-----------------|-----------------------------------------------------------------------------------------------------|
+| `--input-dir`   | Input directory containing instruction context messages |
+| `--solana-target` | Path to Solana Agave shared object (.so) target file            |
+| `--output-dir`  | Instruction fixtures dumping directory |
 | `--num-processes`  | Number of processes to use |
 
 

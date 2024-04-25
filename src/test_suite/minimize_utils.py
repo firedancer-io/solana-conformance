@@ -7,10 +7,16 @@ from test_suite.multiprocessing_utils import (
 )
 
 
-def minimize_single_test_case(test_file: Path):
+def minimize_single_test_case(test_file: Path) -> int:
     """
     Minimize a single test case by pruning any additional accounts / features that do not
     affect output.
+
+    Args:
+        test_file (Path): The test file to minimize
+
+    Returns:
+        int: 0 on failure, 1 on success
     """
     _, serialized_instruction_context = generate_test_case(test_file)
 

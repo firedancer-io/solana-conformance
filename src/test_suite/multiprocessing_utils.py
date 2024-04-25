@@ -190,7 +190,7 @@ def merge_results_over_iterations(results: tuple) -> tuple[str, dict]:
 
 def prune_execution_result(
     file_serialized_instruction_context: tuple[str, dict],
-    file_serialized_instruction_effects,
+    file_serialized_instruction_effects: tuple[str, dict[str, str | None]],
 ) -> tuple[str, dict]:
     """
     Prune execution result to only include actually modified accounts.
