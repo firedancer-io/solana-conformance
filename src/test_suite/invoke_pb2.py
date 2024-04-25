@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='invoke.proto',
   package='org.solana.sealevel.v1',
   syntax='proto3',
-  serialized_pb=_b('\n\x0cinvoke.proto\x12\x16org.solana.sealevel.v1\"\x1e\n\nFeatureSet\x12\x10\n\x08\x66\x65\x61tures\x18\x01 \x03(\x06\"s\n\tAcctState\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\x0c\x12\x10\n\x08lamports\x18\x02 \x01(\x04\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\x12\x12\n\nexecutable\x18\x04 \x01(\x08\x12\x12\n\nrent_epoch\x18\x05 \x01(\x04\x12\r\n\x05owner\x18\x06 \x01(\x0c\"D\n\x0c\x45pochContext\x12\x34\n\x08\x66\x65\x61tures\x18\x01 \x01(\x0b\x32\".org.solana.sealevel.v1.FeatureSet\"\r\n\x0bSlotContext\"\x0c\n\nTxnContext\"B\n\tInstrAcct\x12\r\n\x05index\x18\x01 \x01(\r\x12\x13\n\x0bis_writable\x18\x02 \x01(\x08\x12\x11\n\tis_signer\x18\x03 \x01(\x08\"\xf6\x02\n\x0cInstrContext\x12\x12\n\nprogram_id\x18\x01 \x01(\x0c\x12\x11\n\tloader_id\x18\x02 \x01(\x0c\x12\x33\n\x08\x61\x63\x63ounts\x18\x03 \x03(\x0b\x32!.org.solana.sealevel.v1.AcctState\x12\x39\n\x0einstr_accounts\x18\x04 \x03(\x0b\x32!.org.solana.sealevel.v1.InstrAcct\x12\x0c\n\x04\x64\x61ta\x18\x05 \x01(\x0c\x12\x10\n\x08\x63u_avail\x18\x06 \x01(\x04\x12\x37\n\x0btxn_context\x18\x07 \x01(\x0b\x32\".org.solana.sealevel.v1.TxnContext\x12\x39\n\x0cslot_context\x18\x08 \x01(\x0b\x32#.org.solana.sealevel.v1.SlotContext\x12;\n\repoch_context\x18\t \x01(\x0b\x32$.org.solana.sealevel.v1.EpochContext\"\x82\x01\n\x0cInstrEffects\x12\x0e\n\x06result\x18\x01 \x01(\x05\x12\x12\n\ncustom_err\x18\x02 \x01(\r\x12<\n\x11modified_accounts\x18\x03 \x03(\x0b\x32!.org.solana.sealevel.v1.AcctState\x12\x10\n\x08\x63u_avail\x18\x04 \x01(\x04\"y\n\x0cInstrFixture\x12\x33\n\x05input\x18\x01 \x01(\x0b\x32$.org.solana.sealevel.v1.InstrContext\x12\x34\n\x06output\x18\x02 \x01(\x0b\x32$.org.solana.sealevel.v1.InstrEffectsb\x06proto3')
+  serialized_pb=_b('\n\x0cinvoke.proto\x12\x16org.solana.sealevel.v1\"\x1e\n\nFeatureSet\x12\x10\n\x08\x66\x65\x61tures\x18\x01 \x03(\x06\"s\n\tAcctState\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\x0c\x12\x10\n\x08lamports\x18\x02 \x01(\x04\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\x12\x12\n\nexecutable\x18\x04 \x01(\x08\x12\x12\n\nrent_epoch\x18\x05 \x01(\x04\x12\r\n\x05owner\x18\x06 \x01(\x0c\"D\n\x0c\x45pochContext\x12\x34\n\x08\x66\x65\x61tures\x18\x01 \x01(\x0b\x32\".org.solana.sealevel.v1.FeatureSet\"\r\n\x0bSlotContext\"\x0c\n\nTxnContext\"B\n\tInstrAcct\x12\r\n\x05index\x18\x01 \x01(\r\x12\x13\n\x0bis_writable\x18\x02 \x01(\x08\x12\x11\n\tis_signer\x18\x03 \x01(\x08\"\xf6\x02\n\x0cInstrContext\x12\x12\n\nprogram_id\x18\x01 \x01(\x0c\x12\x11\n\tloader_id\x18\x02 \x01(\x0c\x12\x33\n\x08\x61\x63\x63ounts\x18\x03 \x03(\x0b\x32!.org.solana.sealevel.v1.AcctState\x12\x39\n\x0einstr_accounts\x18\x04 \x03(\x0b\x32!.org.solana.sealevel.v1.InstrAcct\x12\x0c\n\x04\x64\x61ta\x18\x05 \x01(\x0c\x12\x10\n\x08\x63u_avail\x18\x06 \x01(\x04\x12\x37\n\x0btxn_context\x18\x07 \x01(\x0b\x32\".org.solana.sealevel.v1.TxnContext\x12\x39\n\x0cslot_context\x18\x08 \x01(\x0b\x32#.org.solana.sealevel.v1.SlotContext\x12;\n\repoch_context\x18\t \x01(\x0b\x32$.org.solana.sealevel.v1.EpochContext\"\x97\x01\n\x0cInstrEffects\x12\x0e\n\x06result\x18\x01 \x01(\x05\x12\x12\n\ncustom_err\x18\x02 \x01(\r\x12<\n\x11modified_accounts\x18\x03 \x03(\x0b\x32!.org.solana.sealevel.v1.AcctState\x12\x10\n\x08\x63u_avail\x18\x04 \x01(\x04\x12\x13\n\x0breturn_data\x18\x05 \x01(\x0c\"y\n\x0cInstrFixture\x12\x33\n\x05input\x18\x01 \x01(\x0b\x32$.org.solana.sealevel.v1.InstrContext\x12\x34\n\x06output\x18\x02 \x01(\x0b\x32$.org.solana.sealevel.v1.InstrEffectsb\x06proto3')
 )
 
 
@@ -368,6 +368,13 @@ _INSTREFFECTS = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='return_data', full_name='org.solana.sealevel.v1.InstrEffects.return_data', index=4,
+      number=5, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -381,7 +388,7 @@ _INSTREFFECTS = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=734,
-  serialized_end=864,
+  serialized_end=885,
 )
 
 
@@ -418,8 +425,8 @@ _INSTRFIXTURE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=866,
-  serialized_end=987,
+  serialized_start=887,
+  serialized_end=1008,
 )
 
 _EPOCHCONTEXT.fields_by_name['features'].message_type = _FEATURESET
