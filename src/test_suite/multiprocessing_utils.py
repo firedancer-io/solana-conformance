@@ -11,6 +11,10 @@ from google.protobuf import text_format
 import os
 
 
+def lazy_starmap(args, function):
+    return function(*args)
+
+
 def process_instruction(
     library: ctypes.CDLL, serialized_instruction_context: str
 ) -> pb.InstrEffects | None:
