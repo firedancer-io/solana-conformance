@@ -1,8 +1,10 @@
 
-#./test_suite_env/bin/solana-test-suite decode-protobuf --input-dir ../test-vectors/instr/inputs/20240425/vote --output-dir foo
+#./test_suite_env/bin/solana-test-suite decode-protobuf --input-dir ../test-vectors/instr/inputs/20240425/stake --output-dir foo
 
-#./test_suite_env/bin/solana-test-suite run-tests --input-dir ../test-vectors/instr/inputs/20240425/vote --solana-target ./impl/lib/libsolfuzz_agave_v2.0.so --target ./impl/lib/libsolfuzz_firedancer.so --output-dir foo --num-processes 10
+#./test_suite_env/bin/solana-test-suite run-tests --input-dir ../test-vectors/instr/inputs/20240425/stake --solana-target ./impl/lib/libsolfuzz_agave_v2.0.so --target ./impl/lib/libsolfuzz_firedancer.so --output-dir foo --num-processes 10
 
-#13a2c7fc13035d31
+#02114f4d222b9917
 
-./test_suite_env/bin/solana-test-suite debug-instruction --input ../test-vectors/instr/inputs/20240425/vote/*13a2c7fc13035d31* --target ./impl/lib/libsolfuzz_firedancer.so --debugger gdb
+# ./test_suite_env/bin/solana-test-suite debug-instruction --input ../test-vectors/instr/inputs/20240425/stake/*041f79ec09dbd864* --target ./impl/lib/libsolfuzz_firedancer.so --debugger /home/jsiegel/bin/egdb
+
+ ./test_suite_env/bin/solana-test-suite debug-instruction --input ../test-vectors/instr/inputs/20240425/stake/*02114f4d222b9917* --target ./impl/lib/libsolfuzz_agave_v2.0.so --debugger /home/jsiegel/bin/egdb
