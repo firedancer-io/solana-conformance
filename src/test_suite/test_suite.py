@@ -326,7 +326,7 @@ def create_fixtures(
     lib.sol_compat_init()
     globals.target_libraries[solana_shared_library] = lib
 
-    num_test_cases = len(list(input.dir()))
+    num_test_cases = len(list(input_dir.iterdir()))
 
     # Generate the test cases in parallel from files on disk
     print("Reading test files...")
