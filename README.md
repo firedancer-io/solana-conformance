@@ -64,7 +64,7 @@ solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_targ
 You can pick out a single test case and run it to view the instruction effects via output with the following command:
 
 ```sh
-solana-test-suite execute-single-instruction --input <input_file> --target <shared_lib>
+solana-test-suite exec-instr --input <input_file> --target <shared_lib>
 ```
 
 | Argument        | Description                                                                                         |
@@ -78,7 +78,7 @@ solana-test-suite execute-single-instruction --input <input_file> --target <shar
 For failing test cases, it may be useful to analyze what could have differed between Solana and Firedancer. You can execute a Protobuf message (human-readable or binary) through the desired client as such:
 
 ```sh
-solana-test-suite debug-instruction --input <input_file> --target <shared_lib> --debugger <gdb,rust-gdb,etc>
+solana-test-suite debug-instr --input <input_file> --target <shared_lib> --debugger <gdb,rust-gdb,etc>
 ```
 
 | Argument        | Description                                                                                         |
@@ -111,7 +111,7 @@ solana-test-suite minimize-tests --input-dir <input_dir> --solana-target <solana
 Create full test fixtures containing both instruction context and effects. Effects are computed by running instruction context through `--solana-target`. Fixtures with `None` values for instruction context/effects are not included.
 
 ```sh
-solana-test-suite create-fixtures --input-dir <input_dir> --solana-target <solana_target.so> --output-dir <fixtures_output_dir> --num-processes <num_processes>
+solana-test-suite create-fixtures --input-dir <input_dir> --solana-target <solana_target.so> --output-dir <fixtures_output_dir> --num-processes <num_processes> [--readable]
 ```
 
 | Argument        | Description                                                                                         |
@@ -120,6 +120,7 @@ solana-test-suite create-fixtures --input-dir <input_dir> --solana-target <solan
 | `--solana-target` | Path to Solana Agave shared object (.so) target file            |
 | `--output-dir`  | Instruction fixtures dumping directory |
 | `--num-processes`  | Number of processes to use |
+| `--readable` | Output fixtures in human-readable format |
 
 
 ### Validation

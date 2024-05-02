@@ -74,6 +74,6 @@ def minimize_single_test_case(test_file: Path) -> int:
     del instruction_context.epoch_context.features.features[:]
     instruction_context.epoch_context.features.features.extend(sorted(set(features)))
 
-    with open(globals.output_dir / test_file.name, "wb") as f:
+    with open(globals.output_dir / (test_file.stem + ".txt"), "wb") as f:
         f.write(instruction_context.SerializeToString(deterministic=True))
     return 1
