@@ -18,3 +18,6 @@ output_buffer_pointer = None
 # A FeaturePool object describing the hardcoded and supported features
 # of the target
 feature_pool = None
+
+# (For fixtures) Whether to output in human-readable format
+readable = False

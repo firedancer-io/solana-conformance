@@ -1,6 +1,8 @@
+from test_suite.codec_utils import encode_input, encode_output
 from test_suite.multiprocessing_utils import prune_execution_result
 import test_suite.globals as globals
 import test_suite.invoke_pb2 as pb
+from google.protobuf import text_format
 
 
 def create_fixture(
@@ -50,7 +52,8 @@ def create_fixture(
 
 def write_fixture_to_disk(file_stem: str, serialized_instruction_fixture: str) -> int:
     """
-    Writes instruction fixtures to disk.
+    Writes instruction fixtures to disk. This function outputs in binary format unless
+    specified otherwise with the --readable flag.
 
     Args:
         - file_stem (str): File stem
@@ -62,7 +65,29 @@ def write_fixture_to_disk(file_stem: str, serialized_instruction_fixture: str) -
     if serialized_instruction_fixture is None:
         return 0
 
-    with open(f"{globals.output_dir}/{file_stem}.bin", "wb") as f:
-        f.write(serialized_instruction_fixture)
+    if globals.readable:
+        # Deserialize fixture
+        instr_fixture = pb.InstrFixture()
+        instr_fixture.ParseFromString(serialized_instruction_fixture)
+
+        # Encode fields for instruction context and effects
+        instr_context = pb.InstrContext()
+        instr_context.CopyFrom(instr_fixture.input)
+        encode_input(instr_context)
+
+        instr_effects = pb.InstrEffects()
+        instr_effects.CopyFrom(instr_fixture.output)
+        encode_output(instr_effects)
+
+        instr_fixture.input.CopyFrom(instr_context)
+        instr_fixture.output.CopyFrom(instr_effects)
+
+        with open(globals.output_dir / (file_stem + ".txt"), "w") as f:
+            f.write(
+                text_format.MessageToString(instr_fixture, print_unknown_fields=False)
+            )
+    else:
+        with open(f"{globals.output_dir}/{file_stem}.bin", "wb") as f:
+            f.write(serialized_instruction_fixture)
 
     return 1

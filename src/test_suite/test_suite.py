@@ -37,7 +37,7 @@ app = typer.Typer(
 
 
 @app.command()
-def execute_single_instruction(
+def exec_instr(
     file: Path = typer.Option(None, "--input", "-i", help="Input file"),
     shared_library: Path = typer.Option(
         Path("impl/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so"),
@@ -88,7 +88,7 @@ def execute_single_instruction(
 
 
 @app.command()
-def debug_instruction(
+def debug_instr(
     file: Path = typer.Option(None, "--input", "-i", help="Input file"),
     shared_library: Path = typer.Option(
         Path("impl/lib/libsolfuzz_firedancer.so"),
@@ -310,10 +310,14 @@ def create_fixtures(
     num_processes: int = typer.Option(
         4, "--num-processes", "-p", help="Number of processes to use"
     ),
+    readable: bool = typer.Option(
+        False, "--readable", "-r", help="Output fixtures in human-readable format"
+    ),
 ):
     # Specify globals
     globals.output_dir = output_dir
     globals.solana_shared_library = solana_shared_library
+    globals.readable = readable
 
     # Create the output directory, if necessary
     if globals.output_dir.exists():
@@ -474,7 +478,7 @@ def run_tests(
         ):
             execution_results.append(result)
 
-    # Prune modified accounts that were not actually modified
+    # Prune accounts that were not actually modified
     print("Pruning results...")
     pruned_execution_results = []
     with Pool(processes=num_processes) as pool:

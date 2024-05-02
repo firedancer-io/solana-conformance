@@ -63,7 +63,7 @@ def process_instruction(
 
 def generate_test_case(test_file: Path) -> tuple[str, str | None]:
     """
-    Reads in test files and generates a Protobuf object for a test case.
+    Reads in test files and generates an InstrContext Protobuf object for a test case.
 
     Args:
         - test_file (Path): Path to the file containing serialized instruction contexts.
@@ -121,7 +121,7 @@ def decode_single_test_case(test_file: Path) -> int:
     instruction_context.ParseFromString(serialized_instruction_context)
     encode_input(instruction_context)
 
-    with open(globals.output_dir / test_file.name, "w") as f:
+    with open(globals.output_dir / (test_file.stem + ".txt"), "w") as f:
         f.write(
             text_format.MessageToString(instruction_context, print_unknown_fields=False)
         )
