@@ -12,7 +12,8 @@ dependencies = [
   "loguru~=0.7.0",
   "protobuf~=3.19.0",
   "typer~=0.9.0",
-  "Cython>=3.0.9"
+  "Cython>=3.0.9",
+  "tqdm~=4.66.0"
 ]
 
 [project.scripts]
