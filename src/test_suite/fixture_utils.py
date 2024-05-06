@@ -37,6 +37,9 @@ def create_fixture(
         globals.solana_shared_library
     ]
 
+    if pruned_instruction_effects is None:
+        return file_stem, None
+
     # Create instruction fixture
     instr_context = pb.InstrContext()
     instr_context.ParseFromString(serialized_instruction_context)
