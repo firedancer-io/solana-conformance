@@ -38,6 +38,9 @@ test_vectors_agave = [
 
 # manual code cov
 test_vectors_manual = [
+    # inconsistent between ed25519 and secp256k1
+    [ 0 ],    # ed25519: err, secp256k1: ok
+    [ 0, 0 ], # ed25519: ok,  secp256k1: err
     # InvalidInstructionDataSize (result: 5)
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/ed25519_instruction.rs#L90-L92
     [ 1 ],
