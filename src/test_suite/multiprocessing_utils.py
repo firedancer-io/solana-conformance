@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 from test_suite.constants import OUTPUT_BUFFER_SIZE
 import test_suite.invoke_pb2 as pb
-from test_suite.codec_utils import encode_input, encode_output, decode_input
+import test_suite.vm_pb2 as pbvm
+from test_suite.codec_utils import encode_input, encode_output, decode_input, encode_output_syscalls
 from test_suite.validation_utils import check_account_unchanged, is_valid
 import ctypes
 from ctypes import c_uint64, c_int, POINTER, Structure
@@ -60,6 +61,53 @@ def process_instruction(
 
     return output_object
 
+def process_syscall(
+    library: ctypes.CDLL, serialized_instruction_context: str
+) -> pb.InstrEffects | None:
+    """
+    Process an instruction through a provided shared library and return the result.
+
+    Args:
+        - library (ctypes.CDLL): Shared library to process instructions.
+        - serialized_instruction_context (str): Serialized instruction context message.
+
+    Returns:
+        - pb.InstrEffects | None: Result of instruction execution.
+    """
+
+    # Define argument and return types
+    library.sol_compat_vm_syscall_execute_v1.argtypes = [
+        POINTER(ctypes.c_uint8),  # out_ptr
+        POINTER(c_uint64),  # out_psz
+        POINTER(ctypes.c_uint8),  # in_ptr
+        c_uint64,  # in_sz
+    ]
+    library.sol_compat_vm_syscall_execute_v1.restype = c_int
+
+    # Prepare input data and output buffers
+    in_data = serialized_instruction_context
+    in_ptr = (ctypes.c_uint8 * len(in_data))(*in_data)
+    in_sz = len(in_data)
+    out_sz = ctypes.c_uint64(OUTPUT_BUFFER_SIZE)
+
+    print("process_syscall 1")
+
+    # Call the function
+    result = library.sol_compat_vm_syscall_execute_v1(
+        globals.output_buffer_pointer, ctypes.byref(out_sz), in_ptr, in_sz
+    )
+    print("process_syscall 2")
+
+    # Result == 0 means execution failed
+    if result == 0:
+        return None
+
+    # Process the output
+    output_data = bytearray(globals.output_buffer_pointer[: out_sz.value])
+    output_object = pbvm.SyscallEffects()
+    output_object.ParseFromString(output_data)
+
+    return output_object
 
 def generate_test_case(test_file: Path) -> tuple[str, str | None]:
     """
@@ -82,6 +130,44 @@ def generate_test_case(test_file: Path) -> tuple[str, str | None]:
             # Maybe it's in human-readable Protobuf format?
             with open(test_file) as f:
                 instruction_context = text_format.Parse(f.read(), pb.InstrContext())
+
+            # Decode into digestable fields
+            decode_input(instruction_context)
+        except:
+            # Unable to read message, skip and continue
+            instruction_context = None
+
+    if instruction_context is None:
+        # Unreadable file, skip it
+        return test_file.stem, None
+
+    # Discard unknown fields
+    instruction_context.DiscardUnknownFields()
+
+    # Serialize instruction context to string (pickleable)
+    return test_file.stem, instruction_context.SerializeToString(deterministic=True)
+
+def generate_test_case_syscalls(test_file: Path) -> tuple[str, str | None]:
+    """
+    Reads in test files and generates an InstrContext Protobuf object for a test case.
+
+    Args:
+        - test_file (Path): Path to the file containing serialized instruction contexts.
+
+    Returns:
+        - tuple[str, str | None]: Tuple of file stem and serialized instruction context, if exists.
+    """
+    # Try to read in first as binary-encoded Protobuf messages
+    try:
+        # Read in binary Protobuf messages
+        with open(test_file, "rb") as f:
+            instruction_context = pbvm.SyscallContext()
+            instruction_context.ParseFromString(f.read())
+    except:
+        try:
+            # Maybe it's in human-readable Protobuf format?
+            with open(test_file) as f:
+                instruction_context = text_format.Parse(f.read(), pbvm.SyscallContext())
 
             # Decode into digestable fields
             decode_input(instruction_context)
@@ -152,6 +238,43 @@ def process_single_test_case(
     results = {}
     for target in globals.target_libraries:
         instruction_effects = process_instruction(
+            globals.target_libraries[target], serialized_instruction_context
+        )
+        result = (
+            instruction_effects.SerializeToString(deterministic=True)
+            if instruction_effects
+            else None
+        )
+        results[target] = result
+
+    return file_stem, results
+
+
+def process_single_test_case_syscalls(
+    file_stem: str, serialized_instruction_context: str | None
+) -> tuple[str, dict[str, str | None] | None]:
+    """
+    Process a single execution context (file, serialized instruction context) through
+    all target libraries and returns serialized instruction effects. This
+    function is called by processes.
+
+    Args:
+        - file_stem (str): Stem of file containing serialized instruction context.
+        - serialized_instruction_context (str | None): Serialized instruction context.
+
+    Returns:
+        - tuple[str, dict[str, str | None] | None]: Tuple of file stem and dictionary of target library names
+            and instruction effects.
+    """
+    # Mark as skipped if instruction context doesn't exist
+    if serialized_instruction_context is None:
+        return file_stem, None
+
+    # Execute test case on each target library
+    results = {}
+    for target in globals.target_libraries:
+        print("process ", target)
+        instruction_effects = process_syscall(
             globals.target_libraries[target], serialized_instruction_context
         )
         result = (
@@ -347,6 +470,49 @@ def build_test_results(
     # 1 = passed, -1 = failed
     return file_stem, 1 if test_case_passed else -1, outputs
 
+def build_test_results_syscalls(file_stem: str, results: dict[str, str | None]) -> int:
+    """
+    Build a single result of single test execution and returns whether the test passed or failed.
+
+    Args:
+        - file_stem (str): File stem of the test case.
+        - results (dict[str, str | None]): Dictionary of target library names and serialized instruction effects.
+
+    Returns:
+        - tuple[str, int, dict | None]: Tuple of:
+            File stem; 1 if passed, -1 if failed, 0 if skipped
+            Dictionary of target library
+            Names and file-dumpable serialized instruction effects.
+    """
+    outputs = {target: "None\n" for target in results}
+
+    # If no results or Agave rejects input, mark case as skipped
+    if results is None:
+        # Mark as skipped (0)
+        return file_stem, 0, None
+
+    # Log execution results
+    protobuf_structures = {}
+    for target, result in results.items():
+        # Create a Protobuf struct to compare and output, if applicable
+        instruction_effects = None
+        if result:
+            # Turn bytes into human readable fields
+            instruction_effects = pbvm.SyscallEffects()
+            instruction_effects.ParseFromString(result)
+            encode_output_syscalls(instruction_effects)
+            instruction_effects.stack = b""
+            outputs[target] = text_format.MessageToString(instruction_effects)
+
+        protobuf_structures[target] = instruction_effects
+
+    test_case_passed = all(
+        protobuf_structures[globals.solana_shared_library] == result
+        for result in protobuf_structures.values()
+    )
+
+    # 1 = passed, -1 = failed
+    return file_stem, 1 if test_case_passed else -1, outputs
 
 def initialize_process_output_buffers(randomize_output_buffer=False):
     """

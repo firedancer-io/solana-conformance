@@ -1,6 +1,7 @@
 import base64
 import fd58
 import test_suite.invoke_pb2 as pb
+import test_suite.vm_pb2 as pbvm
 
 
 def decode_input(instruction_context: pb.InstrContext):
@@ -86,3 +87,25 @@ def encode_output(instruction_effects: pb.InstrEffects):
             instruction_effects.modified_accounts[i].owner = fd58.enc32(
                 instruction_effects.modified_accounts[i].owner
             )
+
+def encode_output_syscalls(syscall_effects: pbvm.SyscallEffects):
+    """
+    Encode InstrEffects fields in-place into human-readable format.
+    Addresses are encoded in base58, data in base64.
+
+    Args:
+        - instruction_effects (pb.InstrEffects): Instruction effects (will be modified).
+    """
+    # for i in range(len(syscall_effects.modified_accounts)):
+    #     if syscall_effects.modified_accounts[i].address:
+    #         syscall_effects.modified_accounts[i].address = fd58.enc32(
+    #             syscall_effects.modified_accounts[i].address
+    #         )
+    #     if syscall_effects.modified_accounts[i].data:
+    #         syscall_effects.modified_accounts[i].data = base64.b64encode(
+    #             syscall_effects.modified_accounts[i].data
+    #         )
+    #     if syscall_effects.modified_accounts[i].owner:
+    #         syscall_effects.modified_accounts[i].owner = fd58.enc32(
+    #             syscall_effects.modified_accounts[i].owner
+    #         )

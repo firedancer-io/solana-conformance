@@ -19,11 +19,15 @@ from test_suite.multiprocessing_utils import (
     check_consistency_in_results,
     decode_single_test_case,
     generate_test_case,
+    generate_test_case_syscalls,
     initialize_process_output_buffers,
     lazy_starmap,
     merge_results_over_iterations,
     process_instruction,
     process_single_test_case,
+    process_single_test_case_syscalls,
+    build_test_results,
+    build_test_results_syscalls,
     prune_execution_result,
     get_feature_pool,
     run_test,
@@ -108,7 +112,7 @@ def debug_instr(
     print(f"Processing {file.name}...")
 
     # Decode the file and pass it into GDB
-    _, instruction_context = generate_test_case(file)
+    _, instruction_context = generate_test_case_syscalls(file)
     assert instruction_context is not None, f"Unable to read {file.name}"
     debug_host(shared_library, instruction_context, gdb=debugger)
 
@@ -521,6 +525,7 @@ def run_tests(
     print("Logging results...")
     passed = 0
     failed = 0
+    failed_tests = []
     skipped = 0
     failed_tests = []
     target_log_files = {target: None for target in shared_libraries}
@@ -565,6 +570,168 @@ def run_tests(
     print(f"Passed: {passed}, Failed: {failed}, Skipped: {skipped}")
     if verbose:
         print(f"Failed tests: {failed_tests}")
+
+
+@app.command()
+def run_tests_syscalls(
+    input_dir: Path = typer.Option(
+        Path("corpus8"),
+        "--input-dir",
+        "-i",
+        help="Input directory containing instruction context messages",
+    ),
+    solana_shared_library: Path = typer.Option(
+        Path("impl/lib/libsolfuzz_agave_v2.0.so"),
+        "--solana-target",
+        "-s",
+        help="Solana (or ground truth) shared object (.so) target file path",
+    ),
+    shared_libraries: List[Path] = typer.Option(
+        [], "--target", "-t", help="Shared object (.so) target file paths"
+    ),
+    output_dir: Path = typer.Option(
+        Path("test_results"),
+        "--output-dir",
+        "-o",
+        help="Output directory for test results",
+    ),
+    num_processes: int = typer.Option(
+        4, "--num-processes", "-p", help="Number of processes to use"
+    ),
+    randomize_output_buffer: bool = typer.Option(
+        False,
+        "--randomize-output-buffer",
+        "-r",
+        help="Randomizes bytes in output buffer before shared library execution",
+    ),
+    log_chunk_size: int = typer.Option(
+        10000, "--chunk-size", "-c", help="Number of test results per file"
+    ),
+):
+    # Add Solana library to shared libraries
+    shared_libraries = [solana_shared_library] + shared_libraries
+
+    # Specify globals
+    globals.output_dir = output_dir
+    globals.solana_shared_library = solana_shared_library
+
+    # Create the output directory, if necessary
+    if globals.output_dir.exists():
+        shutil.rmtree(globals.output_dir)
+    globals.output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Initialize shared libraries
+    for target in shared_libraries:
+        # Load in and initialize shared libraries
+        lib = ctypes.CDLL(target)
+        lib.sol_compat_init()
+        globals.target_libraries[target] = lib
+
+        # Make log output directories for each shared library
+        log_dir = globals.output_dir / target.stem
+        log_dir.mkdir(parents=True, exist_ok=True)
+
+    num_test_cases = len(list(input_dir.iterdir()))
+
+    # Generate the test cases in parallel from files on disk
+    execution_contexts = []
+    print("Reading test files...")
+    with Pool(processes=num_processes) as pool:
+        for result in tqdm.tqdm(
+            pool.imap(generate_test_case_syscalls, input_dir.iterdir()), total=num_test_cases
+        ):
+            execution_contexts.append(result)
+
+    # Process the test cases in parallel through shared libraries
+    print("Executing tests...")
+    execution_results = []
+    with Pool(
+        processes=num_processes,
+        initializer=initialize_process_output_buffers,
+        initargs=(randomize_output_buffer,),
+    ) as pool:
+        for result in tqdm.tqdm(
+            pool.imap(
+                functools.partial(lazy_starmap, function=process_single_test_case_syscalls),
+                execution_contexts,
+            ),
+            total=num_test_cases,
+        ):
+            execution_results.append(result)
+
+    # Prune accounts that were not actually modified
+    # print("Pruning results...")
+    # pruned_execution_results = []
+    # with Pool(processes=num_processes) as pool:
+    #     for result in tqdm.tqdm(
+    #         pool.imap(
+    #             functools.partial(lazy_starmap, function=prune_execution_result_syscalls),
+    #             zip(execution_contexts, execution_results),
+    #         ),
+    #         total=num_test_cases,
+    #     ):
+    #         pruned_execution_results.append(result)
+    pruned_execution_results = execution_results
+
+    # Process the test results in parallel
+    print("Building test results...")
+    test_case_results = []
+    with Pool(processes=num_processes) as pool:
+        for result in tqdm.tqdm(
+            pool.imap(
+                functools.partial(lazy_starmap, function=build_test_results_syscalls),
+                pruned_execution_results,
+            ),
+            total=num_test_cases,
+        ):
+            test_case_results.append(result)
+
+    print("Logging results...")
+    passed = 0
+    failed = 0
+    failed_tests = []
+    skipped = 0
+    target_log_files = {target: None for target in shared_libraries}
+    for file_stem, status, stringified_results in test_case_results:
+        if stringified_results is None:
+            skipped += 1
+            continue
+
+        for target, string_result in stringified_results.items():
+            if (passed + failed + skipped) % log_chunk_size == 0:
+                if target_log_files[target]:
+                    target_log_files[target].close()
+                target_log_files[target] = open(
+                    globals.output_dir / target.stem / (file_stem + ".txt"), "w"
+                )
+
+            target_log_files[target].write(
+                file_stem
+                + ":\n"
+                + string_result
+                + "\n"
+                + "-" * LOG_FILE_SEPARATOR_LENGTH
+                + "\n"
+            )
+
+        if status == 1:
+            passed += 1
+        elif status == -1:
+            failed += 1
+            failed_tests.append(file_stem)
+
+    print("Cleaning up...")
+    for target in shared_libraries:
+        if target_log_files[target]:
+            target_log_files[target].close()
+        globals.target_libraries[target].sol_compat_fini()
+
+    peak_memory_usage_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    print(f"Peak Memory Usage: {peak_memory_usage_kb / 1024} MB")
+
+    print(f"Total test cases: {passed + failed + skipped}")
+    print(f"Passed: {passed}, Failed: {failed}, Skipped: {skipped}")
+    print(f"Failed tests: {failed_tests}")
 
 
 @app.command()
