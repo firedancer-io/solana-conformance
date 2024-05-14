@@ -515,7 +515,7 @@ def run_tests(
             continue
 
         for target, string_result in stringified_results.items():
-            if (passed + failed + skipped) % log_chunk_size == 0:
+            if (passed + failed) % log_chunk_size == 0:
                 if target_log_files[target]:
                     target_log_files[target].close()
                 target_log_files[target] = open(
