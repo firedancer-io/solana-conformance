@@ -5,90 +5,176 @@ from test_suite.codec_utils import encode_input
 import test_suite.invoke_pb2 as pb
 import test_suite.vm_pb2 as pbvm
 from dataclasses import dataclass
+import struct
 
 OUTPUT_DIR = "./test-vectors/instr/inputs/20240425/syscalls"
+HEAP_START = 0x300000000
+CU_BASE = 85
+CU_PER_BYTE = 1  # this is actually every 2 bytes...
+CU_MEM_OP = 10
 
-# program_id = "KeccakSecp256k11111111111111111111111111111"
-accounts = []
+def heap_vec(data_vec, start):
+    res = []
+    last = start + len(data_vec) * 16
+    for data in data_vec:
+        res += struct.pack('<Q', last)
+        res += struct.pack('<Q', len(data))
+        last += len(data)
+    for data in data_vec:
+        res += bytes(data, "ascii")
+    return res
 
-# https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L1039
-test_vectors_agave = [
-    # test_count_is_zero_but_sig_data_exists
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    # test_invalid_offsets
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0] + [ 0 ] * 100,
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] + [ 0 ] * 100,
-    [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0] + [ 0 ] * 100,
-    # test_signature_offset
-    [1, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 37, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    # test_eth_offset
-    [1, 0, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0],
-    [1, 0, 0, 0, 81, 0, 0, 0, 0, 0, 0, 0],
-    # test_message_data_offsets
-    [1, 0, 0, 0, 0, 0, 0, 99, 0, 1, 0, 0],
-    [1, 0, 0, 0, 0, 0, 0, 100, 0, 1, 0, 0],
-    [1, 0, 0, 0, 0, 0, 0, 100, 0, 232, 3, 0],
-    [1, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 0],
-    # test_secp256k1
-    [1, 32, 0, 0, 12, 0, 0, 97, 0, 5, 0, 0, 129, 246, 169, 169, 105, 76, 208, 128, 223, 135, 27, 68, 249, 42, 201, 69, 55, 2, 173, 101, 14, 196, 198, 193, 237, 0, 14, 83, 87, 183, 25, 69, 136, 43, 251, 73, 44, 194, 141, 230, 102, 16, 220, 6, 46, 214, 214, 125, 120, 16, 103, 254, 39, 121, 88, 223, 156, 229, 186, 211, 38, 101, 196, 233, 125, 150, 136, 177, 123, 197, 48, 219, 28, 26, 10, 76, 198, 127, 91, 80, 88, 191, 6, 3, 1, 104, 101, 108, 108, 111],
-    [1, 32, 12, 0, 12, 0, 0, 97, 0, 5, 0, 0, 129, 246, 169, 169, 105, 76, 208, 128, 223, 135, 27, 68, 249, 42, 201, 69, 55, 2, 173, 101, 14, 196, 198, 193, 237, 0, 14, 83, 87, 183, 25, 69, 136, 43, 251, 73, 44, 194, 141, 230, 102, 16, 220, 6, 46, 214, 214, 125, 120, 16, 103, 254, 39, 121, 88, 223, 156, 229, 186, 211, 38, 101, 196, 233, 125, 150, 136, 177, 123, 197, 48, 219, 28, 26, 10, 76, 198, 127, 91, 80, 88, 191, 6, 3, 1, 104, 101, 108, 108, 111],
-    # test_malleability
-    [2, 23, 0, 0, 88, 0, 0, 108, 0, 5, 0, 0, 113, 0, 0, 178, 0, 0, 198, 0, 5, 0, 0, 8, 106, 2, 17, 228, 135, 168, 210, 219, 113, 75, 102, 239, 51, 218, 230, 218, 125, 149, 73, 201, 61, 102, 253, 170, 115, 201, 14, 162, 243, 11, 22, 90, 90, 242, 118, 196, 38, 97, 5, 74, 132, 110, 172, 168, 204, 248, 224, 162, 249, 64, 95, 48, 88, 72, 56, 157, 16, 4, 2, 165, 47, 207, 113, 0, 45, 237, 4, 121, 189, 201, 77, 37, 225, 171, 23, 82, 196, 28, 174, 59, 124, 136, 139, 245, 104, 101, 108, 108, 111, 8, 106, 2, 17, 228, 135, 168, 210, 219, 113, 75, 102, 239, 51, 218, 230, 218, 125, 149, 73, 201, 61, 102, 253, 170, 115, 201, 14, 162, 243, 11, 22, 165, 165, 13, 137, 59, 217, 158, 250, 181, 123, 145, 83, 87, 51, 7, 30, 23, 181, 156, 135, 126, 240, 88, 3, 34, 194, 90, 138, 43, 6, 113, 208, 1, 45, 237, 4, 121, 189, 201, 77, 37, 225, 171, 23, 82, 196, 28, 174, 59, 124, 136, 139, 245, 104, 101, 108, 108, 111],
-]
+def exact_cu_cost(data_vec):
+    return CU_BASE + sum([max((len(x) / 2)*CU_PER_BYTE, CU_MEM_OP) for x in data_vec])
 
-# manual code cov
-test_vectors_manual = [
-    # inconsistent between ed25519 and secp256k1
-    [ 0 ],    # ed25519: err, secp256k1: ok
-    [ 0, 0 ], # ed25519: ok,  secp256k1: err
-    # InvalidInstructionDataSize (result: 5)
-    # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L937-L947
-    # note: this is different behavior than ed25519
-    [],
-    [ 0, 0, 0 ],
+# https://github.com/solana-labs/solana/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L2521
+test_hello = ["hello"]
+test_hello_world = ["hello", " world"]
+test_vectors = [
+    {
+        # empty hash = valid
+        "heap_prefix": [0]*32,
+        "result_addr": HEAP_START,
+        "cu_avail": CU_BASE
+    },
+    {
+        # hash("hello") = valid
+        "heap_prefix": [0]*32 + heap_vec(test_hello, HEAP_START + 32),
+        "vals_addr": HEAP_START + 32,
+        "vals_len": len(test_hello),
+        "result_addr": HEAP_START,
+        "cu_avail": exact_cu_cost(test_hello)
+    },
+    {
+        # hash("hello") = valid
+        # result at the end
+        "heap_prefix": heap_vec(test_hello, HEAP_START + 32) + [0]*32,
+        "vals_addr": HEAP_START,
+        "vals_len": len(test_hello),
+        "result_addr": HEAP_START + len(heap_vec(test_hello, HEAP_START + 32)),
+        "cu_avail": exact_cu_cost(test_hello)
+    },
+    {
+        # hash("hello") = valid
+        # result overwrites input
+        "heap_prefix": heap_vec(test_hello, HEAP_START) + [0]*11,
+        "vals_addr": HEAP_START,
+        "vals_len": len(test_hello),
+        "result_addr": HEAP_START,
+        "cu_avail": exact_cu_cost(test_hello)
+    },
+    {
+        # hash("hello world") = valid
+        "heap_prefix": [0]*32 + heap_vec(test_hello_world, HEAP_START + 32),
+        "vals_addr": HEAP_START + 32,
+        "vals_len": len(test_hello_world),
+        "result_addr": HEAP_START,
+        "cu_avail": exact_cu_cost(test_hello_world)
+    },
+    # SyscallError::TooManySlices
+    # https://github.com/solana-labs/solana/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1919
+    {
+        # fail max slices
+        "heap_prefix": [0]*32 + heap_vec(test_hello_world, HEAP_START + 32),
+        "vals_addr": HEAP_START + 32,
+        "vals_len": 20001,
+        "result_addr": HEAP_START,
+        "cu_avail": exact_cu_cost(test_hello_world)
+    },
+    # ComputationalBudgetExceeded
+    # https://github.com/solana-labs/solana/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1922
+    {
+        # fail cu begin
+        "heap_prefix": [0]*32 + heap_vec(test_hello_world, HEAP_START + 32),
+        "vals_addr": HEAP_START + 32,
+        "vals_len": len(test_hello_world),
+        "result_addr": HEAP_START,
+        "cu_avail": 1
+    },
 
-    # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L951-L953
-    [ 1 ],
-    [ 1, 0, 0 ],
+    # translate_slice_mut
+    # https://github.com/solana-labs/solana/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1924-L1929
+    # TODO: cover all errors, e.g. UnalignedPointer
+    {
+        # fail alloc result
+        "heap_prefix": [0]*32 + heap_vec(test_hello_world, HEAP_START + 32),
+        "vals_addr": HEAP_START + 32,
+        "vals_len": len(test_hello_world),
+        "result_addr": HEAP_START - 1,
+        "cu_avail": exact_cu_cost(test_hello_world)
+    },
+    {
+        # fail alloc result
+        "heap_prefix": [0]*32 + heap_vec(test_hello_world, HEAP_START + 32),
+        "vals_addr": HEAP_START + 32,
+        "vals_len": len(test_hello_world),
+        "result_addr": HEAP_START - 64,
+        "cu_avail": exact_cu_cost(test_hello_world)
+    },
+    {
+        # fail alloc result (2)
+        "heap_prefix": [0]*32 + heap_vec(test_hello_world, HEAP_START + 32),
+        "vals_addr": HEAP_START + 32,
+        "vals_len": len(test_hello_world),
+        "result_addr": HEAP_START + 100,
+        "cu_avail": exact_cu_cost(test_hello_world)
+    },
 
-    # InvalidSignature (result: 3)
-    # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L960-L961
-    # ??? I don't think this can ever happen?
+    # translate_slice
+    # https://github.com/solana-labs/solana/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1932-L1937
+    # TODO: cover all errors, e.g. UnalignedPointer
+    {
+        # fail alloc vec
+        "heap_prefix": [0]*32 + heap_vec(test_hello_world, HEAP_START + 32),
+        "vals_addr": HEAP_START - 1,
+        "vals_len": len(test_hello_world),
+        "result_addr": HEAP_START,
+        "cu_avail": exact_cu_cost(test_hello_world)
+    },
+    {
+        # fail alloc vec (2)
+        "heap_prefix": [0]*32 + heap_vec(test_hello_world, HEAP_START + 32),
+        "vals_addr": HEAP_START + 100,
+        "vals_len": len(test_hello_world),
+        "result_addr": HEAP_START,
+        "cu_avail": exact_cu_cost(test_hello_world)
+    },
+    # https://github.com/solana-labs/solana/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1939-L1944
+    {
+        # fail alloc elem
+        "heap_prefix": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 164, 0, 0, 0, 3, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 69, 0, 0, 0, 3, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100],
+        "vals_addr": HEAP_START + 32,
+        "vals_len": len(test_hello_world),
+        "result_addr": HEAP_START,
+        "cu_avail": exact_cu_cost(test_hello_world)
+    },
+    {
+        # fail alloc elem
+        "heap_prefix": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 3, 0, 0, 0, 105, 0, 0, 0, 0, 0, 0, 0, 69, 0, 0, 0, 3, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100],
+        "vals_addr": HEAP_START + 32,
+        "vals_len": len(test_hello_world),
+        "result_addr": HEAP_START,
+        "cu_avail": exact_cu_cost(test_hello_world)
+    },
 
-    # InvalidDataOffsets (result: 4)
-    # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L965-L967
-    # tested above
-
-    # InvalidSignature (result: 3)
-    # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L971-L973
-    # tested above
-    # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L975-L978
-    # signature fails to decode
-    [1, 32, 0, 0, 12, 0, 0, 97, 0, 5, 0, 0, 129, 246, 169, 169, 105, 76, 208, 128, 223, 135, 27, 68, 249, 42, 201, 69, 55, 2, 173, 101, 255, 196, 198, 193, 237, 0, 14, 83, 87, 183, 25, 69, 136, 43, 251, 73, 44, 194, 141, 230, 102, 16, 220, 6, 46, 214, 214, 125, 120, 16, 103, 254, 39, 121, 88, 223, 156, 229, 186, 211, 38, 101, 196, 233, 125, 150, 136, 177, 123, 197, 48, 219, 28, 26, 10, 76, 198, 127, 91, 80, 88, 191, 6, 3, 255, 104, 101, 108, 108, 111],
-    #                                       \--- pubkey (eth)                                                                     ---/  \--- sig                                                                                                                                                                                                                                                                                         ---/  \--- msg           ---/
-
-    # InvalidRecoveryId (result: 2)
-    # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L981C43-L981C60
-    [1, 32, 0, 0, 12, 0, 0, 97, 0, 5, 0, 0, 129, 246, 169, 169, 105, 76, 208, 128, 223, 135, 27, 68, 249, 42, 201, 69, 55, 2, 173, 101, 14, 196, 198, 193, 237, 0, 14, 83, 87, 183, 25, 69, 136, 43, 251, 73, 44, 194, 141, 230, 102, 16, 220, 6, 46, 214, 214, 125, 120, 16, 103, 254, 39, 121, 88, 223, 156, 229, 186, 211, 38, 101, 196, 233, 125, 150, 136, 177, 123, 197, 48, 219, 28, 26, 10, 76, 198, 127, 91, 80, 88, 191, 6, 3, 4, 104, 101, 108, 108, 111],
-    #                                       \--- pubkey (eth)                                                                     ---/  \--- sig                                                                                                                                                                                                                                                                                      ---/  \--- msg           ---/
-
-    # InvalidDataOffsets (result: 4)
-    # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L984-L989
-    # tested above
-    # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L992-L997
-    # tested above
-
-    # InvalidSignature (result: 3)
-    # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L1003-L1008
-    # signature fails to verify
-    [1, 32, 0, 0, 12, 0, 0, 97, 0, 5, 0, 0, 129, 246, 169, 169, 105, 76, 208, 128, 223, 135, 27, 68, 249, 42, 201, 69, 55, 2, 173, 101, 14, 196, 198, 193, 237, 0, 14, 83, 87, 183, 25, 69, 136, 43, 251, 73, 44, 194, 141, 230, 102, 16, 220, 6, 46, 214, 214, 125, 120, 16, 103, 254, 39, 121, 88, 223, 156, 229, 186, 211, 38, 101, 196, 233, 125, 150, 136, 177, 123, 197, 48, 219, 28, 26, 10, 76, 198, 127, 91, 80, 88, 191, 6, 3, 1, 104, 101, 108, 108, 255],
-    [2, 23, 0, 0, 88, 0, 0, 108, 0, 5, 0, 0, 113, 0, 0, 178, 0, 0, 198, 0, 5, 0, 0, 8, 106, 2, 17, 228, 135, 168, 210, 219, 113, 75, 102, 239, 51, 218, 230, 218, 125, 149, 73, 201, 61, 102, 253, 170, 115, 201, 14, 162, 243, 11, 22, 90, 90, 242, 118, 196, 38, 97, 5, 74, 132, 110, 172, 168, 204, 248, 224, 162, 249, 64, 95, 48, 88, 72, 56, 157, 16, 4, 2, 165, 47, 207, 113, 0, 45, 237, 4, 121, 189, 201, 77, 37, 225, 171, 23, 82, 196, 28, 174, 59, 124, 136, 139, 245, 104, 101, 108, 108, 111, 8, 106, 2, 17, 228, 135, 168, 210, 219, 113, 75, 102, 239, 51, 218, 230, 218, 125, 149, 73, 201, 61, 102, 253, 170, 115, 201, 14, 162, 243, 11, 22, 165, 165, 13, 137, 59, 217, 158, 250, 181, 123, 145, 83, 87, 51, 7, 30, 23, 181, 156, 135, 126, 240, 88, 3, 34, 194, 90, 138, 43, 6, 113, 208, 1, 45, 237, 4, 121, 189, 201, 77, 37, 225, 171, 23, 82, 196, 28, 174, 59, 124, 136, 139, 245, 104, 101, 108, 108, 255],
-    # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L1003-L1008
-    # sig returns incorrect pubkey
-    [1, 32, 0, 0, 12, 0, 0, 97, 0, 5, 0, 0, 111, 246, 169, 169, 105, 76, 208, 128, 223, 135, 27, 68, 249, 42, 201, 69, 55, 2, 173, 101, 14, 196, 198, 193, 237, 0, 14, 83, 87, 183, 25, 69, 136, 43, 251, 73, 44, 194, 141, 230, 102, 16, 220, 6, 46, 214, 214, 125, 120, 16, 103, 254, 39, 121, 88, 223, 156, 229, 186, 211, 38, 101, 196, 233, 125, 150, 136, 177, 123, 197, 48, 219, 28, 26, 10, 76, 198, 127, 91, 80, 88, 191, 6, 3, 1, 104, 101, 108, 108, 111],
-    #                                       \--- pubkey (eth)                                                                     ---/  \--- sig                                                                                                                                                                                                                                                                                      ---/  \--- msg           ---/
+    # ComputationalBudgetExceeded
+    # https://github.com/solana-labs/solana/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1945-L1952
+    {
+        # fail cu middle
+        "heap_prefix": [0]*32 + heap_vec(test_hello_world, HEAP_START + 32),
+        "vals_addr": HEAP_START + 32,
+        "vals_len": len(test_hello_world),
+        "result_addr": HEAP_START,
+        "cu_avail": CU_BASE
+    },
+    {
+        # fail cu end
+        "heap_prefix": [0]*32 + heap_vec(test_hello_world, HEAP_START + 32),
+        "vals_addr": HEAP_START + 32,
+        "vals_len": len(test_hello_world),
+        "result_addr": HEAP_START,
+        "cu_avail": CU_BASE + 12
+    },
 ]
 
 def _into_key_data(key_prefix, test_vectors):
@@ -96,19 +182,21 @@ def _into_key_data(key_prefix, test_vectors):
 
 print("Generating syscalls sha256, keccak256, blake3 tests...")
 
-test_vectors = _into_key_data("a", test_vectors_agave) \
-    + _into_key_data("m", test_vectors_manual)
+print([0]*32 + heap_vec(test_hello_world, HEAP_START + 32))
 
-test_vectors = [test_vectors[0]]
+test_vectors = _into_key_data("a", test_vectors)
 
 for (key, test) in test_vectors:
     for hash in ["sha256", "keccak256", "blake3"]:
+        heap_prefix = test.get("heap_prefix", [])
         syscall_ctx = pbvm.SyscallContext()
         syscall_ctx.syscall_invocation.function_name = bytes("sol_" + hash, "ascii")
-        syscall_ctx.instr_ctx.cu_avail = 1000000
-        syscall_ctx.vm_ctx.heap_max = 1024
-        syscall_ctx.vm_ctx.r2 = 0
-        syscall_ctx.vm_ctx.r3 = 0x300000000
+        syscall_ctx.syscall_invocation.heap_prefix = bytes(heap_prefix)
+        syscall_ctx.vm_ctx.heap_max = len(heap_prefix)
+        syscall_ctx.vm_ctx.r1 = test.get("vals_addr", 0)
+        syscall_ctx.vm_ctx.r2 = test.get("vals_len", 0)
+        syscall_ctx.vm_ctx.r3 = test.get("result_addr", 0)
+        syscall_ctx.instr_ctx.cu_avail = test.get("cu_avail", 0)
         syscall_ctx.instr_ctx.program_id = bytes([0]*32) # solfuzz-agave expectes a program_id
         syscall_ctx.vm_ctx.rodata = b"x" # fd expects some bytes
 

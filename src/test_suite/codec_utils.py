@@ -96,6 +96,7 @@ def encode_output_syscalls(syscall_effects: pbvm.SyscallEffects):
     Args:
         - instruction_effects (pb.InstrEffects): Instruction effects (will be modified).
     """
+    syscall_effects.heap = base64.b16encode(syscall_effects.heap)
     # for i in range(len(syscall_effects.modified_accounts)):
     #     if syscall_effects.modified_accounts[i].address:
     #         syscall_effects.modified_accounts[i].address = fd58.enc32(
