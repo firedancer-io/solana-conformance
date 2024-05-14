@@ -316,12 +316,12 @@ def build_test_results(file_stem: str, results: dict[str, str | None]) -> int:
             Dictionary of target library
             Names and file-dumpable serialized instruction effects.
     """
-    outputs = {target: "None\n" for target in results}
-
     # If no results or Agave rejects input, mark case as skipped
     if results is None:
         # Mark as skipped (0)
         return file_stem, 0, None
+
+    outputs = {target: "None\n" for target in results}
 
     # Log execution results
     protobuf_structures = {}
