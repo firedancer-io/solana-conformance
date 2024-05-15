@@ -106,7 +106,7 @@ solana-test-suite minimize-tests --input-dir <input_dir> --solana-target <solana
 | `--num-processes`  | Number of processes to use |
 
 
-### Creating Fixtures
+### Creating Fixtures from Instruction Context
 
 Create full test fixtures containing both instruction context and effects. Effects are computed by running instruction context through `--solana-target`. Fixtures with `None` values for instruction context/effects are not included.
 
@@ -122,6 +122,20 @@ solana-test-suite create-fixtures --input-dir <input_dir> --solana-target <solan
 | `--num-processes`  | Number of processes to use |
 | `--readable` | Output fixtures in human-readable format |
 
+
+### Create Instruction Context from Fixtures
+
+Opposite as above. Does not require a target.
+
+```sh
+solana-test-suite instr-from-fixtures --input-dir <input_dir> --solana-target <solana_target.so> --output-dir <fixtures_output_dir> --num-processes <num_processes> [--readable]
+```
+
+| Argument        | Description                                                                                         |
+|-----------------|-----------------------------------------------------------------------------------------------------|
+| `--input-dir`   | Input directory containing instruction fixture messages |
+| `--output-dir`  | Output directory for instr contexts |
+| `--num-processes`  | Number of processes to use |
 
 ### Validation
 
