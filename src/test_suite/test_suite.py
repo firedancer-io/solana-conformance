@@ -6,11 +6,14 @@ import typer
 import ctypes
 from multiprocessing import Pool
 from pathlib import Path
-from google.protobuf import text_format
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
-from test_suite.fixture_utils import create_fixture, write_fixture_to_disk
+from test_suite.fixture_utils import (
+    create_fixture,
+    extract_instr_context_from_fixture,
+    write_fixture_to_disk,
+)
 import test_suite.invoke_pb2 as pb
-from test_suite.codec_utils import decode_input, encode_input, encode_output
+from test_suite.codec_utils import encode_output
 from test_suite.minimize_utils import minimize_single_test_case
 from test_suite.multiprocessing_utils import (
     check_consistency_in_results,
@@ -21,9 +24,9 @@ from test_suite.multiprocessing_utils import (
     merge_results_over_iterations,
     process_instruction,
     process_single_test_case,
-    build_test_results,
     prune_execution_result,
     get_feature_pool,
+    run_test,
 )
 import test_suite.globals as globals
 from test_suite.debugger import debug_host
@@ -64,6 +67,7 @@ def exec_instr(
     instruction_effects = process_instruction(lib, instruction_context)
 
     if not instruction_effects:
+        print("No instruction effects returned")
         return None
 
     instruction_effects = instruction_effects.SerializeToString(deterministic=True)
@@ -288,6 +292,48 @@ def minimize_tests(
 
 
 @app.command()
+def instr_from_fixtures(
+    input_dir: Path = typer.Option(
+        Path("fixtures"),
+        "--input-dir",
+        "-i",
+        help="Input directory containing instruction fixture messages",
+    ),
+    output_dir: Path = typer.Option(
+        Path("instr"),
+        "--output-dir",
+        "-o",
+        help="Output directory for instr contexts",
+    ),
+    num_processes: int = typer.Option(
+        4, "--num-processes", "-p", help="Number of processes to use"
+    ),
+):
+    # Specify globals
+    globals.output_dir = output_dir
+
+    # Create the output directory, if necessary
+    if globals.output_dir.exists():
+        shutil.rmtree(globals.output_dir)
+    globals.output_dir.mkdir(parents=True, exist_ok=True)
+
+    num_test_cases = len(list(input_dir.iterdir()))
+
+    print("Converting to InstrContext...")
+    execution_contexts = []
+    with Pool(processes=num_processes) as pool:
+        for result in tqdm.tqdm(
+            pool.imap(extract_instr_context_from_fixture, input_dir.iterdir()),
+            total=num_test_cases,
+        ):
+            execution_contexts.append(result)
+
+    print("-" * LOG_FILE_SEPARATOR_LENGTH)
+    print(f"{len(execution_contexts)} total files seen")
+    print(f"{sum(execution_contexts)} files successfully written")
+
+
+@app.command()
 def create_fixtures(
     input_dir: Path = typer.Option(
         Path("corpus8"),
@@ -452,54 +498,16 @@ def run_tests(
 
     num_test_cases = len(list(input_dir.iterdir()))
 
-    # Generate the test cases in parallel from files on disk
-    execution_contexts = []
-    print("Reading test files...")
-    with Pool(processes=num_processes) as pool:
-        for result in tqdm.tqdm(
-            pool.imap(generate_test_case, input_dir.iterdir()), total=num_test_cases
-        ):
-            execution_contexts.append(result)
-
-    # Process the test cases in parallel through shared libraries
-    print("Executing tests...")
-    execution_results = []
+    # Process the test results in parallel
+    print("Running tests...")
+    test_case_results = []
     with Pool(
         processes=num_processes,
         initializer=initialize_process_output_buffers,
         initargs=(randomize_output_buffer,),
     ) as pool:
         for result in tqdm.tqdm(
-            pool.imap(
-                functools.partial(lazy_starmap, function=process_single_test_case),
-                execution_contexts,
-            ),
-            total=num_test_cases,
-        ):
-            execution_results.append(result)
-
-    # Prune accounts that were not actually modified
-    print("Pruning results...")
-    pruned_execution_results = []
-    with Pool(processes=num_processes) as pool:
-        for result in tqdm.tqdm(
-            pool.imap(
-                functools.partial(lazy_starmap, function=prune_execution_result),
-                zip(execution_contexts, execution_results),
-            ),
-            total=num_test_cases,
-        ):
-            pruned_execution_results.append(result)
-
-    # Process the test results in parallel
-    print("Building test results...")
-    test_case_results = []
-    with Pool(processes=num_processes) as pool:
-        for result in tqdm.tqdm(
-            pool.imap(
-                functools.partial(lazy_starmap, function=build_test_results),
-                pruned_execution_results,
-            ),
+            pool.imap(run_test, input_dir.iterdir()),
             total=num_test_cases,
         ):
             test_case_results.append(result)

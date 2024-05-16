@@ -193,7 +193,7 @@ def merge_results_over_iterations(results: tuple) -> tuple[str, dict]:
 
 
 def prune_execution_result(
-    file_serialized_instruction_context: tuple[str, dict],
+    file_serialized_instruction_context: tuple[str, str],
     file_serialized_instruction_effects: tuple[str, dict[str, str | None]],
 ) -> tuple[str, dict]:
     """
@@ -302,7 +302,9 @@ def check_consistency_in_results(file_stem: str, results: dict) -> dict[str, boo
     return results_per_target
 
 
-def build_test_results(file_stem: str, results: dict[str, str | None]) -> int:
+def build_test_results(
+    file_stem: str, results: dict[str, str | None]
+) -> tuple[str, int, dict | None]:
     """
     Build a single result of single test execution and returns whether the test passed or failed.
 
@@ -312,9 +314,9 @@ def build_test_results(file_stem: str, results: dict[str, str | None]) -> int:
 
     Returns:
         - tuple[str, int, dict | None]: Tuple of:
-            File stem; 1 if passed, -1 if failed, 0 if skipped
-            Dictionary of target library
-            Names and file-dumpable serialized instruction effects.
+            - File stem
+            - 1 if passed, -1 if failed, 0 if skipped
+            - Dictionary of target library names and file-dumpable serialized instruction effects
     """
     # If no results or Agave rejects input, mark case as skipped
     if results is None:
@@ -393,3 +395,22 @@ def get_feature_pool(library: ctypes.CDLL) -> FeaturePool:
         result.hardcoded_features[i] for i in range(result.hardcoded_feature_cnt)
     ]
     return FeaturePool(supported, hardcoded)
+
+
+def run_test(test_file: Path) -> tuple[str, int, dict | None]:
+    """
+    Runs a single test from start to finish.
+
+    Args:
+        - test_file (Path): Path to the file containing serialized instruction contexts.
+
+    Returns:
+        - tuple[str, int, dict | None]: Tuple of:
+            - File stem
+            - 1 if passed, -1 if failed, 0 if skipped
+            - Dictionary of target library names and file-dumpable serialized instruction effects
+    """
+    test_case = generate_test_case(test_file)
+    results = process_single_test_case(*test_case)
+    pruned_results = prune_execution_result(test_case, results)
+    return build_test_results(*pruned_results)
