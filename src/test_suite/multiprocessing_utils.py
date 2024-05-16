@@ -15,9 +15,11 @@ def lazy_starmap(args, function):
     return function(*args)
 
 
-def process_instruction(
-    library: ctypes.CDLL, serialized_instruction_context: str
-) -> pb.InstrEffects | None:
+def exec_sol_compat_call(
+    library: ctypes.CDLL,
+    sol_compat_fn_name: str,
+    serialized_context: str,
+) -> bytearray | None:
     """
     Process an instruction through a provided shared library and return the result.
 
@@ -28,24 +30,25 @@ def process_instruction(
     Returns:
         - pb.InstrEffects | None: Result of instruction execution.
     """
+    sol_compat_fn = getattr(library, sol_compat_fn_name)
 
     # Define argument and return types
-    library.sol_compat_instr_execute_v1.argtypes = [
+    sol_compat_fn.argtypes = [
         POINTER(ctypes.c_uint8),  # out_ptr
         POINTER(c_uint64),  # out_psz
         POINTER(ctypes.c_uint8),  # in_ptr
         c_uint64,  # in_sz
     ]
-    library.sol_compat_instr_execute_v1.restype = c_int
+    sol_compat_fn.restype = c_int
 
     # Prepare input data and output buffers
-    in_data = serialized_instruction_context
+    in_data = serialized_context
     in_ptr = (ctypes.c_uint8 * len(in_data))(*in_data)
     in_sz = len(in_data)
     out_sz = ctypes.c_uint64(OUTPUT_BUFFER_SIZE)
 
     # Call the function
-    result = library.sol_compat_instr_execute_v1(
+    result = sol_compat_fn(
         globals.output_buffer_pointer, ctypes.byref(out_sz), in_ptr, in_sz
     )
 
@@ -55,9 +58,23 @@ def process_instruction(
 
     # Process the output
     output_data = bytearray(globals.output_buffer_pointer[: out_sz.value])
+
+    return output_data
+
+
+def process_instruction(
+    library: ctypes.CDLL,
+    serialized_instruction_context: str,
+) -> pb.InstrEffects | None:
+
+    output_data = exec_sol_compat_call(
+        library,
+        "sol_compat_instr_execute_v1",
+        serialized_instruction_context,
+    )
+
     output_object = pb.InstrEffects()
     output_object.ParseFromString(output_data)
-
     return output_object
 
 
