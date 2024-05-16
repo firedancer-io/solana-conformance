@@ -1,7 +1,7 @@
 from test_suite.constants import OUTPUT_BUFFER_SIZE
 import test_suite.invoke_pb2 as pb
 from test_suite.instr.codec_utils import encode_input, encode_output, decode_input
-from test_suite.validation_utils import check_account_unchanged, is_valid
+from test_suite.instr.validation_utils import check_account_unchanged, is_valid
 import ctypes
 from test_suite.sol_compat import exec_sol_compat_call
 
