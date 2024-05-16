@@ -1,7 +1,5 @@
 import hashlib
 import test_suite.vm_pb2 as pbvm
-from dataclasses import dataclass
-import struct
 from syscalls_hash import test_vectors as test_vectors_hash, heap_vec
 
 OUTPUT_DIR = "./test-vectors/instr/inputs/20240425/syscalls/poseidon"
@@ -190,34 +188,37 @@ test_vectors_workflow = [
     # these are all the tests in test_vectors_poseidon
 ]
 
-print("Generating syscall poseidon tests...")
+test_vectors = _into_key_data("p", test_vectors_poseidon) \
+        + _into_key_data("w", test_vectors_workflow) \
+        + test_vectors_hash
 
-test_vectors = _into_key_data("p", test_vectors_poseidon) + _into_key_data("w", test_vectors_workflow) + test_vectors_hash
+if __name__ == "__main__":
+    print("Generating syscall poseidon tests...")
 
-for (key, test) in test_vectors:
-    heap_prefix = test.get("heap_prefix", [])
-    syscall_ctx = pbvm.SyscallContext()
-    syscall_ctx.syscall_invocation.function_name = b"sol_poseidon"
-    syscall_ctx.syscall_invocation.heap_prefix = bytes(heap_prefix)
-    syscall_ctx.vm_ctx.heap_max = len(heap_prefix)
-    syscall_ctx.vm_ctx.r1 = test.get("params", 0)
-    syscall_ctx.vm_ctx.r2 = test.get("endianness", 0)
-    syscall_ctx.vm_ctx.r3 = test.get("vals_addr", 0)
-    syscall_ctx.vm_ctx.r4 = test.get("vals_len", 0)
-    syscall_ctx.vm_ctx.r5 = test.get("result_addr", 0)
-    syscall_ctx.instr_ctx.cu_avail = test.get("cu_avail", 0)
-    syscall_ctx.instr_ctx.program_id = bytes([0]*32) # solfuzz-agave expectes a program_id
-    syscall_ctx.vm_ctx.rodata = b"x" # fd expects some bytes
+    for (key, test) in test_vectors:
+        heap_prefix = test.get("heap_prefix", [])
+        syscall_ctx = pbvm.SyscallContext()
+        syscall_ctx.syscall_invocation.function_name = b"sol_poseidon"
+        syscall_ctx.syscall_invocation.heap_prefix = bytes(heap_prefix)
+        syscall_ctx.vm_ctx.heap_max = len(heap_prefix)
+        syscall_ctx.vm_ctx.r1 = test.get("params", 0)
+        syscall_ctx.vm_ctx.r2 = test.get("endianness", 0)
+        syscall_ctx.vm_ctx.r3 = test.get("vals_addr", 0)
+        syscall_ctx.vm_ctx.r4 = test.get("vals_len", 0)
+        syscall_ctx.vm_ctx.r5 = test.get("result_addr", 0)
+        syscall_ctx.instr_ctx.cu_avail = test.get("cu_avail", 0)
+        syscall_ctx.instr_ctx.program_id = bytes([0]*32) # solfuzz-agave expectes a program_id
+        syscall_ctx.vm_ctx.rodata = b"x" # fd expects some bytes
 
-    syscall_ctx.instr_ctx.epoch_context.features.features.extend([
-        0x3cbf822ccb2eebd4,  # enable_poseidon_syscall
-        0x8ba9e9038d9fdcff,  # simplify_alt_bn128_syscall_error_codes
-    ])
+        syscall_ctx.instr_ctx.epoch_context.features.features.extend([
+            0x3cbf822ccb2eebd4,  # enable_poseidon_syscall
+            # 0x8ba9e9038d9fdcff,  # simplify_alt_bn128_syscall_error_codes
+        ])
 
-    filename = str(key) + "_" + hashlib.sha3_256(syscall_ctx.instr_ctx.data).hexdigest()[:16]
+        filename = str(key) + "_" + hashlib.sha3_256(syscall_ctx.instr_ctx.data).hexdigest()[:16]
 
-    serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
-    with open(f"{OUTPUT_DIR}/{filename}.bin", "wb") as f:
-        f.write(serialized_instr)
+        serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
+        with open(f"{OUTPUT_DIR}/{filename}.bin", "wb") as f:
+            f.write(serialized_instr)
 
-print("done!")
+    print("done!")

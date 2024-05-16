@@ -1,6 +1,5 @@
 import hashlib
 import test_suite.vm_pb2 as pbvm
-from dataclasses import dataclass
 import struct
 
 OUTPUT_DIR = "./test-vectors/instr/inputs/20240425/syscalls"
@@ -179,30 +178,31 @@ test_vectors_hash = [
 def _into_key_data(key_prefix, test_vectors):
     return [(key_prefix + str(j), data) for j, data in enumerate(test_vectors)]
 
-print("Generating syscalls sha256, keccak256, blake3 tests...")
-
 test_vectors = _into_key_data("h", test_vectors_hash)
 
-for (key, test) in test_vectors:
-    for hash in ["sha256", "keccak256", "blake3"]:
-        heap_prefix = test.get("heap_prefix", [])
-        syscall_ctx = pbvm.SyscallContext()
-        syscall_ctx.syscall_invocation.function_name = bytes("sol_" + hash, "ascii")
-        syscall_ctx.syscall_invocation.heap_prefix = bytes(heap_prefix)
-        syscall_ctx.vm_ctx.heap_max = len(heap_prefix)
-        syscall_ctx.vm_ctx.r1 = test.get("vals_addr", 0)
-        syscall_ctx.vm_ctx.r2 = test.get("vals_len", 0)
-        syscall_ctx.vm_ctx.r3 = test.get("result_addr", 0)
-        syscall_ctx.instr_ctx.cu_avail = test.get("cu_avail", 0)
-        syscall_ctx.instr_ctx.program_id = bytes([0]*32) # solfuzz-agave expectes a program_id
-        syscall_ctx.vm_ctx.rodata = b"x" # fd expects some bytes
+if __name__ == "__main__":
+    print("Generating syscalls sha256, keccak256, blake3 tests...")
 
-        syscall_ctx.instr_ctx.epoch_context.features.features.extend([0xe994a4b8eeea84f4]) # enable blake3
+    for (key, test) in test_vectors:
+        for hash in ["sha256", "keccak256", "blake3"]:
+            heap_prefix = test.get("heap_prefix", [])
+            syscall_ctx = pbvm.SyscallContext()
+            syscall_ctx.syscall_invocation.function_name = bytes("sol_" + hash, "ascii")
+            syscall_ctx.syscall_invocation.heap_prefix = bytes(heap_prefix)
+            syscall_ctx.vm_ctx.heap_max = len(heap_prefix)
+            syscall_ctx.vm_ctx.r1 = test.get("vals_addr", 0)
+            syscall_ctx.vm_ctx.r2 = test.get("vals_len", 0)
+            syscall_ctx.vm_ctx.r3 = test.get("result_addr", 0)
+            syscall_ctx.instr_ctx.cu_avail = test.get("cu_avail", 0)
+            syscall_ctx.instr_ctx.program_id = bytes([0]*32) # solfuzz-agave expectes a program_id
+            syscall_ctx.vm_ctx.rodata = b"x" # fd expects some bytes
 
-        filename = str(key) + "_" + hashlib.sha3_256(syscall_ctx.instr_ctx.data).hexdigest()[:16]
+            syscall_ctx.instr_ctx.epoch_context.features.features.extend([0xe994a4b8eeea84f4]) # enable blake3
 
-        serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
-        with open(f"{OUTPUT_DIR}/{hash}/{filename}.bin", "wb") as f:
-            f.write(serialized_instr)
+            filename = str(key) + "_" + hashlib.sha3_256(syscall_ctx.instr_ctx.data).hexdigest()[:16]
 
-print("done!")
+            serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
+            with open(f"{OUTPUT_DIR}/{hash}/{filename}.bin", "wb") as f:
+                f.write(serialized_instr)
+
+    print("done!")
