@@ -1,8 +1,4 @@
-import fd58
 import hashlib
-from eth_hash.auto import keccak
-from test_suite.codec_utils import encode_input
-import test_suite.invoke_pb2 as pb
 import test_suite.vm_pb2 as pbvm
 from dataclasses import dataclass
 import struct
@@ -21,7 +17,10 @@ def heap_vec(data_vec, start):
         res += struct.pack('<Q', len(data))
         last += len(data)
     for data in data_vec:
-        res += bytes(data, "ascii")
+        if isinstance(data, str):
+            res += bytes(data, "ascii")
+        else:
+            res += bytes(data)
     return res
 
 def exact_cu_cost(data_vec):
@@ -30,7 +29,7 @@ def exact_cu_cost(data_vec):
 # https://github.com/solana-labs/solana/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L2521
 test_hello = ["hello"]
 test_hello_world = ["hello", " world"]
-test_vectors = [
+test_vectors_hash = [
     {
         # empty hash = valid
         "heap_prefix": [0]*32,
@@ -182,9 +181,7 @@ def _into_key_data(key_prefix, test_vectors):
 
 print("Generating syscalls sha256, keccak256, blake3 tests...")
 
-print([0]*32 + heap_vec(test_hello_world, HEAP_START + 32))
-
-test_vectors = _into_key_data("a", test_vectors)
+test_vectors = _into_key_data("h", test_vectors_hash)
 
 for (key, test) in test_vectors:
     for hash in ["sha256", "keccak256", "blake3"]:
