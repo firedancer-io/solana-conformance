@@ -1,6 +1,5 @@
 from test_suite.sol_compat import (
     exec_sol_compat_call,
-    initialize_process_output_buffers,
 )
 import test_suite.invoke_pb2 as pb
 import ctypes
@@ -23,8 +22,6 @@ def process_elf_loader_ctx(
     Returns:
         - pb.ELFLoaderEffects: ELFLoaderEffects protobuf message.
     """
-    # Initialize output buffer
-    initialize_process_output_buffers()
 
     # Call sol_compat_elf_loader_v1
     out_data = exec_sol_compat_call(lib, "sol_compat_elf_loader_v1", ctx_str)

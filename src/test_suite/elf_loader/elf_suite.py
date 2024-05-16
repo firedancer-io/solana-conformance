@@ -2,6 +2,7 @@ from pathlib import Path
 import shutil
 import typer
 from .elf_loader_exec import process_elf_loader_ctx
+from test_suite.sol_compat import initialize_process_output_buffers
 import test_suite.invoke_pb2 as pb
 import ctypes
 
@@ -26,11 +27,12 @@ def create_fixtures(
 ):
     # Create the output directory, if necessary
     if out_dir.exists():
-        shutil.rmtree(globals.output_dir)
+        shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     lib = ctypes.CDLL(solana_so_fp)
     lib.sol_compat_init()
+    initialize_process_output_buffers()
 
     # Process ELFLoaderCtx corpora
     for elf_ctx_path in elf_ctx_corpora.iterdir():
@@ -41,7 +43,7 @@ def create_fixtures(
             print(f"Failed to process {elf_ctx_path}")
             continue
         elf_fixture = pb.ELFLoaderFixture()
-        elf_fixture.input.MergeFromString(elf_ctx_str)
+        elf_fixture.input.elf.data = elf_ctx_str
         elf_fixture.output.MergeFrom(elf_loader_effects)
 
         out_fp = out_dir / (elf_ctx_path.stem + ".fix")
