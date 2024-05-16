@@ -1,5 +1,5 @@
-from test_suite.codec_utils import encode_input, encode_output
-from test_suite.multiprocessing_utils import prune_execution_result
+from test_suite.instr.codec_utils import encode_input, encode_output
+from test_suite.instr.multiprocessing_utils import prune_execution_result
 import test_suite.globals as globals
 import test_suite.invoke_pb2 as pb
 from google.protobuf import text_format

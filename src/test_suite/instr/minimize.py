@@ -1,7 +1,7 @@
 from pathlib import Path
 import test_suite.invoke_pb2 as pb
 import test_suite.globals as globals
-from test_suite.multiprocessing_utils import (
+from test_suite.instr.multiprocessing_utils import (
     generate_test_case,
     process_instruction,
 )

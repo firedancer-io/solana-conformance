@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.scripts]
-solana-test-suite = "test_suite.test_suite:app"
+solana-test-suite = "test_suite.instr.test_suite:app"
 
 [project.optional-dependencies]
 test = [

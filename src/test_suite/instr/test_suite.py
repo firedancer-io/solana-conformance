@@ -1,4 +1,3 @@
-from collections import Counter
 import functools
 import shutil
 from typing import List
@@ -7,32 +6,32 @@ import ctypes
 from multiprocessing import Pool
 from pathlib import Path
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
-from test_suite.fixture_utils import (
+from test_suite.instr.fixture_utils import (
     create_fixture,
     extract_instr_context_from_fixture,
     write_fixture_to_disk,
 )
 import test_suite.invoke_pb2 as pb
-from test_suite.codec_utils import encode_output
-from test_suite.minimize_utils import minimize_single_test_case
-from test_suite.multiprocessing_utils import (
+from test_suite.instr.codec_utils import encode_output
+from test_suite.instr.minimize import minimize_single_test_case
+from test_suite.instr.multiprocessing_utils import (
     check_consistency_in_results,
     decode_single_test_case,
     generate_test_case,
-    initialize_process_output_buffers,
     lazy_starmap,
     merge_results_over_iterations,
     process_instruction,
     process_single_test_case,
     prune_execution_result,
-    get_feature_pool,
     run_test,
 )
+from test_suite.sol_compat import initialize_process_output_buffers, get_feature_pool
 import test_suite.globals as globals
 from test_suite.debugger import debug_host
 import resource
 import tqdm
 
+SOL_COMPAT_FN_NAME = "sol_compat_instr_execute_v1"
 
 app = typer.Typer(
     help="Validate instruction effects from clients using instruction context Protobuf messages."
@@ -110,7 +109,7 @@ def debug_instr(
     # Decode the file and pass it into GDB
     _, instruction_context = generate_test_case(file)
     assert instruction_context is not None, f"Unable to read {file.name}"
-    debug_host(shared_library, instruction_context, gdb=debugger)
+    debug_host(shared_library, SOL_COMPAT_FN_NAME, instruction_context, gdb=debugger)
 
 
 @app.command()

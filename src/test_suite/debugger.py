@@ -4,13 +4,13 @@ from multiprocessing import Pipe
 import signal
 import subprocess
 import os
-from test_suite.multiprocessing_utils import (
+from test_suite.sol_compat import (
     initialize_process_output_buffers,
-    process_instruction,
+    exec_sol_compat_call,
 )
 
 
-def debug_target(shared_library, test_input, pipe):
+def debug_target(shared_library, sol_compat_fn_name: str, test_input, pipe):
     initialize_process_output_buffers()
 
     # Signal to parent that we are ready for the debugger
@@ -23,11 +23,12 @@ def debug_target(shared_library, test_input, pipe):
 
     lib = ctypes.CDLL(shared_library)
     lib.sol_compat_init()
-    process_instruction(lib, test_input)
+    # process_instruction(lib, test_input)
+    exec_sol_compat_call(lib, sol_compat_fn_name, test_input)
     lib.sol_compat_fini()
 
 
-def debug_host(shared_library, instruction_context, gdb):
+def debug_host(shared_library, fn_name, context_str, gdb):
     # Sets up the following debug environment:
     #
     #   +-------------------------------+
@@ -48,7 +49,7 @@ def debug_host(shared_library, instruction_context, gdb):
     # Spawn the Python interpreter
     pipe, child_pipe = Pipe()
     target = multiprocessing.Process(
-        target=debug_target, args=(shared_library, instruction_context, child_pipe)
+        target=debug_target, args=(shared_library, fn_name, context_str, child_pipe)
     )
     target.start()
     # Wait for a signal that the child process is ready

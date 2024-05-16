@@ -1,9 +1,7 @@
 import fd58
 import hashlib
 from eth_hash.auto import keccak
-from test_suite.codec_utils import encode_input
 import test_suite.invoke_pb2 as pb
-from dataclasses import dataclass
 import datetime
 import requests
 
@@ -18,9 +16,9 @@ test_vectors_agave = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     # test_invalid_offsets
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0] + [ 0 ] * 100,
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] + [ 0 ] * 100,
-    [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0] + [ 0 ] * 100,
+    [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0] + [0] * 100,
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] + [0] * 100,
+    [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0] + [0] * 100,
     # test_signature_offset
     [1, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [1, 37, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -42,26 +40,22 @@ test_vectors_agave = [
 # manual code cov
 test_vectors_manual = [
     # inconsistent between ed25519 and secp256k1
-    [ 0 ],    # ed25519: err, secp256k1: ok
-    [ 0, 0 ], # ed25519: ok,  secp256k1: err
+    [0],  # ed25519: err, secp256k1: ok
+    [0, 0],  # ed25519: ok,  secp256k1: err
     # InvalidInstructionDataSize (result: 5)
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L937-L947
     # note: this is different behavior than ed25519
     [],
-    [ 0, 0, 0 ],
-
+    [0, 0, 0],
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L951-L953
-    [ 1 ],
-    [ 1, 0, 0 ],
-
+    [1],
+    [1, 0, 0],
     # InvalidSignature (result: 3)
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L960-L961
     # ??? I don't think this can ever happen?
-
     # InvalidDataOffsets (result: 4)
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L965-L967
     # tested above
-
     # InvalidSignature (result: 3)
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L971-L973
     # tested above
@@ -74,13 +68,11 @@ test_vectors_manual = [
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L981C43-L981C60
     [1, 32, 0, 0, 12, 0, 0, 97, 0, 5, 0, 0, 129, 246, 169, 169, 105, 76, 208, 128, 223, 135, 27, 68, 249, 42, 201, 69, 55, 2, 173, 101, 14, 196, 198, 193, 237, 0, 14, 83, 87, 183, 25, 69, 136, 43, 251, 73, 44, 194, 141, 230, 102, 16, 220, 6, 46, 214, 214, 125, 120, 16, 103, 254, 39, 121, 88, 223, 156, 229, 186, 211, 38, 101, 196, 233, 125, 150, 136, 177, 123, 197, 48, 219, 28, 26, 10, 76, 198, 127, 91, 80, 88, 191, 6, 3, 4, 104, 101, 108, 108, 111],
     #                                       \--- pubkey (eth)                                                                     ---/  \--- sig                                                                                                                                                                                                                                                                                      ---/  \--- msg           ---/
-
     # InvalidDataOffsets (result: 4)
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L984-L989
     # tested above
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L992-L997
     # tested above
-
     # InvalidSignature (result: 3)
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/src/secp256k1_instruction.rs#L1003-L1008
     # signature fails to verify
@@ -92,17 +84,22 @@ test_vectors_manual = [
     #                                       \--- pubkey (eth)                                                                     ---/  \--- sig                                                                                                                                                                                                                                                                                      ---/  \--- msg           ---/
 ]
 
+
 def _into_key_data(key_prefix, test_vectors):
     return [(key_prefix + str(j), data) for j, data in enumerate(test_vectors)]
 
+
 print("Generating secp256k1 tests...")
 
-test_vectors = _into_key_data("a", test_vectors_agave) \
-    + _into_key_data("m", test_vectors_manual)
+test_vectors = _into_key_data("a", test_vectors_agave) + _into_key_data(
+    "m", test_vectors_manual
+)
 
 program_id = fd58.dec32(bytes(program_id, "utf-8"))
-program_owner = fd58.dec32(bytes("NativeLoader1111111111111111111111111111111", "utf-8"))
-for (key, test) in test_vectors:
+program_owner = fd58.dec32(
+    bytes("NativeLoader1111111111111111111111111111111", "utf-8")
+)
+for key, test in test_vectors:
     instr_ctx = pb.InstrContext()
     instr_ctx.program_id = program_id
     instr_ctx.data = bytes(test)
@@ -112,7 +109,7 @@ for (key, test) in test_vectors:
     account.owner = program_owner
     instr_ctx.accounts.extend([account])
     instr_ctx.instr_accounts.extend([pb.InstrAcct()])
-    instr_ctx.epoch_context.features.features.extend([0x1a6958db2ff09870])
+    instr_ctx.epoch_context.features.features.extend([0x1A6958DB2FF09870])
 
     filename = str(key) + "_" + hashlib.sha3_256(instr_ctx.data).hexdigest()[:16]
 
