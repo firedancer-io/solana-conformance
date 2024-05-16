@@ -104,3 +104,30 @@ message InstrFixture {
   InstrContext input = 1;
   InstrEffects output = 2;
 }
+
+message ELFBinary {
+    bytes data = 1;
+}
+
+// Wrapper for the ELF binary and the features that the loader should use
+// Note that we currently hardcode the features to be used by the loader,
+// so features isn't actually used yet.
+message ELFLoaderCtx {
+    ELFBinary elf = 1;
+    FeatureSet features = 2;
+}
+
+// Captures the results of a elf binary load.
+// Structurally similar to fd_sbpf_program_t
+message ELFLoaderEffects {
+    bytes rodata = 1;
+    uint64 rodata_sz = 2;
+
+    // bytes text = 3; // not needed, just points to a region in rodata
+    uint64 text_cnt = 4;
+    uint64 text_off = 5;
+
+    uint64 entry_pc = 6;
+
+    repeated uint64 calldests = 7;
+}

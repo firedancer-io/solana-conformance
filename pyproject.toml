@@ -18,6 +18,7 @@ dependencies = [
 
 [project.scripts]
 solana-test-suite = "test_suite.instr.test_suite:app"
+elf-proto-tools = "test_suite.elf_loader.elf_proto_converter:main"
 
 [project.optional-dependencies]
 test = [
@@ -34,5 +35,5 @@ dev = [
 ]
 
 [build-system]
-requires = ['setuptools']
+requires = ["setuptools", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
