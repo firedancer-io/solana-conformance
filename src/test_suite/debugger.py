@@ -63,7 +63,7 @@ def debug_host(shared_library, fn_name, context_str, gdb):
         # As soon as the target library gets loaded, set a breakpoint
         # for the newly appeared executor function
         "set breakpoint pending on",
-        "break sol_compat_instr_execute_v1",
+        f"break {fn_name}",
         # GDB stops the process when attaching, let it continue
         "continue",
         # ... At this point, the child process has SIGSTOP'ed itself
