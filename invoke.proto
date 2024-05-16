@@ -131,3 +131,8 @@ message ELFLoaderEffects {
 
     repeated uint64 calldests = 7;
 }
+
+message ELFLoaderFixture {
+    ELFLoaderCtx input = 1;
+    ELFLoaderEffects output = 2;
+}
