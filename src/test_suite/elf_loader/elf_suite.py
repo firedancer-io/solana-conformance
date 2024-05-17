@@ -43,7 +43,7 @@ def create_fixtures(
             print(f"Failed to process {elf_ctx_path}")
             continue
         elf_fixture = pb.ELFLoaderFixture()
-        elf_fixture.input.elf.data = elf_ctx_str
+        elf_fixture.input.MergeFromString(elf_ctx_str)
         elf_fixture.output.MergeFrom(elf_loader_effects)
 
         out_fp = out_dir / (elf_ctx_path.stem + ".fix")
