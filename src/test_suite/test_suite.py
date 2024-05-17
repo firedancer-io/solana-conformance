@@ -472,6 +472,12 @@ def run_tests(
     log_chunk_size: int = typer.Option(
         10000, "--chunk-size", "-c", help="Number of test results per file"
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Verbose output: log failed test cases",
+    ),
 ):
     # Add Solana library to shared libraries
     shared_libraries = [solana_shared_library] + shared_libraries
@@ -516,6 +522,7 @@ def run_tests(
     passed = 0
     failed = 0
     skipped = 0
+    failed_tests = []
     target_log_files = {target: None for target in shared_libraries}
     for file_stem, status, stringified_results in test_case_results:
         if stringified_results is None:
@@ -543,6 +550,7 @@ def run_tests(
             passed += 1
         elif status == -1:
             failed += 1
+            failed_tests.append(file_stem)
 
     print("Cleaning up...")
     for target in shared_libraries:
@@ -555,6 +563,8 @@ def run_tests(
 
     print(f"Total test cases: {passed + failed + skipped}")
     print(f"Passed: {passed}, Failed: {failed}, Skipped: {skipped}")
+    if verbose:
+        print(f"Failed tests: {failed_tests}")
 
 
 @app.command()
