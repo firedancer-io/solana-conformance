@@ -472,6 +472,12 @@ def run_tests(
     log_chunk_size: int = typer.Option(
         10000, "--chunk-size", "-c", help="Number of test results per file"
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Verbose output: log failed test cases",
+    ),
 ):
     # Add Solana library to shared libraries
     shared_libraries = [solana_shared_library] + shared_libraries
@@ -557,7 +563,9 @@ def run_tests(
 
     print(f"Total test cases: {passed + failed + skipped}")
     print(f"Passed: {passed}, Failed: {failed}, Skipped: {skipped}")
-    print(f"Failed tests: {failed_tests}")
+    if verbose:
+        print(f"Failed tests: {failed_tests}")
+
 
 @app.command()
 def decode_protobuf(
