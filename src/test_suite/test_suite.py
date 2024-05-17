@@ -516,6 +516,7 @@ def run_tests(
     passed = 0
     failed = 0
     skipped = 0
+    failed_tests = []
     target_log_files = {target: None for target in shared_libraries}
     for file_stem, status, stringified_results in test_case_results:
         if stringified_results is None:
@@ -543,6 +544,7 @@ def run_tests(
             passed += 1
         elif status == -1:
             failed += 1
+            failed_tests.append(file_stem)
 
     print("Cleaning up...")
     for target in shared_libraries:
@@ -555,7 +557,7 @@ def run_tests(
 
     print(f"Total test cases: {passed + failed + skipped}")
     print(f"Passed: {passed}, Failed: {failed}, Skipped: {skipped}")
-
+    print(f"Failed tests: {failed_tests}")
 
 @app.command()
 def decode_protobuf(
