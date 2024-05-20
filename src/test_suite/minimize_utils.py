@@ -2,7 +2,7 @@ from pathlib import Path
 import test_suite.invoke_pb2 as pb
 import test_suite.globals as globals
 from test_suite.multiprocessing_utils import (
-    generate_test_case,
+    read_instr,
     process_instruction,
 )
 
@@ -18,7 +18,7 @@ def minimize_single_test_case(test_file: Path) -> int:
     Returns:
         int: 0 on failure, 1 on success
     """
-    _, serialized_instruction_context = generate_test_case(test_file)
+    _, serialized_instruction_context = read_instr(test_file)
 
     # Skip if input is invalid
     if serialized_instruction_context is None:

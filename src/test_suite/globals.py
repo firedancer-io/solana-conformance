@@ -21,3 +21,9 @@ feature_pool = None
 
 # (For fixtures) Whether to output in human-readable format
 readable = False
+
+# (For fixtures) Whether to organize fixtures by program type
+organize_fixture_dir = False
+
+# (For fixtures) Whether to only keep passing tests
+only_keep_passing = False
