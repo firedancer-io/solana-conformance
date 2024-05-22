@@ -43,18 +43,21 @@ Optionally, instruction context messages may also be left in the original Protob
 To run the test suite, use the following command:
 
 ```sh
-solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_target.so> --target <firedancer> [--target <target_2> ...] --output-dir <log_output_dir> --num-processes <num_processes> --chunk-size <chunk_size> [--randomize-output-buffer]
+solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_target.so> --target <firedancer.so> [--target <target_2> ...] --output-dir <log_output_dir> --num-processes <num_processes> --chunk-size <chunk_size> [--randomize-output-buffer]
 ```
+
+You can provide both `InstrContext` and `InstrFixture` within `--input-dir` - parsing is taken care of depending on the file extension `.bin` for `InstrContext` and `.fix` for `InstrFixture`.
 
 | Argument        | Description                                                                                         |
 |-----------------|-----------------------------------------------------------------------------------------------------|
-| `--input-dir`   | Input directory containing instruction context messages |
+| `--input-dir`   | Input directory containing instruction context or fixture messages |
 | `--solana-target` | Path to Solana Agave shared object (.so) target file            |
 | `--target`      | Additional shared object (.so) target file paths  |
 | `--output-dir`  | Log output directory for test results |
 | `--num-processes`  | Number of processes to use |
 | `--randomize-output-buffer`| Randomizes bytes in output buffer before shared library execution                                                        |
 | `--chunk-size`  | Number of test results per log file |
+| `--verbose`   | Verbose output: log failed test cases |
 
 **Note:** Each `.so` target file name should be unique.
 
@@ -111,16 +114,22 @@ solana-test-suite minimize-tests --input-dir <input_dir> --solana-target <solana
 Create full test fixtures containing both instruction context and effects. Effects are computed by running instruction context through `--solana-target`. Fixtures with `None` values for instruction context/effects are not included.
 
 ```sh
-solana-test-suite create-fixtures --input-dir <input_dir> --solana-target <solana_target.so> --output-dir <fixtures_output_dir> --num-processes <num_processes> [--readable]
+solana-test-suite create-fixtures --input-dir <input_dir> --solana-target <solana_target.so> --target <firedancer.so> [--target <target_2> ...] --output-dir <fixtures_output_dir> --num-processes <num_processes> [--readable] [--keep-passing] [--group-by-program]
 ```
+
+You have an additional option to produce fixtures for only passing test cases (makes it easier to produce fixtures from larger batches of new-passing mismatches).
+
 
 | Argument        | Description                                                                                         |
 |-----------------|-----------------------------------------------------------------------------------------------------|
 | `--input-dir`   | Input directory containing instruction context messages |
 | `--solana-target` | Path to Solana Agave shared object (.so) target file            |
+| `--target`  | Shared object (.so) target file paths (pairs with `--keep-passing`)
 | `--output-dir`  | Instruction fixtures dumping directory |
 | `--num-processes`  | Number of processes to use |
 | `--readable` | Output fixtures in human-readable format |
+| `--keep-passing` | Only keep passing test cases |
+| `--group-by-program` | Group fixture output by program type |
 
 
 ### Create Instruction Context from Fixtures
@@ -136,23 +145,6 @@ solana-test-suite instr-from-fixtures --input-dir <input_dir> --solana-target <s
 | `--input-dir`   | Input directory containing instruction fixture messages |
 | `--output-dir`  | Output directory for instr contexts |
 | `--num-processes`  | Number of processes to use |
-
-### Validation
-
-Used to detect potential memory corruption issues / inconsistent outputs. The program will run each supplied library `num-iteration` times on the entire test suite. Use the following:
-
-```sh
-solana-test-suite check-consistency --input-dir <input_dir> --target <firedancer> [--target <target_2> ...] --output-dir <log_output_dir> --num-iterations <num_iterations> --num-processes <num_processes> [--randomize-output-buffer]
-```
-
-| Argument                   | Description                                                                                                              |
-|----------------------------|--------------------------------------------------------------------------------------------------------------------------|
-| `--input-dir`              | Input directory containing instruction context messages                                       |
-| `--target`                 | Additional shared object (.so) target file paths                                                                         |
-| `--output-dir`             | Log output directory for test results                                                                                    |
-| `--num-iterations`         | Number of consistency iterations to run for each library                                                                 |
-| `--num-processes`          | Number of processes to use                                                                                               |
-| `--randomize-output-buffer`| Randomizes bytes in output buffer before shared library execution                                                        |
 
 
 ### Uninstalling

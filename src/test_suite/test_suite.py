@@ -6,24 +6,19 @@ import typer
 import ctypes
 from multiprocessing import Pool
 from pathlib import Path
-from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
+from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH, NATIVE_PROGRAM_MAPPING
 from test_suite.fixture_utils import (
     create_fixture,
     extract_instr_context_from_fixture,
-    write_fixture_to_disk,
 )
 import test_suite.invoke_pb2 as pb
 from test_suite.codec_utils import encode_output
 from test_suite.minimize_utils import minimize_single_test_case
 from test_suite.multiprocessing_utils import (
-    check_consistency_in_results,
     decode_single_test_case,
-    generate_test_case,
+    read_instr,
     initialize_process_output_buffers,
-    lazy_starmap,
-    merge_results_over_iterations,
     process_instruction,
-    process_single_test_case,
     prune_execution_result,
     get_feature_pool,
     run_test,
@@ -55,7 +50,7 @@ def exec_instr(
         help="Randomizes bytes in output buffer before shared library execution",
     ),
 ):
-    _, instruction_context = generate_test_case(file)
+    instruction_context = read_instr(file)
     assert instruction_context is not None, f"Unable to read {file.name}"
 
     # Initialize output buffers and shared library
@@ -73,9 +68,9 @@ def exec_instr(
     instruction_effects = instruction_effects.SerializeToString(deterministic=True)
 
     # Prune execution results
-    _, pruned_instruction_effects = prune_execution_result(
-        (file.stem, instruction_context),
-        (file.stem, {shared_library: instruction_effects}),
+    pruned_instruction_effects = prune_execution_result(
+        instruction_context,
+        {shared_library: instruction_effects},
     )
     parsed_instruction_effects = pb.InstrEffects()
     parsed_instruction_effects.ParseFromString(
@@ -108,129 +103,9 @@ def debug_instr(
     print(f"Processing {file.name}...")
 
     # Decode the file and pass it into GDB
-    _, instruction_context = generate_test_case(file)
+    instruction_context = read_instr(file)
     assert instruction_context is not None, f"Unable to read {file.name}"
     debug_host(shared_library, instruction_context, gdb=debugger)
-
-
-@app.command()
-def check_consistency(
-    input_dir: Path = typer.Option(
-        Path("corpus8"),
-        "--input-dir",
-        "-i",
-        help="Input directory containing instruction context messages",
-    ),
-    shared_libraries: List[Path] = typer.Option(
-        [], "--target", "-t", help="Shared object (.so) target file paths"
-    ),
-    output_dir: Path = typer.Option(
-        Path("consistency_results"),
-        "--output-dir",
-        "-o",
-        help="Output directory for test results",
-    ),
-    num_iterations: int = typer.Option(
-        2,
-        "--num-iterations",
-        "-n",
-        help="Number of consistency iterations to run for each library",
-    ),
-    num_processes: int = typer.Option(
-        4, "--num-processes", "-p", help="Number of processes to use"
-    ),
-    randomize_output_buffer: bool = typer.Option(
-        False,
-        "--randomize-output-buffer",
-        "-r",
-        help="Randomizes bytes in output buffer before shared library execution",
-    ),
-):
-    # Initialize globals
-    globals.output_dir = output_dir
-    globals.n_iterations = num_iterations
-
-    # Create the output directory, if necessary
-    if globals.output_dir.exists():
-        shutil.rmtree(globals.output_dir)
-    globals.output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Generate the test cases in parallel from files on disk
-    print("Reading test files...")
-    with Pool(processes=num_processes) as pool:
-        execution_contexts = pool.map(generate_test_case, input_dir.iterdir())
-
-    results_per_iteration = []
-    for iteration in range(globals.n_iterations):
-        print(f"Starting iteration {iteration}...")
-
-        # Use the target libraries global map to store shared libraries
-        for target in shared_libraries:
-            lib = ctypes.CDLL(target)
-            lib.sol_compat_init()
-            globals.target_libraries[target] = lib
-
-            # Initialize the libraries for each iteration
-            for iteration in range(globals.n_iterations):
-                # Make output directory
-                (globals.output_dir / target.stem / str(iteration)).mkdir(
-                    parents=True, exist_ok=True
-                )
-
-        # Process the test cases in parallel through shared libraries for n interations
-        print("Executing tests...")
-        with Pool(
-            processes=num_processes,
-            initializer=initialize_process_output_buffers,
-            initargs=(randomize_output_buffer,),
-        ) as pool:
-            execution_results = pool.starmap(
-                process_single_test_case, execution_contexts
-            )
-            results_per_iteration.append(execution_results)
-
-        print("Cleaning up...")
-        for target in shared_libraries:
-            globals.target_libraries[target].sol_compat_fini()
-
-    # Build the results properly
-    with Pool(processes=num_processes) as pool:
-        execution_results = pool.map(
-            merge_results_over_iterations, zip(*results_per_iteration)
-        )
-
-    # Process the test results in parallel
-    print("Building test results...")
-    with Pool(processes=num_processes) as pool:
-        test_case_results = pool.starmap(
-            check_consistency_in_results, execution_results
-        )
-
-    # Compute per-library results
-    library_results = {}
-    for library in globals.target_libraries:
-        library_results[library] = {"passed": 0, "failed": 0, "skipped": 0}
-
-    # Build the results
-    for result in test_case_results:
-        for library, outcome in result.items():
-            library_results[library]["passed"] += outcome == 1
-            library_results[library]["failed"] += outcome == -1
-            library_results[library]["skipped"] += outcome == 0
-
-    peak_memory_usage_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    print(f"Peak Memory Usage: {peak_memory_usage_kb / 1024} MB")
-
-    print("-" * LOG_FILE_SEPARATOR_LENGTH)
-
-    for library in globals.target_libraries:
-        results = library_results[library]
-        print(f"{library} results")
-        print(f"Total test cases: {sum(results.values())}")
-        print(
-            f"Passed: {results['passed']}, Failed: {results['failed']}, Skipped: {results['skipped']}"
-        )
-        print("-" * LOG_FILE_SEPARATOR_LENGTH)
 
 
 @app.command()
@@ -317,20 +192,21 @@ def instr_from_fixtures(
         shutil.rmtree(globals.output_dir)
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
-    num_test_cases = len(list(input_dir.iterdir()))
+    test_cases = list(input_dir.iterdir())
+    num_test_cases = len(test_cases)
 
     print("Converting to InstrContext...")
-    execution_contexts = []
+    results = []
     with Pool(processes=num_processes) as pool:
         for result in tqdm.tqdm(
-            pool.imap(extract_instr_context_from_fixture, input_dir.iterdir()),
+            pool.imap(extract_instr_context_from_fixture, test_cases),
             total=num_test_cases,
         ):
-            execution_contexts.append(result)
+            results.append(result)
 
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
-    print(f"{len(execution_contexts)} total files seen")
-    print(f"{sum(execution_contexts)} files successfully written")
+    print(f"{len(results)} total files seen")
+    print(f"{sum(results)} files successfully written")
 
 
 @app.command()
@@ -347,6 +223,12 @@ def create_fixtures(
         "-s",
         help="Solana (or ground truth) shared object (.so) target file path",
     ),
+    shared_libraries: List[Path] = typer.Option(
+        [],
+        "--target",
+        "-t",
+        help="Shared object (.so) target file paths (pairs with --keep-passing)",
+    ),
     output_dir: Path = typer.Option(
         Path("test_fixtures"),
         "--output-dir",
@@ -359,11 +241,22 @@ def create_fixtures(
     readable: bool = typer.Option(
         False, "--readable", "-r", help="Output fixtures in human-readable format"
     ),
+    only_keep_passing: bool = typer.Option(
+        False, "--keep-passing", "-k", help="Only keep passing test cases"
+    ),
+    organize_fixture_dir: bool = typer.Option(
+        False, "--group-by-program", "-g", help="Group fixture output by program type"
+    ),
 ):
+    # Add Solana library to shared libraries
+    shared_libraries = [solana_shared_library] + shared_libraries
+
     # Specify globals
     globals.output_dir = output_dir
     globals.solana_shared_library = solana_shared_library
     globals.readable = readable
+    globals.only_keep_passing = only_keep_passing
+    globals.organize_fixture_dir = organize_fixture_dir
 
     # Create the output directory, if necessary
     if globals.output_dir.exists():
@@ -371,58 +264,25 @@ def create_fixtures(
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
     # Initialize shared library
-    globals.solana_shared_library = solana_shared_library
-    lib = ctypes.CDLL(solana_shared_library)
-    lib.sol_compat_init()
-    globals.target_libraries[solana_shared_library] = lib
+    for target in shared_libraries:
+        # Load in and initialize shared libraries
+        lib = ctypes.CDLL(target)
+        lib.sol_compat_init()
+        globals.target_libraries[target] = lib
 
-    num_test_cases = len(list(input_dir.iterdir()))
+    test_cases = list(input_dir.iterdir())
+    num_test_cases = len(test_cases)
 
     # Generate the test cases in parallel from files on disk
-    print("Reading test files...")
-    execution_contexts = []
-    with Pool(processes=num_processes) as pool:
-        for result in tqdm.tqdm(
-            pool.imap(generate_test_case, input_dir.iterdir()), total=num_test_cases
-        ):
-            execution_contexts.append(result)
-
-    # Process the test cases in parallel through shared libraries
-    print("Executing tests...")
-    execution_results = []
+    print("Creating fixtures...")
+    write_results = []
     with Pool(
         processes=num_processes, initializer=initialize_process_output_buffers
     ) as pool:
         for result in tqdm.tqdm(
             pool.imap(
-                functools.partial(lazy_starmap, function=process_single_test_case),
-                execution_contexts,
-            ),
-            total=num_test_cases,
-        ):
-            execution_results.append(result)
-
-    # Prune effects and create fixtures
-    print("Creating fixtures...")
-    execution_fixtures = []
-    with Pool(processes=num_processes) as pool:
-        for result in tqdm.tqdm(
-            pool.imap(
-                functools.partial(lazy_starmap, function=create_fixture),
-                zip(execution_contexts, execution_results),
-            ),
-            total=num_test_cases,
-        ):
-            execution_fixtures.append(result)
-
-    # Write fixtures to disk
-    print("Writing results to disk...")
-    write_results = []
-    with Pool(processes=num_processes) as pool:
-        for result in tqdm.tqdm(
-            pool.imap(
-                functools.partial(lazy_starmap, function=write_fixture_to_disk),
-                execution_fixtures,
+                create_fixture,
+                test_cases,
             ),
             total=num_test_cases,
         ):
@@ -430,7 +290,8 @@ def create_fixtures(
 
     # Clean up
     print("Cleaning up...")
-    lib.sol_compat_fini()
+    for target in shared_libraries:
+        globals.target_libraries[target].sol_compat_fini()
 
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
     print(f"{len(write_results)} total files seen")
@@ -443,7 +304,7 @@ def run_tests(
         Path("corpus8"),
         "--input-dir",
         "-i",
-        help="Input directory containing instruction context messages",
+        help="Input directory containing instruction context or fixture messages",
     ),
     solana_shared_library: Path = typer.Option(
         Path("impl/lib/libsolfuzz_agave_v2.0.so"),
@@ -502,7 +363,8 @@ def run_tests(
         log_dir = globals.output_dir / target.stem
         log_dir.mkdir(parents=True, exist_ok=True)
 
-    num_test_cases = len(list(input_dir.iterdir()))
+    test_cases = list(input_dir.iterdir())
+    num_test_cases = len(test_cases)
 
     # Process the test results in parallel
     print("Running tests...")
@@ -513,7 +375,7 @@ def run_tests(
         initargs=(randomize_output_buffer,),
     ) as pool:
         for result in tqdm.tqdm(
-            pool.imap(run_test, input_dir.iterdir()),
+            pool.imap(run_test, test_cases),
             total=num_test_cases,
         ):
             test_case_results.append(result)

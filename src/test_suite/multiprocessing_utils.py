@@ -2,17 +2,13 @@ from dataclasses import dataclass, field
 from test_suite.constants import OUTPUT_BUFFER_SIZE
 import test_suite.invoke_pb2 as pb
 from test_suite.codec_utils import encode_input, encode_output, decode_input
-from test_suite.validation_utils import check_account_unchanged, is_valid
+from test_suite.validation_utils import check_account_unchanged
 import ctypes
 from ctypes import c_uint64, c_int, POINTER, Structure
 from pathlib import Path
 import test_suite.globals as globals
 from google.protobuf import text_format
 import os
-
-
-def lazy_starmap(args, function):
-    return function(*args)
 
 
 def process_instruction(
@@ -61,15 +57,15 @@ def process_instruction(
     return output_object
 
 
-def generate_test_case(test_file: Path) -> tuple[str, str | None]:
+def read_instr(test_file: Path) -> str | None:
     """
     Reads in test files and generates an InstrContext Protobuf object for a test case.
 
     Args:
-        - test_file (Path): Path to the file containing serialized instruction contexts.
+        - test_file (Path): Path to the instruction context message.
 
     Returns:
-        - tuple[str, str | None]: Tuple of file stem and serialized instruction context, if exists.
+        - str | None: Serialized instruction context, or None if reading failed.
     """
     # Try to read in first as binary-encoded Protobuf messages
     try:
@@ -91,13 +87,46 @@ def generate_test_case(test_file: Path) -> tuple[str, str | None]:
 
     if instruction_context is None:
         # Unreadable file, skip it
-        return test_file.stem, None
+        return None
 
     # Discard unknown fields
     instruction_context.DiscardUnknownFields()
 
     # Serialize instruction context to string (pickleable)
-    return test_file.stem, instruction_context.SerializeToString(deterministic=True)
+    return instruction_context.SerializeToString(deterministic=True)
+
+
+def read_fixture(fixture_file: Path) -> str | None:
+    """
+    Same as read_instr, but for InstrFixture protobuf messages.
+
+    DOES NOT SUPPORT HUMAN READABLE MESSAGES!!!
+
+    Args:
+        - fixture_file (Path): Path to the instruction fixture message.
+
+    Returns:
+        - str | None: Serialized instruction fixture, or None if reading failed.
+    """
+    # Try to read in first as binary-encoded Protobuf messages
+    try:
+        # Read in binary Protobuf messages
+        with open(fixture_file, "rb") as f:
+            instruction_fixture = pb.InstrFixture()
+            instruction_fixture.ParseFromString(f.read())
+    except:
+        # Unable to read message, skip and continue
+        instruction_fixture = None
+
+    if instruction_fixture is None:
+        # Unreadable file, skip it
+        return None
+
+    # Discard unknown fields
+    instruction_fixture.DiscardUnknownFields()
+
+    # Serialize instruction fixture to string (pickleable)
+    return instruction_fixture.SerializeToString(deterministic=True)
 
 
 def decode_single_test_case(test_file: Path) -> int:
@@ -110,7 +139,7 @@ def decode_single_test_case(test_file: Path) -> int:
     Returns:
         - int: 1 if successfully decoded and written, 0 if skipped.
     """
-    _, serialized_instruction_context = generate_test_case(test_file)
+    serialized_instruction_context = read_instr(test_file)
 
     # Skip if input is invalid
     if serialized_instruction_context is None:
@@ -129,24 +158,21 @@ def decode_single_test_case(test_file: Path) -> int:
 
 
 def process_single_test_case(
-    file_stem: str, serialized_instruction_context: str | None
-) -> tuple[str, dict[str, str | None] | None]:
+    serialized_instruction_context: str | None,
+) -> dict[str, str | None] | None:
     """
     Process a single execution context (file, serialized instruction context) through
-    all target libraries and returns serialized instruction effects. This
-    function is called by processes.
+    all target libraries and returns serialized instruction effects.
 
     Args:
-        - file_stem (str): Stem of file containing serialized instruction context.
         - serialized_instruction_context (str | None): Serialized instruction context.
 
     Returns:
-        - tuple[str, dict[str, str | None] | None]: Tuple of file stem and dictionary of target library names
-            and instruction effects.
+        - dict[str, str | None] | None: Dictionary of target library names and instruction effects.
     """
     # Mark as skipped if instruction context doesn't exist
     if serialized_instruction_context is None:
-        return file_stem, None
+        return None
 
     # Execute test case on each target library
     results = {}
@@ -161,7 +187,7 @@ def process_single_test_case(
         )
         results[target] = result
 
-    return file_stem, results
+    return results
 
 
 def merge_results_over_iterations(results: tuple) -> tuple[str, dict]:
@@ -193,30 +219,24 @@ def merge_results_over_iterations(results: tuple) -> tuple[str, dict]:
 
 
 def prune_execution_result(
-    file_serialized_instruction_context: tuple[str, str],
-    file_serialized_instruction_effects: tuple[str, dict[str, str | None]],
-) -> tuple[str, dict]:
+    serialized_instruction_context: str,
+    targets_to_serialized_instruction_effects: dict[str, str | None],
+) -> dict[str, str | None] | None:
     """
     Prune execution result to only include actually modified accounts.
 
     Args:
-        - file_serialized_instruction_context (tuple[str, str]): Tuple of file stem and serialized instruction context.
-        - file_serialized_instruction_effects (tuple[str, dict[str, str | None]]): Tuple of file stem and dictionary of target library names and serialized instruction effects.
+        - serialized_instruction_context (str): Serialized instruction context.
+        - serialized_instruction_effects (dict[str, str | None]): Dictionary of target library names and serialized instruction effects.
 
     Returns:
-        - tuple[str, dict]: Tuple of file stem and serialized pruned instruction effects for each target.
+        - dict[str, str | None] | None: Serialized pruned instruction effects for each target.
     """
-    file_stem, serialized_instruction_context = file_serialized_instruction_context
     if serialized_instruction_context is None:
-        return file_stem, None
+        return None
 
     instruction_context = pb.InstrContext()
     instruction_context.ParseFromString(serialized_instruction_context)
-
-    file_stem_2, targets_to_serialized_instruction_effects = (
-        file_serialized_instruction_effects
-    )
-    assert file_stem == file_stem_2, f"{file_stem}, {file_stem_2}"
 
     targets_to_serialized_pruned_instruction_effects = {}
     for (
@@ -249,7 +269,7 @@ def prune_execution_result(
             instruction_effects.SerializeToString(deterministic=True)
         )
 
-    return file_stem, targets_to_serialized_pruned_instruction_effects
+    return targets_to_serialized_pruned_instruction_effects
 
 
 def check_consistency_in_results(file_stem: str, results: dict) -> dict[str, bool]:
@@ -302,26 +322,22 @@ def check_consistency_in_results(file_stem: str, results: dict) -> dict[str, boo
     return results_per_target
 
 
-def build_test_results(
-    file_stem: str, results: dict[str, str | None]
-) -> tuple[str, int, dict | None]:
+def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None]:
     """
     Build a single result of single test execution and returns whether the test passed or failed.
 
     Args:
-        - file_stem (str): File stem of the test case.
         - results (dict[str, str | None]): Dictionary of target library names and serialized instruction effects.
 
     Returns:
-        - tuple[str, int, dict | None]: Tuple of:
-            - File stem
+        - tuple[int, dict | None]: Tuple of:
             - 1 if passed, -1 if failed, 0 if skipped
             - Dictionary of target library names and file-dumpable serialized instruction effects
     """
     # If no results or Agave rejects input, mark case as skipped
     if results is None:
         # Mark as skipped (0)
-        return file_stem, 0, None
+        return 0, None
 
     outputs = {target: "None\n" for target in results}
 
@@ -345,7 +361,7 @@ def build_test_results(
     )
 
     # 1 = passed, -1 = failed
-    return file_stem, 1 if test_case_passed else -1, outputs
+    return 1 if test_case_passed else -1, outputs
 
 
 def initialize_process_output_buffers(randomize_output_buffer=False):
@@ -410,7 +426,14 @@ def run_test(test_file: Path) -> tuple[str, int, dict | None]:
             - 1 if passed, -1 if failed, 0 if skipped
             - Dictionary of target library names and file-dumpable serialized instruction effects
     """
-    test_case = generate_test_case(test_file)
-    results = process_single_test_case(*test_case)
-    pruned_results = prune_execution_result(test_case, results)
-    return build_test_results(*pruned_results)
+    # Process fixtures through this entrypoint as well
+    if test_file.suffix == ".fix":
+        fixture = pb.InstrFixture()
+        serialized_fixture = read_fixture(test_file)
+        fixture.MergeFromString(serialized_fixture)
+        serialized_instr_context = fixture.input.SerializeToString(deterministic=True)
+    else:
+        serialized_instr_context = read_instr(test_file)
+    results = process_single_test_case(serialized_instr_context)
+    pruned_results = prune_execution_result(serialized_instr_context, results)
+    return test_file.stem, *build_test_results(pruned_results)
