@@ -1,5 +1,5 @@
 import fd58
-from test_suite.codec_utils import encode_input, encode_output
+from test_suite.instr.codec_utils import encode_input, encode_output
 from test_suite.constants import NATIVE_PROGRAM_MAPPING
 from test_suite.multiprocessing_utils import (
     build_test_results,

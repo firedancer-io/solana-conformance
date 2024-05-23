@@ -12,7 +12,7 @@ from test_suite.fixture_utils import (
     extract_instr_context_from_fixture,
 )
 import test_suite.invoke_pb2 as pb
-from test_suite.codec_utils import encode_output
+from test_suite.instr.codec_utils import encode_output
 from test_suite.minimize_utils import minimize_single_test_case
 from test_suite.multiprocessing_utils import (
     decode_single_test_case,
