@@ -13,7 +13,6 @@ from test_suite.fixture_utils import (
 )
 import test_suite.invoke_pb2 as pb
 from test_suite.instr.codec_utils import encode_output
-from test_suite.minimize_utils import minimize_single_test_case
 from test_suite.multiprocessing_utils import (
     decode_single_test_case,
     read_context,
@@ -115,64 +114,6 @@ def debug_instr(
     instruction_context = read_context(file)
     assert instruction_context is not None, f"Unable to read {file.name}"
     debug_host(shared_library, instruction_context, gdb=debugger)
-
-
-@app.command()
-def minimize_tests(
-    input_dir: Path = typer.Option(
-        Path("corpus8"),
-        "--input-dir",
-        "-i",
-        help="Input directory containing instruction context messages",
-    ),
-    solana_shared_library: Path = typer.Option(
-        Path("impl/lib/libsolfuzz_agave_v2.0.so"),
-        "--solana-target",
-        "-s",
-        help="Solana (or ground truth) shared object (.so) target file path",
-    ),
-    output_dir: Path = typer.Option(
-        Path("test_results"),
-        "--output-dir",
-        "-o",
-        help="Output directory for test results",
-    ),
-    num_processes: int = typer.Option(
-        4, "--num-processes", "-p", help="Number of processes to use"
-    ),
-):
-    # Specify globals
-    globals.output_dir = output_dir
-    globals.solana_shared_library = solana_shared_library
-
-    # Create the output directory, if necessary
-    if globals.output_dir.exists():
-        shutil.rmtree(globals.output_dir)
-    globals.output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Load in and initialize shared library
-    lib = ctypes.CDLL(globals.solana_shared_library)
-    lib.sol_compat_init()
-    globals.target_libraries[globals.solana_shared_library] = lib
-
-    globals.feature_pool = get_feature_pool(lib)
-
-    num_test_cases = len(list(input_dir.iterdir()))
-
-    minimize_results = []
-    with Pool(
-        processes=num_processes, initializer=initialize_process_output_buffers
-    ) as pool:
-        for result in tqdm.tqdm(
-            pool.imap(minimize_single_test_case, input_dir.iterdir()),
-            total=num_test_cases,
-        ):
-            minimize_results.append(result)
-
-    lib.sol_compat_fini()
-    print("-" * LOG_FILE_SEPARATOR_LENGTH)
-    print(f"{len(minimize_results)} total files seen")
-    print(f"{sum(minimize_results)} files successfully minimized")
 
 
 @app.command()
