@@ -1,55 +1,66 @@
 from pathlib import Path
 import shutil
 import typer
-from .elf_loader_exec import process_elf_loader_ctx
-from test_suite.sol_compat import initialize_process_output_buffers
-import test_suite.invoke_pb2 as pb
+from test_suite.sol_compat import initialize_process_output_buffers, process_target
 import ctypes
+from .fuzz_context import *
+from test_suite.globals import harness_ctx as h_ctx
+import test_suite.globals as globals
+from multiprocessing import Pool
 
-SOL_COMPAT_FN_NAME = "sol_compat_elf_loader_v1"
 
 app = typer.Typer()
+
+h_ctx = InstrHarness
 
 
 @app.command()
 def create_fixtures(
-    elf_ctx_corpora: Path = typer.Argument(help="Path to the ELFLoaderCtx corpora"),
-    solana_so_fp: Path = typer.Option(
+    ctx_corpora: Path = typer.Argument(
+        help=f"Path to the {h_ctx.context_type.__name__} corpora"
+    ),
+    reference_so_fp: Path = typer.Option(
         Path("impl/lib/libsolfuzz_agave_v2.0.so"),
-        "--solana-target",
-        "-s",
+        "--ref-target",
+        "-t",
     ),
     out_dir: Path = typer.Option(
-        Path("elf_test_fixtures"),
+        Path("test_fixtures"),
         "--out-dir",
         "-o",
     ),
 ):
+    # Specify globals
+    globals.output_dir = out_dir
+    globals.reference_shared_library = reference_so_fp
+    # globals.readable = readable
+
     # Create the output directory, if necessary
     if out_dir.exists():
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    lib = ctypes.CDLL(solana_so_fp)
+    lib = ctypes.CDLL(reference_so_fp)
     lib.sol_compat_init()
     initialize_process_output_buffers()
+    globals.target_libraries[reference_so_fp] = lib
 
-    # Process ELFLoaderCtx corpora
-    for elf_ctx_path in elf_ctx_corpora.iterdir():
-        with open(elf_ctx_path, "rb") as f:
-            elf_ctx_str = f.read()
-        elf_loader_effects = process_elf_loader_ctx(lib, elf_ctx_str)
-        if elf_loader_effects is None:
-            print(f"Failed to process {elf_ctx_path}")
+    # Process corpora
+    for ctx_path in ctx_corpora.iterdir():
+        with open(ctx_path, "rb") as f:
+            ctx_str = f.read()
+        effects = process_target(lib, ctx_str, h_ctx)
+        if effects is None:
+            print(f"Failed to process {ctx_path}")
             continue
-        elf_fixture = pb.ELFLoaderFixture()
-        elf_fixture.input.MergeFromString(elf_ctx_str)
-        elf_fixture.output.MergeFrom(elf_loader_effects)
+        fixture = h_ctx.fixture_type()
+        fixture.input.ParseFromString(ctx_str)
+        fixture.output.MergeFrom(effects)
 
-        out_fp = out_dir / (elf_ctx_path.stem + ".fix")
+        out_fp = out_dir / (ctx_path.stem + ".fix")
         with open(out_fp, "wb") as f:
-            f.write(elf_fixture.SerializeToString())
-        print(f"Processed {elf_ctx_path} and saved to {out_fp}")
+            f.write(fixture.SerializeToString())
+        print(f"Processed {ctx_path} and saved to {out_fp}")
 
     lib.sol_compat_fini()
     print("Done")

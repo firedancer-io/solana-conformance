@@ -14,7 +14,7 @@ from test_suite.instr.fixture_utils import (
 import test_suite.invoke_pb2 as pb
 from test_suite.instr.codec_utils import encode_output
 from test_suite.instr.minimize import minimize_single_test_case
-from test_suite.instr.multiprocessing_utils import (
+from test_suite.multiprocessing_utils import (
     check_consistency_in_results,
     decode_single_test_case,
     generate_test_case,
@@ -258,7 +258,7 @@ def minimize_tests(
 ):
     # Specify globals
     globals.output_dir = output_dir
-    globals.solana_shared_library = solana_shared_library
+    globals.reference_shared_library = solana_shared_library
 
     # Create the output directory, if necessary
     if globals.output_dir.exists():
@@ -266,9 +266,9 @@ def minimize_tests(
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
     # Load in and initialize shared library
-    lib = ctypes.CDLL(globals.solana_shared_library)
+    lib = ctypes.CDLL(globals.reference_shared_library)
     lib.sol_compat_init()
-    globals.target_libraries[globals.solana_shared_library] = lib
+    globals.target_libraries[globals.reference_shared_library] = lib
 
     globals.feature_pool = get_feature_pool(lib)
 
@@ -361,7 +361,7 @@ def create_fixtures(
 ):
     # Specify globals
     globals.output_dir = output_dir
-    globals.solana_shared_library = solana_shared_library
+    globals.reference_shared_library = solana_shared_library
     globals.readable = readable
 
     # Create the output directory, if necessary
@@ -370,7 +370,7 @@ def create_fixtures(
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
     # Initialize shared library
-    globals.solana_shared_library = solana_shared_library
+    globals.reference_shared_library = solana_shared_library
     lib = ctypes.CDLL(solana_shared_library)
     lib.sol_compat_init()
     globals.target_libraries[solana_shared_library] = lib
@@ -477,7 +477,7 @@ def run_tests(
 
     # Specify globals
     globals.output_dir = output_dir
-    globals.solana_shared_library = solana_shared_library
+    globals.reference_shared_library = solana_shared_library
 
     # Create the output directory, if necessary
     if globals.output_dir.exists():

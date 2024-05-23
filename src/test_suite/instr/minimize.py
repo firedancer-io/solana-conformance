@@ -1,7 +1,7 @@
 from pathlib import Path
 import test_suite.invoke_pb2 as pb
 import test_suite.globals as globals
-from test_suite.instr.multiprocessing_utils import (
+from test_suite.multiprocessing_utils import (
     generate_test_case,
     process_instruction,
 )
@@ -24,7 +24,7 @@ def minimize_single_test_case(test_file: Path) -> int:
     if serialized_instruction_context is None:
         return 0
 
-    lib = globals.target_libraries[globals.solana_shared_library]
+    lib = globals.target_libraries[globals.reference_shared_library]
 
     # Get a base output result (could be None)
     baseline_instruction_effects = process_instruction(

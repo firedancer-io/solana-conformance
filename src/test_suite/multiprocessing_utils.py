@@ -3,7 +3,7 @@ import test_suite.invoke_pb2 as pb
 from test_suite.instr.codec_utils import encode_input, encode_output, decode_input
 from test_suite.instr.validation_utils import check_account_unchanged, is_valid
 import ctypes
-from test_suite.sol_compat import exec_sol_compat_call
+from test_suite.sol_compat import exec_sol_compat_call, process_target
 
 from pathlib import Path
 import test_suite.globals as globals
@@ -44,13 +44,15 @@ def generate_test_case(test_file: Path) -> tuple[str, str | None]:
     try:
         # Read in binary Protobuf messages
         with open(test_file, "rb") as f:
-            instruction_context = pb.InstrContext()
+            instruction_context = globals.harness_ctx.context_type()
             instruction_context.ParseFromString(f.read())
     except:
         try:
             # Maybe it's in human-readable Protobuf format?
             with open(test_file) as f:
-                instruction_context = text_format.Parse(f.read(), pb.InstrContext())
+                instruction_context = text_format.Parse(
+                    f.read(), globals.harness_ctx.context_type()
+                )
 
             # Decode into digestable fields
             decode_input(instruction_context)
@@ -120,8 +122,10 @@ def process_single_test_case(
     # Execute test case on each target library
     results = {}
     for target in globals.target_libraries:
-        instruction_effects = process_instruction(
-            globals.target_libraries[target], serialized_instruction_context
+        instruction_effects = process_target(
+            globals.target_libraries[target],
+            serialized_instruction_context,
+            globals.harness_ctx,
         )
         result = (
             instruction_effects.SerializeToString(deterministic=True)
@@ -309,7 +313,7 @@ def build_test_results(
         protobuf_structures[target] = instruction_effects
 
     test_case_passed = all(
-        protobuf_structures[globals.solana_shared_library] == result
+        protobuf_structures[globals.reference_shared_library] == result
         for result in protobuf_structures.values()
     )
 

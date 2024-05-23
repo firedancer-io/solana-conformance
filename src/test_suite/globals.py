@@ -4,7 +4,7 @@
 target_libraries = {}
 
 # Ground truth library (for run-tests)
-solana_shared_library = None
+reference_shared_library = None
 
 # Number of iterations (for check-consistency)
 n_iterations = 0
@@ -21,3 +21,6 @@ feature_pool = None
 
 # (For fixtures) Whether to output in human-readable format
 readable = False
+
+# Harness context
+harness_ctx = None

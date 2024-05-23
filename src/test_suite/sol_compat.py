@@ -2,8 +2,10 @@ import ctypes
 from ctypes import c_uint64, c_int, POINTER, Structure
 from dataclasses import dataclass, field
 import os
+from google.protobuf.message import Message
 import test_suite.globals as globals
 from test_suite.constants import OUTPUT_BUFFER_SIZE
+from test_suite.fuzz_interface import HarnessCtx
 
 
 def initialize_process_output_buffers(randomize_output_buffer=False):
@@ -20,6 +22,31 @@ def initialize_process_output_buffers(randomize_output_buffer=False):
         globals.output_buffer_pointer = (ctypes.c_uint8 * OUTPUT_BUFFER_SIZE)(
             *output_buffer_random_bytes
         )
+
+
+def process_target(lib: ctypes.CDLL, ctx_str: str, ctx: HarnessCtx) -> Message | None:
+    """
+    Process a serialized Context protobuf message using the
+    sol_compat_ function.
+
+    Assumes that the shared library has a function named sol_compat_.
+    Assumes *_compat_init/fini functions are wrapped around this function.
+
+    Args:
+        - lib (ctypes.CDLL): Shared library to process instructions.
+        - ctx (pb.Context): Context protobuf message to process.
+
+    Returns:
+        - pb.Effects: Effects protobuf message.
+    """
+
+    # Call sol_compat_
+    out_data = exec_sol_compat_call(lib, ctx.fuzz_fn_name, ctx_str)
+    if out_data is None:
+        return None
+    effects = ctx.effects_type()
+    effects.ParseFromString(out_data)
+    return effects
 
 
 def exec_sol_compat_call(
