@@ -34,5 +34,5 @@ dev = [
 ]
 
 [build-system]
-requires = ['setuptools']
+requires = ["setuptools", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
