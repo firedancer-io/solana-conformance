@@ -16,8 +16,10 @@ Each fuzzing harness should implement this interface.
 def generic_effects_diff(a: EffectsType, b: EffectsType) -> bool:
     return a == b
 
+
 def generic_human_encode(obj: message.Message) -> None:
     pass
+
 
 def generic_human_decode(obj: message.Message) -> None:
     pass

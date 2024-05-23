@@ -1,3 +1,5 @@
+from test_suite.fuzz_interface import HarnessCtx
+
 # Global variables that can be accessed from processes.
 
 # Target libraries (for run-tests)
@@ -28,4 +30,4 @@ organize_fixture_dir = False
 # (For fixtures) Whether to only keep passing tests
 only_keep_passing = False
 # Harness context
-harness_ctx = None
+harness_ctx: HarnessCtx = None
