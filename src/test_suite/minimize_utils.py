@@ -2,8 +2,8 @@ from pathlib import Path
 import test_suite.invoke_pb2 as pb
 import test_suite.globals as globals
 from test_suite.multiprocessing_utils import (
-    read_instr,
-    process_instruction,
+    read_context,
+    process_target,
 )
 
 
@@ -18,7 +18,7 @@ def minimize_single_test_case(test_file: Path) -> int:
     Returns:
         int: 0 on failure, 1 on success
     """
-    _, serialized_instruction_context = read_instr(test_file)
+    _, serialized_instruction_context = read_context(test_file)
 
     # Skip if input is invalid
     if serialized_instruction_context is None:
@@ -27,9 +27,7 @@ def minimize_single_test_case(test_file: Path) -> int:
     lib = globals.target_libraries[globals.solana_shared_library]
 
     # Get a base output result (could be None)
-    baseline_instruction_effects = process_instruction(
-        lib, serialized_instruction_context
-    )
+    baseline_instruction_effects = process_target(lib, serialized_instruction_context)
 
     # Skip if input could not be processed
     if baseline_instruction_effects is None:
@@ -52,7 +50,7 @@ def minimize_single_test_case(test_file: Path) -> int:
             feature_idx
         ]
         del instruction_context.epoch_context.features.features[feature_idx]
-        test_instruction_effects = process_instruction(
+        test_instruction_effects = process_target(
             lib, instruction_context.SerializeToString(deterministic=True)
         )
         serialized_test_instruction_effects = (

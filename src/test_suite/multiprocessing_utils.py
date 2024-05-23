@@ -11,7 +11,7 @@ from google.protobuf import text_format
 import os
 
 
-def process_instruction(
+def process_target(
     library: ctypes.CDLL, serialized_instruction_context: str
 ) -> pb.InstrEffects | None:
     """
@@ -41,7 +41,8 @@ def process_instruction(
     out_sz = ctypes.c_uint64(OUTPUT_BUFFER_SIZE)
 
     # Call the function
-    result = library.sol_compat_instr_execute_v1(
+    sol_compat_fn = getattr(library, globals.harness_ctx.fuzz_fn_name)
+    result = sol_compat_fn(
         globals.output_buffer_pointer, ctypes.byref(out_sz), in_ptr, in_sz
     )
 
@@ -57,7 +58,7 @@ def process_instruction(
     return output_object
 
 
-def read_instr(test_file: Path) -> str | None:
+def read_context(test_file: Path) -> str | None:
     """
     Reads in test files and generates an InstrContext Protobuf object for a test case.
 
@@ -71,13 +72,15 @@ def read_instr(test_file: Path) -> str | None:
     try:
         # Read in binary Protobuf messages
         with open(test_file, "rb") as f:
-            instruction_context = pb.InstrContext()
+            instruction_context = globals.harness_ctx.context_type()
             instruction_context.ParseFromString(f.read())
     except:
         try:
             # Maybe it's in human-readable Protobuf format?
             with open(test_file) as f:
-                instruction_context = text_format.Parse(f.read(), pb.InstrContext())
+                instruction_context = text_format.Parse(
+                    f.read(), globals.harness_ctx.context_type()
+                )
 
             # Decode into digestable fields
             decode_input(instruction_context)
@@ -139,7 +142,7 @@ def decode_single_test_case(test_file: Path) -> int:
     Returns:
         - int: 1 if successfully decoded and written, 0 if skipped.
     """
-    serialized_instruction_context = read_instr(test_file)
+    serialized_instruction_context = read_context(test_file)
 
     # Skip if input is invalid
     if serialized_instruction_context is None:
@@ -177,7 +180,7 @@ def process_single_test_case(
     # Execute test case on each target library
     results = {}
     for target in globals.target_libraries:
-        instruction_effects = process_instruction(
+        instruction_effects = process_target(
             globals.target_libraries[target], serialized_instruction_context
         )
         result = (
@@ -219,8 +222,8 @@ def merge_results_over_iterations(results: tuple) -> tuple[str, dict]:
 
 
 def prune_execution_result(
-    serialized_instruction_context: str,
-    targets_to_serialized_instruction_effects: dict[str, str | None],
+    serialized_context: str,
+    targets_to_serialized_effects: dict[str, str | None],
 ) -> dict[str, str | None] | None:
     """
     Prune execution result to only include actually modified accounts.
@@ -232,17 +235,17 @@ def prune_execution_result(
     Returns:
         - dict[str, str | None] | None: Serialized pruned instruction effects for each target.
     """
-    if serialized_instruction_context is None:
+    if serialized_context is None:
         return None
 
-    instruction_context = pb.InstrContext()
-    instruction_context.ParseFromString(serialized_instruction_context)
+    context = globals.harness_ctx.context_type()
+    context.ParseFromString(serialized_context)
 
     targets_to_serialized_pruned_instruction_effects = {}
     for (
         target,
         serialized_instruction_effects,
-    ) in targets_to_serialized_instruction_effects.items():
+    ) in targets_to_serialized_effects.items():
         if serialized_instruction_effects is None:
             targets_to_serialized_pruned_instruction_effects[target] = None
             continue
@@ -254,7 +257,7 @@ def prune_execution_result(
         new_modified_accounts: list[pb.AcctState] = []
         for modified_account in instruction_effects.modified_accounts:
             account_unchanged = False
-            for beginning_account_state in instruction_context.accounts:
+            for beginning_account_state in context.accounts:
                 account_unchanged |= check_account_unchanged(
                     modified_account, beginning_account_state
                 )
@@ -433,7 +436,7 @@ def run_test(test_file: Path) -> tuple[str, int, dict | None]:
         fixture.MergeFromString(serialized_fixture)
         serialized_instr_context = fixture.input.SerializeToString(deterministic=True)
     else:
-        serialized_instr_context = read_instr(test_file)
+        serialized_instr_context = read_context(test_file)
     results = process_single_test_case(serialized_instr_context)
     pruned_results = prune_execution_result(serialized_instr_context, results)
     return test_file.stem, *build_test_results(pruned_results)

@@ -16,9 +16,9 @@ from test_suite.instr.codec_utils import encode_output
 from test_suite.minimize_utils import minimize_single_test_case
 from test_suite.multiprocessing_utils import (
     decode_single_test_case,
-    read_instr,
+    read_context,
     initialize_process_output_buffers,
-    process_instruction,
+    process_target,
     prune_execution_result,
     get_feature_pool,
     run_test,
@@ -27,6 +27,10 @@ import test_suite.globals as globals
 from test_suite.debugger import debug_host
 import resource
 import tqdm
+from test_suite.instr.harness import InstrHarness
+from test_suite.fuzz_context import ElfHarness
+
+globals.harness_ctx = ElfHarness
 
 
 app = typer.Typer(
@@ -36,7 +40,12 @@ app = typer.Typer(
 
 @app.command()
 def exec_instr(
-    file: Path = typer.Option(None, "--input", "-i", help="Input file"),
+    file: Path = typer.Option(
+        None,
+        "--input",
+        "-i",
+        help=f"Input {globals.harness_ctx.context_type.__name__} file",
+    ),
     shared_library: Path = typer.Option(
         Path("impl/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so"),
         "--target",
@@ -50,8 +59,8 @@ def exec_instr(
         help="Randomizes bytes in output buffer before shared library execution",
     ),
 ):
-    instruction_context = read_instr(file)
-    assert instruction_context is not None, f"Unable to read {file.name}"
+    context = read_context(file)
+    assert context is not None, f"Unable to read {file.name}"
 
     # Initialize output buffers and shared library
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
@@ -59,29 +68,29 @@ def exec_instr(
     lib.sol_compat_init()
 
     # Execute and cleanup
-    instruction_effects = process_instruction(lib, instruction_context)
+    effects = process_target(lib, context)
 
-    if not instruction_effects:
+    if not effects:
         print("No instruction effects returned")
         return None
 
-    instruction_effects = instruction_effects.SerializeToString(deterministic=True)
+    effects = effects.SerializeToString(deterministic=True)
 
     # Prune execution results
-    pruned_instruction_effects = prune_execution_result(
-        instruction_context,
-        {shared_library: instruction_effects},
-    )
-    parsed_instruction_effects = pb.InstrEffects()
-    parsed_instruction_effects.ParseFromString(
-        pruned_instruction_effects[shared_library]
-    )
+    if hasattr(effects, "modified_accounts"):
+        effects = prune_execution_result(
+            context,
+            {shared_library: effects},
+        )[shared_library]
+
+    parsed_instruction_effects = globals.harness_ctx.effects_type()
+    parsed_instruction_effects.ParseFromString(effects)
 
     lib.sol_compat_fini()
 
     # Print human-readable output
     if parsed_instruction_effects:
-        encode_output(parsed_instruction_effects)
+        globals.harness_ctx.effects_human_encode_fn(parsed_instruction_effects)
 
     print(parsed_instruction_effects)
 
@@ -103,7 +112,7 @@ def debug_instr(
     print(f"Processing {file.name}...")
 
     # Decode the file and pass it into GDB
-    instruction_context = read_instr(file)
+    instruction_context = read_context(file)
     assert instruction_context is not None, f"Unable to read {file.name}"
     debug_host(shared_library, instruction_context, gdb=debugger)
 

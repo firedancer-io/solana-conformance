@@ -3,7 +3,7 @@ from test_suite.instr.codec_utils import encode_input, encode_output
 from test_suite.constants import NATIVE_PROGRAM_MAPPING
 from test_suite.multiprocessing_utils import (
     build_test_results,
-    read_instr,
+    read_context,
     process_single_test_case,
     prune_execution_result,
 )
@@ -23,7 +23,7 @@ def create_fixture(test_file: Path) -> int:
     Returns:
         - int: 1 on success, 0 on failure
     """
-    serialized_instr_context = read_instr(test_file)
+    serialized_instr_context = read_context(test_file)
     results = process_single_test_case(serialized_instr_context)
     pruned_results = prune_execution_result(serialized_instr_context, results)
 
