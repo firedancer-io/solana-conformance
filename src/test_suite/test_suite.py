@@ -74,17 +74,17 @@ def exec_instr(
         print("No instruction effects returned")
         return None
 
-    effects = effects.SerializeToString(deterministic=True)
+    serialized_effects = effects.SerializeToString(deterministic=True)
 
     # Prune execution results
     if hasattr(effects, "modified_accounts"):
-        effects = prune_execution_result(
+        serialized_effects = prune_execution_result(
             context,
-            {shared_library: effects},
+            {shared_library: serialized_effects},
         )[shared_library]
 
     parsed_instruction_effects = globals.harness_ctx.effects_type()
-    parsed_instruction_effects.ParseFromString(effects)
+    parsed_instruction_effects.ParseFromString(serialized_effects)
 
     lib.sol_compat_fini()
 
