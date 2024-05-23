@@ -118,12 +118,12 @@ def extract_instr_context_from_fixture(fixture_file: Path):
         - int: 1 on success, 0 on failure
     """
     try:
-        instr_fixture = pb.InstrFixture()
+        fixture = globals.harness_ctx.fixture_type()
         with open(fixture_file, "rb") as f:
-            instr_fixture.ParseFromString(f.read())
+            fixture.ParseFromString(f.read())
 
         with open(globals.output_dir / (fixture_file.stem + ".bin"), "wb") as f:
-            f.write(instr_fixture.input.SerializeToString(deterministic=True))
+            f.write(fixture.input.SerializeToString(deterministic=True))
     except:
         return 0
 

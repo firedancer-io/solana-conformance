@@ -122,13 +122,13 @@ def instr_from_fixtures(
         Path("fixtures"),
         "--input-dir",
         "-i",
-        help="Input directory containing instruction fixture messages",
+        help=f"Input directory containing {globals.harness_ctx.fixture_type.__name__} messages",
     ),
     output_dir: Path = typer.Option(
         Path("instr"),
         "--output-dir",
         "-o",
-        help="Output directory for instr contexts",
+        help=f"Output directory for {globals.harness_ctx.context_type.__name__} messages",
     ),
     num_processes: int = typer.Option(
         4, "--num-processes", "-p", help="Number of processes to use"
@@ -145,7 +145,7 @@ def instr_from_fixtures(
     test_cases = list(input_dir.iterdir())
     num_test_cases = len(test_cases)
 
-    print("Converting to InstrContext...")
+    print(f"Converting to {globals.harness_ctx.context_type.__name__}...")
     results = []
     with Pool(processes=num_processes) as pool:
         for result in tqdm.tqdm(
