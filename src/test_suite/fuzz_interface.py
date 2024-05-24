@@ -9,7 +9,18 @@ ContextType = TypeVar("ContextType", bound=message.Message)
 EffectsType = TypeVar("EffectsType", bound=message.Message)
 
 """
-Each fuzzing harness should implement this interface.
+Each fuzzing harness should implement this interface in fuzz_context.py
+
+The following defines the interface:
+- fuzz_fn_name: The name of the harness function to call in the fuzz target
+- fixture_desc: The protobuf descriptor for the fixture message.
+    - A fixture message is a message that contains an input and output message.
+    - input: The fuzz target Context
+    - output: The fuzz target Effects
+- diff_effect_fn: A function that compares two effects messages for equality
+- human encode/decode functions for the context and effects messages to
+  convert the messages to/from human-readable format (in-place).
+  Both context and effects messages can have their own encode/decode functions.
 """
 
 
