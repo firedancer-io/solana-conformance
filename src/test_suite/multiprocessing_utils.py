@@ -115,7 +115,7 @@ def read_fixture(fixture_file: Path) -> str | None:
     try:
         # Read in binary Protobuf messages
         with open(fixture_file, "rb") as f:
-            instruction_fixture = pb.InstrFixture()
+            instruction_fixture = globals.harness_ctx.fixture_type()
             instruction_fixture.ParseFromString(f.read())
     except:
         # Unable to read message, skip and continue
@@ -149,9 +149,9 @@ def decode_single_test_case(test_file: Path) -> int:
         return 0
 
     # Encode the input fields to be human readable
-    instruction_context = pb.InstrContext()
+    instruction_context = globals.harness_ctx.context_type()
     instruction_context.ParseFromString(serialized_instruction_context)
-    encode_input(instruction_context)
+    globals.harness_ctx.context_human_encode_fn(instruction_context)
 
     with open(globals.output_dir / (test_file.stem + ".txt"), "w") as f:
         f.write(
@@ -360,7 +360,7 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
             # Turn bytes into human readable fields
             instruction_effects = globals.harness_ctx.effects_type()
             instruction_effects.ParseFromString(result)
-            encode_output(instruction_effects)
+            globals.harness_ctx.effects_human_encode_fn(instruction_effects)
             outputs[target] = text_format.MessageToString(instruction_effects)
 
         protobuf_structures[target] = instruction_effects
@@ -438,9 +438,8 @@ def run_test(test_file: Path) -> tuple[str, int, dict | None]:
     """
     # Process fixtures through this entrypoint as well
     if test_file.suffix == ".fix":
-        fixture = pb.InstrFixture()
-        serialized_fixture = read_fixture(test_file)
-        fixture.MergeFromString(serialized_fixture)
+        fixture = globals.harness_ctx.fixture_type()
+        fixture.ParseFromString(test_file.open("rb").read())
         serialized_instr_context = fixture.input.SerializeToString(deterministic=True)
     else:
         serialized_instr_context = read_context(test_file)

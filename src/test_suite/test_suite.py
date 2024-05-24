@@ -254,7 +254,8 @@ def run_tests(
         Path("corpus8"),
         "--input-dir",
         "-i",
-        help="Input directory containing instruction context or fixture messages",
+        help=f"Input directory containing {globals.harness_ctx.context_type.__name__}"
+        f" or { globals.harness_ctx.fixture_type.__name__ } messages",
     ),
     solana_shared_library: Path = typer.Option(
         Path("impl/lib/libsolfuzz_agave_v2.0.so"),
@@ -385,13 +386,13 @@ def decode_protobuf(
         Path("raw_instruction_context"),
         "--input-dir",
         "-i",
-        help="Input directory containing instruction context messages in binary format",
+        help=f"Input directory containing {globals.harness_ctx.context_type.__name__} messages",
     ),
     output_dir: Path = typer.Option(
         Path("readable_instruction_context"),
         "--output-dir",
         "-o",
-        help="Output directory for base58-encoded, human-readable instruction context messages",
+        help=f"Output directory for base58-encoded, human-readable {globals.harness_ctx.context_type.__name__} messages",
     ),
     num_processes: int = typer.Option(
         4, "--num-processes", "-p", help="Number of processes to use"
