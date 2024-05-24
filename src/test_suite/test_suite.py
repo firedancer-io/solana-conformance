@@ -9,7 +9,7 @@ from pathlib import Path
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH, NATIVE_PROGRAM_MAPPING
 from test_suite.fixture_utils import (
     create_fixture,
-    extract_instr_context_from_fixture,
+    extract_context_from_fixture,
 )
 import test_suite.invoke_pb2 as pb
 from test_suite.instr.codec_utils import encode_output
@@ -76,11 +76,10 @@ def exec_instr(
     serialized_effects = effects.SerializeToString(deterministic=True)
 
     # Prune execution results
-    if hasattr(effects, "modified_accounts"):
-        serialized_effects = prune_execution_result(
-            context,
-            {shared_library: serialized_effects},
-        )[shared_library]
+    serialized_effects = prune_execution_result(
+        context,
+        {shared_library: serialized_effects},
+    )[shared_library]
 
     parsed_instruction_effects = globals.harness_ctx.effects_type()
     parsed_instruction_effects.ParseFromString(serialized_effects)
@@ -149,7 +148,7 @@ def instr_from_fixtures(
     results = []
     with Pool(processes=num_processes) as pool:
         for result in tqdm.tqdm(
-            pool.imap(extract_instr_context_from_fixture, test_cases),
+            pool.imap(extract_context_from_fixture, test_cases),
             total=num_test_cases,
         ):
             results.append(result)
@@ -165,7 +164,7 @@ def create_fixtures(
         Path("corpus8"),
         "--input-dir",
         "-i",
-        help="Input directory containing instruction context messages",
+        help=f"Input directory containing {globals.harness_ctx.context_type.__name__} messages",
     ),
     solana_shared_library: Path = typer.Option(
         Path("impl/lib/libsolfuzz_agave_v2.0.so"),
@@ -177,7 +176,8 @@ def create_fixtures(
         [],
         "--target",
         "-t",
-        help="Shared object (.so) target file paths (pairs with --keep-passing)",
+        help="Shared object (.so) target file paths (pairs with --keep-passing)."
+        f" Targets must have {globals.harness_ctx.fuzz_fn_name} defined",
     ),
     output_dir: Path = typer.Option(
         Path("test_fixtures"),

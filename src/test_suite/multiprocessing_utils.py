@@ -238,6 +238,13 @@ def prune_execution_result(
     if serialized_context is None:
         return None
 
+    EffectsT = globals.harness_ctx.effects_type
+
+    if not hasattr(EffectsT(), "modified_accounts"):
+        # no execution results to prune
+        # TODO: perform this check in a more robust way
+        return targets_to_serialized_effects
+
     context = globals.harness_ctx.context_type()
     context.ParseFromString(serialized_context)
 
@@ -250,7 +257,7 @@ def prune_execution_result(
             targets_to_serialized_pruned_instruction_effects[target] = None
             continue
 
-        instruction_effects = pb.InstrEffects()
+        instruction_effects = EffectsT()
         instruction_effects.ParseFromString(serialized_instruction_effects)
 
         # O(n^2) because not performance sensitive
@@ -351,7 +358,7 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
         instruction_effects = None
         if result:
             # Turn bytes into human readable fields
-            instruction_effects = pb.InstrEffects()
+            instruction_effects = globals.harness_ctx.effects_type()
             instruction_effects.ParseFromString(result)
             encode_output(instruction_effects)
             outputs[target] = text_format.MessageToString(instruction_effects)
