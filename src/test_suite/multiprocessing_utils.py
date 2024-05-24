@@ -83,7 +83,8 @@ def read_context(test_file: Path) -> str | None:
                 )
 
             # Decode into digestable fields
-            decode_input(instruction_context)
+            # decode_input(instruction_context)
+            globals.harness_ctx.context_human_decode_fn(instruction_context)
         except:
             # Unable to read message, skip and continue
             instruction_context = None
@@ -304,9 +305,9 @@ def check_consistency_in_results(file_stem: str, results: dict) -> dict[str, boo
             protobuf_struct = None
             if results[target][iteration]:
                 # Turn bytes into human readable fields
-                protobuf_struct = pb.InstrEffects()
+                protobuf_struct = globals.harness_ctx.effects_type()
                 protobuf_struct.ParseFromString(results[target][iteration])
-                encode_output(protobuf_struct)
+                globals.harness_ctx.effects_human_encode_fn(protobuf_struct)
 
             protobuf_structures[iteration] = protobuf_struct
 
