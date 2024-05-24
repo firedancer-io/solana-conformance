@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 from test_suite.constants import OUTPUT_BUFFER_SIZE
 import test_suite.invoke_pb2 as pb
-from test_suite.codec_utils import encode_input, encode_output, decode_input
 from test_suite.validation_utils import check_account_unchanged
 import ctypes
 from ctypes import c_uint64, c_int, POINTER, Structure
@@ -11,7 +10,7 @@ from google.protobuf import text_format
 import os
 
 
-def process_instruction(
+def process_target(
     library: ctypes.CDLL, serialized_instruction_context: str
 ) -> pb.InstrEffects | None:
     """
@@ -41,7 +40,8 @@ def process_instruction(
     out_sz = ctypes.c_uint64(OUTPUT_BUFFER_SIZE)
 
     # Call the function
-    result = library.sol_compat_instr_execute_v1(
+    sol_compat_fn = getattr(library, globals.harness_ctx.fuzz_fn_name)
+    result = sol_compat_fn(
         globals.output_buffer_pointer, ctypes.byref(out_sz), in_ptr, in_sz
     )
 
@@ -57,7 +57,7 @@ def process_instruction(
     return output_object
 
 
-def read_instr(test_file: Path) -> str | None:
+def read_context(test_file: Path) -> str | None:
     """
     Reads in test files and generates an InstrContext Protobuf object for a test case.
 
@@ -71,16 +71,19 @@ def read_instr(test_file: Path) -> str | None:
     try:
         # Read in binary Protobuf messages
         with open(test_file, "rb") as f:
-            instruction_context = pb.InstrContext()
+            instruction_context = globals.harness_ctx.context_type()
             instruction_context.ParseFromString(f.read())
     except:
         try:
             # Maybe it's in human-readable Protobuf format?
             with open(test_file) as f:
-                instruction_context = text_format.Parse(f.read(), pb.InstrContext())
+                instruction_context = text_format.Parse(
+                    f.read(), globals.harness_ctx.context_type()
+                )
 
             # Decode into digestable fields
-            decode_input(instruction_context)
+            # decode_input(instruction_context)
+            globals.harness_ctx.context_human_decode_fn(instruction_context)
         except:
             # Unable to read message, skip and continue
             instruction_context = None
@@ -112,7 +115,7 @@ def read_fixture(fixture_file: Path) -> str | None:
     try:
         # Read in binary Protobuf messages
         with open(fixture_file, "rb") as f:
-            instruction_fixture = pb.InstrFixture()
+            instruction_fixture = globals.harness_ctx.fixture_type()
             instruction_fixture.ParseFromString(f.read())
     except:
         # Unable to read message, skip and continue
@@ -139,16 +142,16 @@ def decode_single_test_case(test_file: Path) -> int:
     Returns:
         - int: 1 if successfully decoded and written, 0 if skipped.
     """
-    serialized_instruction_context = read_instr(test_file)
+    serialized_instruction_context = read_context(test_file)
 
     # Skip if input is invalid
     if serialized_instruction_context is None:
         return 0
 
     # Encode the input fields to be human readable
-    instruction_context = pb.InstrContext()
+    instruction_context = globals.harness_ctx.context_type()
     instruction_context.ParseFromString(serialized_instruction_context)
-    encode_input(instruction_context)
+    globals.harness_ctx.context_human_encode_fn(instruction_context)
 
     with open(globals.output_dir / (test_file.stem + ".txt"), "w") as f:
         f.write(
@@ -177,7 +180,7 @@ def process_single_test_case(
     # Execute test case on each target library
     results = {}
     for target in globals.target_libraries:
-        instruction_effects = process_instruction(
+        instruction_effects = process_target(
             globals.target_libraries[target], serialized_instruction_context
         )
         result = (
@@ -219,8 +222,8 @@ def merge_results_over_iterations(results: tuple) -> tuple[str, dict]:
 
 
 def prune_execution_result(
-    serialized_instruction_context: str,
-    targets_to_serialized_instruction_effects: dict[str, str | None],
+    serialized_context: str,
+    targets_to_serialized_effects: dict[str, str | None],
 ) -> dict[str, str | None] | None:
     """
     Prune execution result to only include actually modified accounts.
@@ -232,29 +235,36 @@ def prune_execution_result(
     Returns:
         - dict[str, str | None] | None: Serialized pruned instruction effects for each target.
     """
-    if serialized_instruction_context is None:
+    if serialized_context is None:
         return None
 
-    instruction_context = pb.InstrContext()
-    instruction_context.ParseFromString(serialized_instruction_context)
+    EffectsT = globals.harness_ctx.effects_type
+
+    if not hasattr(EffectsT(), "modified_accounts"):
+        # no execution results to prune
+        # TODO: perform this check in a more robust way
+        return targets_to_serialized_effects
+
+    context = globals.harness_ctx.context_type()
+    context.ParseFromString(serialized_context)
 
     targets_to_serialized_pruned_instruction_effects = {}
     for (
         target,
         serialized_instruction_effects,
-    ) in targets_to_serialized_instruction_effects.items():
+    ) in targets_to_serialized_effects.items():
         if serialized_instruction_effects is None:
             targets_to_serialized_pruned_instruction_effects[target] = None
             continue
 
-        instruction_effects = pb.InstrEffects()
+        instruction_effects = EffectsT()
         instruction_effects.ParseFromString(serialized_instruction_effects)
 
         # O(n^2) because not performance sensitive
         new_modified_accounts: list[pb.AcctState] = []
         for modified_account in instruction_effects.modified_accounts:
             account_unchanged = False
-            for beginning_account_state in instruction_context.accounts:
+            for beginning_account_state in context.accounts:
                 account_unchanged |= check_account_unchanged(
                     modified_account, beginning_account_state
                 )
@@ -294,9 +304,9 @@ def check_consistency_in_results(file_stem: str, results: dict) -> dict[str, boo
             protobuf_struct = None
             if results[target][iteration]:
                 # Turn bytes into human readable fields
-                protobuf_struct = pb.InstrEffects()
+                protobuf_struct = globals.harness_ctx.effects_type()
                 protobuf_struct.ParseFromString(results[target][iteration])
-                encode_output(protobuf_struct)
+                globals.harness_ctx.effects_human_encode_fn(protobuf_struct)
 
             protobuf_structures[iteration] = protobuf_struct
 
@@ -348,9 +358,9 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
         instruction_effects = None
         if result:
             # Turn bytes into human readable fields
-            instruction_effects = pb.InstrEffects()
+            instruction_effects = globals.harness_ctx.effects_type()
             instruction_effects.ParseFromString(result)
-            encode_output(instruction_effects)
+            globals.harness_ctx.effects_human_encode_fn(instruction_effects)
             outputs[target] = text_format.MessageToString(instruction_effects)
 
         protobuf_structures[target] = instruction_effects
@@ -428,12 +438,11 @@ def run_test(test_file: Path) -> tuple[str, int, dict | None]:
     """
     # Process fixtures through this entrypoint as well
     if test_file.suffix == ".fix":
-        fixture = pb.InstrFixture()
-        serialized_fixture = read_fixture(test_file)
-        fixture.MergeFromString(serialized_fixture)
+        fixture = globals.harness_ctx.fixture_type()
+        fixture.ParseFromString(test_file.open("rb").read())
         serialized_instr_context = fixture.input.SerializeToString(deterministic=True)
     else:
-        serialized_instr_context = read_instr(test_file)
+        serialized_instr_context = read_context(test_file)
     results = process_single_test_case(serialized_instr_context)
     pruned_results = prune_execution_result(serialized_instr_context, results)
     return test_file.stem, *build_test_results(pruned_results)

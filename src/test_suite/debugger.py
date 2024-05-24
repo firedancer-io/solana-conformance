@@ -6,8 +6,9 @@ import subprocess
 import os
 from test_suite.multiprocessing_utils import (
     initialize_process_output_buffers,
-    process_instruction,
+    process_target,
 )
+import test_suite.globals as globals
 
 
 def debug_target(shared_library, test_input, pipe):
@@ -23,7 +24,7 @@ def debug_target(shared_library, test_input, pipe):
 
     lib = ctypes.CDLL(shared_library)
     lib.sol_compat_init()
-    process_instruction(lib, test_input)
+    process_target(lib, test_input)
     lib.sol_compat_fini()
 
 
@@ -62,7 +63,7 @@ def debug_host(shared_library, instruction_context, gdb):
         # As soon as the target library gets loaded, set a breakpoint
         # for the newly appeared executor function
         "set breakpoint pending on",
-        "break sol_compat_instr_execute_v1",
+        f"break {globals.harness_ctx.fuzz_fn_name}",
         # GDB stops the process when attaching, let it continue
         "continue",
         # ... At this point, the child process has SIGSTOP'ed itself

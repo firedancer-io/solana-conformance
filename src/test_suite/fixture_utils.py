@@ -1,9 +1,8 @@
 import fd58
-from test_suite.codec_utils import encode_input, encode_output
 from test_suite.constants import NATIVE_PROGRAM_MAPPING
 from test_suite.multiprocessing_utils import (
     build_test_results,
-    read_instr,
+    read_context,
     process_single_test_case,
     prune_execution_result,
 )
@@ -23,9 +22,10 @@ def create_fixture(test_file: Path) -> int:
     Returns:
         - int: 1 on success, 0 on failure
     """
-    serialized_instr_context = read_instr(test_file)
-    results = process_single_test_case(serialized_instr_context)
-    pruned_results = prune_execution_result(serialized_instr_context, results)
+    serialized_context = read_context(test_file)
+    results = process_single_test_case(serialized_context)
+
+    pruned_results = prune_execution_result(serialized_context, results)
 
     # This is only relevant when you gather results for multiple targets
     if globals.only_keep_passing:
@@ -38,25 +38,25 @@ def create_fixture(test_file: Path) -> int:
 
     serialized_instr_effects = pruned_results[globals.solana_shared_library]
 
-    if serialized_instr_context is None or serialized_instr_effects is None:
+    if serialized_context is None or serialized_instr_effects is None:
         return 0
 
     # Create instruction fixture
-    instr_context = pb.InstrContext()
-    instr_context.ParseFromString(serialized_instr_context)
-    instr_effects = pb.InstrEffects()
-    instr_effects.ParseFromString(serialized_instr_effects)
+    context = globals.harness_ctx.context_type()
+    context.ParseFromString(serialized_context)
+    effects = globals.harness_ctx.effects_type()
+    effects.ParseFromString(serialized_instr_effects)
 
-    fixture = pb.InstrFixture()
-    fixture.input.MergeFrom(instr_context)
-    fixture.output.MergeFrom(instr_effects)
+    fixture = globals.harness_ctx.fixture_type()
+    fixture.input.MergeFrom(context)
+    fixture.output.MergeFrom(effects)
 
     return write_fixture_to_disk(
         test_file.stem, fixture.SerializeToString(deterministic=True)
     )
 
 
-def write_fixture_to_disk(file_stem: str, serialized_instruction_fixture: str) -> int:
+def write_fixture_to_disk(file_stem: str, serialized_fixture: str) -> int:
     """
     Writes instruction fixtures to disk. This function outputs in binary format unless
     specified otherwise with the --readable flag.
@@ -67,47 +67,46 @@ def write_fixture_to_disk(file_stem: str, serialized_instruction_fixture: str) -
     Returns:
         - int: 0 on failure, 1 on success
     """
-    if serialized_instruction_fixture is None:
+    if serialized_fixture is None:
         return 0
 
     output_dir = globals.output_dir
 
     if globals.organize_fixture_dir:
-        instr_fixture = pb.InstrFixture()
-        instr_fixture.ParseFromString(serialized_instruction_fixture)
-        program_type = get_program_type(instr_fixture)
+        fixture = globals.harness_ctx.fixture_type()
+        fixture.ParseFromString(serialized_fixture)
+        program_type = get_program_type(fixture)
         output_dir = output_dir / program_type
         output_dir.mkdir(parents=True, exist_ok=True)
 
     if globals.readable:
         # Deserialize fixture
-        instr_fixture = pb.InstrFixture()
-        instr_fixture.ParseFromString(serialized_instruction_fixture)
+        fixture = pb.InstrFixture()
+        fixture.ParseFromString(serialized_fixture)
 
         # Encode fields for instruction context and effects
-        instr_context = pb.InstrContext()
-        instr_context.CopyFrom(instr_fixture.input)
-        encode_input(instr_context)
+        context = globals.harness_ctx.context_type()
+        context.CopyFrom(fixture.input)
+        # encode_input(context)
+        globals.harness_ctx.context_human_encode_fn(context)
 
-        instr_effects = pb.InstrEffects()
-        instr_effects.CopyFrom(instr_fixture.output)
-        encode_output(instr_effects)
+        instr_effects = globals.harness_ctx.effects_type()
+        instr_effects.CopyFrom(fixture.output)
+        globals.harness_ctx.effects_human_encode_fn(instr_effects)
 
-        instr_fixture.input.CopyFrom(instr_context)
-        instr_fixture.output.CopyFrom(instr_effects)
+        fixture.input.CopyFrom(context)
+        fixture.output.CopyFrom(instr_effects)
 
         with open(output_dir / (file_stem + ".fix.txt"), "w") as f:
-            f.write(
-                text_format.MessageToString(instr_fixture, print_unknown_fields=False)
-            )
+            f.write(text_format.MessageToString(fixture, print_unknown_fields=False))
     else:
         with open(output_dir / (file_stem + ".fix"), "wb") as f:
-            f.write(serialized_instruction_fixture)
+            f.write(serialized_fixture)
 
     return 1
 
 
-def extract_instr_context_from_fixture(fixture_file: Path):
+def extract_context_from_fixture(fixture_file: Path):
     """
     Extract InstrContext from InstrEffects and write to disk.
 
@@ -118,12 +117,12 @@ def extract_instr_context_from_fixture(fixture_file: Path):
         - int: 1 on success, 0 on failure
     """
     try:
-        instr_fixture = pb.InstrFixture()
+        fixture = globals.harness_ctx.fixture_type()
         with open(fixture_file, "rb") as f:
-            instr_fixture.ParseFromString(f.read())
+            fixture.ParseFromString(f.read())
 
         with open(globals.output_dir / (fixture_file.stem + ".bin"), "wb") as f:
-            f.write(instr_fixture.input.SerializeToString(deterministic=True))
+            f.write(fixture.input.SerializeToString(deterministic=True))
     except:
         return 0
 

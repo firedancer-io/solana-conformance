@@ -1,7 +1,6 @@
 import fd58
 import hashlib
 from eth_hash.auto import keccak
-from test_suite.codec_utils import encode_input
 import test_suite.invoke_pb2 as pb
 from dataclasses import dataclass
 import datetime

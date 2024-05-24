@@ -9,16 +9,15 @@ from pathlib import Path
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH, NATIVE_PROGRAM_MAPPING
 from test_suite.fixture_utils import (
     create_fixture,
-    extract_instr_context_from_fixture,
+    extract_context_from_fixture,
 )
 import test_suite.invoke_pb2 as pb
-from test_suite.codec_utils import encode_output
-from test_suite.minimize_utils import minimize_single_test_case
+from test_suite.instr.codec_utils import encode_output
 from test_suite.multiprocessing_utils import (
     decode_single_test_case,
-    read_instr,
+    read_context,
     initialize_process_output_buffers,
-    process_instruction,
+    process_target,
     prune_execution_result,
     get_feature_pool,
     run_test,
@@ -27,6 +26,9 @@ import test_suite.globals as globals
 from test_suite.debugger import debug_host
 import resource
 import tqdm
+from test_suite.fuzz_context import ElfHarness, InstrHarness
+
+globals.harness_ctx = InstrHarness
 
 
 app = typer.Typer(
@@ -36,7 +38,12 @@ app = typer.Typer(
 
 @app.command()
 def exec_instr(
-    file: Path = typer.Option(None, "--input", "-i", help="Input file"),
+    file: Path = typer.Option(
+        None,
+        "--input",
+        "-i",
+        help=f"Input {globals.harness_ctx.context_type.__name__} file",
+    ),
     shared_library: Path = typer.Option(
         Path("impl/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so"),
         "--target",
@@ -50,8 +57,8 @@ def exec_instr(
         help="Randomizes bytes in output buffer before shared library execution",
     ),
 ):
-    instruction_context = read_instr(file)
-    assert instruction_context is not None, f"Unable to read {file.name}"
+    context = read_context(file)
+    assert context is not None, f"Unable to read {file.name}"
 
     # Initialize output buffers and shared library
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
@@ -59,29 +66,28 @@ def exec_instr(
     lib.sol_compat_init()
 
     # Execute and cleanup
-    instruction_effects = process_instruction(lib, instruction_context)
+    effects = process_target(lib, context)
 
-    if not instruction_effects:
+    if not effects:
         print("No instruction effects returned")
         return None
 
-    instruction_effects = instruction_effects.SerializeToString(deterministic=True)
+    serialized_effects = effects.SerializeToString(deterministic=True)
 
     # Prune execution results
-    pruned_instruction_effects = prune_execution_result(
-        instruction_context,
-        {shared_library: instruction_effects},
-    )
-    parsed_instruction_effects = pb.InstrEffects()
-    parsed_instruction_effects.ParseFromString(
-        pruned_instruction_effects[shared_library]
-    )
+    serialized_effects = prune_execution_result(
+        context,
+        {shared_library: serialized_effects},
+    )[shared_library]
+
+    parsed_instruction_effects = globals.harness_ctx.effects_type()
+    parsed_instruction_effects.ParseFromString(serialized_effects)
 
     lib.sol_compat_fini()
 
     # Print human-readable output
     if parsed_instruction_effects:
-        encode_output(parsed_instruction_effects)
+        globals.harness_ctx.effects_human_encode_fn(parsed_instruction_effects)
 
     print(parsed_instruction_effects)
 
@@ -103,67 +109,9 @@ def debug_instr(
     print(f"Processing {file.name}...")
 
     # Decode the file and pass it into GDB
-    instruction_context = read_instr(file)
+    instruction_context = read_context(file)
     assert instruction_context is not None, f"Unable to read {file.name}"
     debug_host(shared_library, instruction_context, gdb=debugger)
-
-
-@app.command()
-def minimize_tests(
-    input_dir: Path = typer.Option(
-        Path("corpus8"),
-        "--input-dir",
-        "-i",
-        help="Input directory containing instruction context messages",
-    ),
-    solana_shared_library: Path = typer.Option(
-        Path("impl/lib/libsolfuzz_agave_v2.0.so"),
-        "--solana-target",
-        "-s",
-        help="Solana (or ground truth) shared object (.so) target file path",
-    ),
-    output_dir: Path = typer.Option(
-        Path("test_results"),
-        "--output-dir",
-        "-o",
-        help="Output directory for test results",
-    ),
-    num_processes: int = typer.Option(
-        4, "--num-processes", "-p", help="Number of processes to use"
-    ),
-):
-    # Specify globals
-    globals.output_dir = output_dir
-    globals.solana_shared_library = solana_shared_library
-
-    # Create the output directory, if necessary
-    if globals.output_dir.exists():
-        shutil.rmtree(globals.output_dir)
-    globals.output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Load in and initialize shared library
-    lib = ctypes.CDLL(globals.solana_shared_library)
-    lib.sol_compat_init()
-    globals.target_libraries[globals.solana_shared_library] = lib
-
-    globals.feature_pool = get_feature_pool(lib)
-
-    num_test_cases = len(list(input_dir.iterdir()))
-
-    minimize_results = []
-    with Pool(
-        processes=num_processes, initializer=initialize_process_output_buffers
-    ) as pool:
-        for result in tqdm.tqdm(
-            pool.imap(minimize_single_test_case, input_dir.iterdir()),
-            total=num_test_cases,
-        ):
-            minimize_results.append(result)
-
-    lib.sol_compat_fini()
-    print("-" * LOG_FILE_SEPARATOR_LENGTH)
-    print(f"{len(minimize_results)} total files seen")
-    print(f"{sum(minimize_results)} files successfully minimized")
 
 
 @app.command()
@@ -172,13 +120,13 @@ def instr_from_fixtures(
         Path("fixtures"),
         "--input-dir",
         "-i",
-        help="Input directory containing instruction fixture messages",
+        help=f"Input directory containing {globals.harness_ctx.fixture_type.__name__} messages",
     ),
     output_dir: Path = typer.Option(
         Path("instr"),
         "--output-dir",
         "-o",
-        help="Output directory for instr contexts",
+        help=f"Output directory for {globals.harness_ctx.context_type.__name__} messages",
     ),
     num_processes: int = typer.Option(
         4, "--num-processes", "-p", help="Number of processes to use"
@@ -195,11 +143,11 @@ def instr_from_fixtures(
     test_cases = list(input_dir.iterdir())
     num_test_cases = len(test_cases)
 
-    print("Converting to InstrContext...")
+    print(f"Converting to {globals.harness_ctx.context_type.__name__}...")
     results = []
     with Pool(processes=num_processes) as pool:
         for result in tqdm.tqdm(
-            pool.imap(extract_instr_context_from_fixture, test_cases),
+            pool.imap(extract_context_from_fixture, test_cases),
             total=num_test_cases,
         ):
             results.append(result)
@@ -215,7 +163,7 @@ def create_fixtures(
         Path("corpus8"),
         "--input-dir",
         "-i",
-        help="Input directory containing instruction context messages",
+        help=f"Input directory containing {globals.harness_ctx.context_type.__name__} messages",
     ),
     solana_shared_library: Path = typer.Option(
         Path("impl/lib/libsolfuzz_agave_v2.0.so"),
@@ -227,7 +175,8 @@ def create_fixtures(
         [],
         "--target",
         "-t",
-        help="Shared object (.so) target file paths (pairs with --keep-passing)",
+        help="Shared object (.so) target file paths (pairs with --keep-passing)."
+        f" Targets must have {globals.harness_ctx.fuzz_fn_name} defined",
     ),
     output_dir: Path = typer.Option(
         Path("test_fixtures"),
@@ -304,7 +253,8 @@ def run_tests(
         Path("corpus8"),
         "--input-dir",
         "-i",
-        help="Input directory containing instruction context or fixture messages",
+        help=f"Input directory containing {globals.harness_ctx.context_type.__name__}"
+        f" or { globals.harness_ctx.fixture_type.__name__ } messages",
     ),
     solana_shared_library: Path = typer.Option(
         Path("impl/lib/libsolfuzz_agave_v2.0.so"),
@@ -435,13 +385,13 @@ def decode_protobuf(
         Path("raw_instruction_context"),
         "--input-dir",
         "-i",
-        help="Input directory containing instruction context messages in binary format",
+        help=f"Input directory containing {globals.harness_ctx.context_type.__name__} messages",
     ),
     output_dir: Path = typer.Option(
         Path("readable_instruction_context"),
         "--output-dir",
         "-o",
-        help="Output directory for base58-encoded, human-readable instruction context messages",
+        help=f"Output directory for base58-encoded, human-readable {globals.harness_ctx.context_type.__name__} messages",
     ),
     num_processes: int = typer.Option(
         4, "--num-processes", "-p", help="Number of processes to use"

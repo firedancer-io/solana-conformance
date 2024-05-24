@@ -1,10 +1,12 @@
+from test_suite.fuzz_interface import HarnessCtx
+
 # Global variables that can be accessed from processes.
 
 # Target libraries (for run-tests)
 target_libraries = {}
 
 # Ground truth library (for run-tests)
-solana_shared_library = None
+reference_shared_library = None
 
 # Number of iterations (for check-consistency)
 n_iterations = 0
@@ -27,3 +29,5 @@ organize_fixture_dir = False
 
 # (For fixtures) Whether to only keep passing tests
 only_keep_passing = False
+# Harness context
+harness_ctx: HarnessCtx = None
