@@ -28,7 +28,7 @@ import resource
 import tqdm
 from test_suite.fuzz_context import ElfHarness, InstrHarness
 
-globals.harness_ctx = ElfHarness  # change to InstrHarness to test instruction effects
+globals.harness_ctx = InstrHarness
 
 
 app = typer.Typer(
