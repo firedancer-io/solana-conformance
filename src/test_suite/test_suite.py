@@ -26,10 +26,9 @@ import test_suite.globals as globals
 from test_suite.debugger import debug_host
 import resource
 import tqdm
-from test_suite.instr.harness import InstrHarness
-from test_suite.fuzz_context import ElfHarness
+from test_suite.fuzz_context import ElfHarness, InstrHarness
 
-globals.harness_ctx = ElfHarness
+globals.harness_ctx = ElfHarness  # change to InstrHarness to test instruction effects
 
 
 app = typer.Typer(
