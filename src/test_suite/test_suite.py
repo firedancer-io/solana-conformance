@@ -289,11 +289,11 @@ def run_tests(
         "-v",
         help="Verbose output: log failed test cases",
     ),
-    ignore_error_codes: bool = typer.Option(
+    consensus_mode: bool = typer.Option(
         False,
-        "--ignore-error-codes",
-        "-e",
-        help="Ignore error codes when comparing results",
+        "--consensus-mode",
+        "-c",
+        help="Only fail on consensus failures.\n One such effect is to normalize error codes when comparing results",
     ),
 ):
     # Add Solana library to shared libraries
@@ -303,23 +303,23 @@ def run_tests(
     globals.output_dir = output_dir
     globals.solana_shared_library = solana_shared_library
 
-    if ignore_error_codes:
-        if globals.harness_ctx.result_field_name is None:
-            raise ValueError(
-                f"Cannot ignore error codes when {globals.harness_ctx.effects_type.__name__}"
-                " does not have a result field"
-            )
+    if consensus_mode:
 
         original_diff_effects_fn = globals.harness_ctx.diff_effect_fn
 
         def diff_effect_wrapper(a, b):
-            a_res = getattr(a, globals.harness_ctx.result_field_name)
-            b_res = getattr(b, globals.harness_ctx.result_field_name)
+            if globals.harness_ctx.result_field_name:
+                a_res = getattr(a, globals.harness_ctx.result_field_name)
+                b_res = getattr(b, globals.harness_ctx.result_field_name)
 
-            if not (a_res == 0 or b_res == 0):
-                # normalize error code. Modifies effects in place!
-                setattr(a, globals.harness_ctx.result_field_name, 1)
-                setattr(b, globals.harness_ctx.result_field_name, 1)
+                if not (a_res == 0 or b_res == 0):
+                    # normalize error code. Modifies effects in place!
+                    setattr(a, globals.harness_ctx.result_field_name, 1)
+                    setattr(b, globals.harness_ctx.result_field_name, 1)
+            else:
+                print(
+                    "No result field name found in harness context, will not normalize error codes."
+                )
 
             return original_diff_effects_fn(a, b)
 
