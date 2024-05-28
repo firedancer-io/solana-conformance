@@ -1,6 +1,6 @@
 from typing import Callable, Type, TypeVar
 from google.protobuf import message, descriptor, message_factory
-from dataclasses import dataclass, InitVar
+from dataclasses import dataclass, InitVar, field
 
 msg_factory = message_factory.MessageFactory()
 
@@ -40,14 +40,15 @@ def generic_human_decode(obj: message.Message) -> None:
 class HarnessCtx:
     fuzz_fn_name: str
     fixture_desc: InitVar[descriptor.Descriptor]
+    result_field_name: str | None = "result"
     diff_effect_fn: Callable[[EffectsType, EffectsType], bool] = generic_effects_diff
     context_human_encode_fn: Callable[[ContextType], None] = generic_human_encode
     context_human_decode_fn: Callable[[ContextType], None] = generic_human_decode
     effects_human_encode_fn: Callable[[EffectsType], None] = generic_human_encode
     effects_human_decode_fn: Callable[[EffectsType], None] = generic_human_decode
-    fixture_type: Type[FixtureType] = message.Message
-    context_type: Type[ContextType] = message.Message
-    effects_type: Type[EffectsType] = message.Message
+    fixture_type: Type[FixtureType] = field(init=False)
+    context_type: Type[ContextType] = field(init=False)
+    effects_type: Type[EffectsType] = field(init=False)
 
     def __post_init__(self, fixture_desc):
         self.fixture_type = msg_factory.GetPrototype(fixture_desc)
@@ -57,3 +58,8 @@ class HarnessCtx:
         self.effects_type = msg_factory.GetPrototype(
             fixture_desc.fields_by_name["output"].message_type
         )
+
+        effects_desc = fixture_desc.fields_by_name.get("output").message_type
+
+        if effects_desc.fields_by_name.get(self.result_field_name) is None:
+            self.result_field_name = None
