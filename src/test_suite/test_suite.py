@@ -293,7 +293,7 @@ def run_tests(
         False,
         "--consensus-mode",
         "-c",
-        help="Only fail on consensus failures.\n One such effect is to normalize error codes when comparing results",
+        help="Only fail on consensus failures. One such effect is to normalize error codes when comparing results",
     ),
 ):
     # Add Solana library to shared libraries
@@ -304,7 +304,6 @@ def run_tests(
     globals.solana_shared_library = solana_shared_library
 
     if consensus_mode:
-
         original_diff_effects_fn = globals.harness_ctx.diff_effect_fn
 
         def diff_effect_wrapper(a, b):
