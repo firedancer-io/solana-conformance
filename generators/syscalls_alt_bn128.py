@@ -9,17 +9,33 @@ CU_BASE = 542
 CU_PER_ELEM = 61
 CU_MEM_OP = 10
 
-ADD_OP= 0
-ADD_SZ= 64+64
+ADD_OP = 0
+ADD_SZ = 64+64
 ADD_CU = 334
 
-MUL_OP= 2
-MUL_SZ= 64+32
+MUL_OP = 2
+MUL_SZ = 64+32
 MUL_CU = 3840
 
 PAIRING_OP = 3
 PAIRING_SZ = (64+128)*2
 PAIRING_CU = 36364 + 12121 + PAIRING_SZ + 85 + 32  # wtf!?
+
+COMP_G1_OP = 0
+COMP_G1_SZ = 64
+COMP_G1_CU = 30 + 100
+
+DECOMP_G1_OP = 1
+DECOMP_G1_SZ = 32
+DECOMP_G1_CU = 398 + 100
+
+COMP_G2_OP = 2
+COMP_G2_SZ = 128
+COMP_G2_CU = 86 + 100
+
+DECOMP_G2_OP = 3
+DECOMP_G2_SZ = 64
+DECOMP_G2_CU = 13610 + 100
 
 def exact_cu_cost(data_vec):
     return CU_BASE + CU_PER_ELEM * len(data_vec) * len(data_vec)
@@ -383,58 +399,452 @@ for test in pairing_inputs:
 test_vectors_compress_g1 = [
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1890
     # invalid op
+    {
+        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41", True),
+        "op": 4,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
 
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1813
     # cost
+    {
+        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41", True),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU - 1,
+    },
 
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1815-L1827
     # i/o
+    {
+        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41", True),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START + 1,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41", True),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START + 33,
+        "cu_avail": COMP_G1_CU,
+    },
 
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1834-L1847
     # actual op - all these tests either return Ok(0) or Ok(1)
+    {
+        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41", True),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59002f7149c03b2c47b35163356519d1179affcf3b9487f7f857c3f11331120e06", True),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+
+    # firedancer
+    # https://github.com/firedancer-io/firedancer/blob/a8c2e27b/src/ballet/bn254/fd_bn254.c#L17
+    # - https://github.com/firedancer-io/firedancer/blob/a8c2e27b/src/ballet/bn254/fd_bn254_g1.c#L263
+    # - https://github.com/firedancer-io/firedancer/blob/a8c2e27b/src/ballet/bn254/fd_bn254_g1.c#L267
+    # - https://github.com/firedancer-io/firedancer/blob/a8c2e27b/src/ballet/bn254/fd_bn254_g1.c#L272
+    # - https://github.com/firedancer-io/firedancer/blob/a8c2e27b/src/ballet/bn254/fd_bn254_g1.c#L274
+    # https://github.com/firedancer-io/firedancer/blob/a8c2e27b/src/ballet/bn254/fd_bn254.c#L27
+    # https://github.com/firedancer-io/firedancer/blob/a8c2e27b/src/ballet/bn254/fd_bn254.c#L34
+    {
+        "heap_prefix": bytes([0] * 64),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": bytes([8] + [0] * 63),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": bytes([4] + [0] * 63),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": bytes([12] + [0] * 63),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": bytes([0xff] * 32 + [0] * 32),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": bytes([0] * 32 + [0xff] * 32),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": bytes([0] * 32 + [8] + [0] * 31),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": bytes([0] * 32 + [4] + [0] * 31),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": bytes([0] * 32 + [12] + [0] * 31),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": base64.b16decode("9c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41", True),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": base64.b16decode("9c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59002f7149c03b2c47b35163356519d1179affcf3b9487f7f857c3f11331120e06", True),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": base64.b16decode("5c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41", True),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": base64.b16decode("5c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59002f7149c03b2c47b35163356519d1179affcf3b9487f7f857c3f11331120e06", True),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+
+    { # 19
+        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59b034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41", True),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59802f7149c03b2c47b35163356519d1179affcf3b9487f7f857c3f11331120e06", True),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f597034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41", True),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    { # 22
+        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59402f7149c03b2c47b35163356519d1179affcf3b9487f7f857c3f11331120e06", True),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59f034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41", True),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59c02f7149c03b2c47b35163356519d1179affcf3b9487f7f857c3f11331120e06", True),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
 ]
 test_vectors_decompress_g1 = [
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1813
     # cost
+    {
+        "heap_prefix": base64.b16decode("9c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59", True) + bytes([0]*32),
+        "op": DECOMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": DECOMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": DECOMP_G1_CU - 1,
+    },
 
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1815-L1827
     # i/o
+    {
+        "heap_prefix": base64.b16decode("9c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59", True) + bytes([0]*32),
+        "op": DECOMP_G1_OP,
+        "input_addr": HEAP_START + 33,
+        "input_size": DECOMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": DECOMP_G1_CU,
+    },
+    {
+        "heap_prefix": base64.b16decode("9c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59", True) + bytes([0]*32),
+        "op": DECOMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": DECOMP_G1_SZ,
+        "result_addr": HEAP_START + 1,
+        "cu_avail": DECOMP_G1_CU,
+    },
 
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1834-L1847
     # actual op - all these tests either return Ok(0) or Ok(1)
+    {
+        "heap_prefix": base64.b16decode("9c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59", True) + bytes([0]*32),
+        "op": DECOMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": DECOMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": DECOMP_G1_CU,
+    },
+    {
+        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59", True) + bytes([0]*32),
+        "op": DECOMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": DECOMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": DECOMP_G1_CU,
+    },
+
+    # firedancer
+    # https://github.com/firedancer-io/firedancer/blob/a8c2e27b/src/ballet/bn254/fd_bn254.c#L43
+    # - https://github.com/firedancer-io/firedancer/blob/a8c2e27b/src/ballet/bn254/fd_bn254_field.c#78
+    # - https://github.com/firedancer-io/firedancer/blob/a8c2e27b/src/ballet/bn254/fd_bn254_field.c#90
+    # https://github.com/firedancer-io/firedancer/blob/a8c2e27b/src/ballet/bn254/fd_bn254.c#L52
+    # https://github.com/firedancer-io/firedancer/blob/a8c2e27b/src/ballet/bn254/fd_bn254.c#L62
+    # - ...
+    # https://github.com/firedancer-io/firedancer/blob/a8c2e27b/src/ballet/bn254/fd_bn254.c#L67
+    # tested above (success cases)
+    {
+        "heap_prefix": bytes([0] * 32),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": bytes([8] + [0] * 31),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": bytes([4] + [0] * 31),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": bytes([12] + [0] * 31),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
+    {
+        "heap_prefix": base64.b16decode("dc76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59", True) + bytes([0]*32),
+        "op": DECOMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": DECOMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": DECOMP_G1_CU,
+    },
+    {
+        "heap_prefix": bytes([0x3f] + [0xff] * 31),
+        "op": COMP_G1_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G1_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G1_CU,
+    },
 ]
 test_vectors_compress_g2 = [
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1813
     # cost
+    {
+        "heap_prefix": base64.b16decode("209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550", True),
+        "op": COMP_G2_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G2_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G2_CU - 1,
+    },
 
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1815-L1827
     # i/o
+    {
+        "heap_prefix": base64.b16decode("209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550", True),
+        "op": COMP_G2_OP,
+        "input_addr": HEAP_START + 1,
+        "input_size": COMP_G2_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G2_CU,
+    },
+    {
+        "heap_prefix": base64.b16decode("209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550", True),
+        "op": COMP_G2_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G2_SZ,
+        "result_addr": HEAP_START + 65,
+        "cu_avail": COMP_G2_CU,
+    },
 
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1834-L1847
     # actual op - all these tests either return Ok(0) or Ok(1)
+    {
+        "heap_prefix": base64.b16decode("209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550", True),
+        "op": COMP_G2_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G2_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G2_CU,
+    },
+    {
+        "heap_prefix": base64.b16decode("209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a4167804ac1c27ea61d6f480ad989c3d245b50f4da4fc3edadaadf7c8d4fec86bec8fa1e5a2425ee25843033f124ef834777def4b484725bd61a4525c0a631f9f587f7", True),
+        "op": COMP_G2_OP,
+        "input_addr": HEAP_START,
+        "input_size": COMP_G2_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": COMP_G2_CU,
+    },
 ]
 test_vectors_decompress_g2 = [
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1813
     # cost
+    {
+        "heap_prefix": base64.b16decode("a09dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a41678", True) + bytes([0]*64),
+        "op": DECOMP_G2_OP,
+        "input_addr": HEAP_START,
+        "input_size": DECOMP_G2_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": DECOMP_G2_CU - 1,
+    },
 
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1815-L1827
     # i/o
+    {
+        "heap_prefix": base64.b16decode("a09dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a41678", True) + bytes([0]*64),
+        "op": DECOMP_G2_OP,
+        "input_addr": HEAP_START + 65,
+        "input_size": DECOMP_G2_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": DECOMP_G2_CU,
+    },
+    {
+        "heap_prefix": base64.b16decode("a09dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a41678", True) + bytes([0]*64),
+        "op": DECOMP_G2_OP,
+        "input_addr": HEAP_START,
+        "input_size": DECOMP_G2_SZ,
+        "result_addr": HEAP_START + 1,
+        "cu_avail": DECOMP_G2_CU,
+    },
 
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1834-L1847
     # actual op - all these tests either return Ok(0) or Ok(1)
+    {
+        "heap_prefix": base64.b16decode("a09dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a41678", True) + bytes([0]*64),
+        "op": DECOMP_G2_OP,
+        "input_addr": HEAP_START,
+        "input_size": DECOMP_G2_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": DECOMP_G2_CU,
+    },
+    {
+        "heap_prefix": base64.b16decode("209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a41678", True) + bytes([0]*64),
+        "op": DECOMP_G2_OP,
+        "input_addr": HEAP_START,
+        "input_size": DECOMP_G2_SZ,
+        "result_addr": HEAP_START,
+        "cu_avail": DECOMP_G2_CU,
+    },
 ]
 
 test_vectors_group = \
     _into_key_data("a", test_vectors_add) + \
     _into_key_data("m", test_vectors_mul) + \
     _into_key_data("p", test_vectors_pairing)
-# test_vectors_group = []
+test_vectors_group = []
 
 test_vectors_compression = \
     _into_key_data("c1", test_vectors_compress_g1) + \
     _into_key_data("d1", test_vectors_decompress_g1) + \
     _into_key_data("c2", test_vectors_compress_g2) + \
     _into_key_data("d2", test_vectors_decompress_g2)
+
+features = [
+    0xaaef1edeb6c5bf85,  # enable_alt_bn128_syscall
+    0x9bb55b5df1c396c5,  # enable_alt_bn128_compression_syscall
+    # 0x8ba9e9038d9fdcff,  # simplify_alt_bn128_syscall_error_codes
+]
 
 if __name__ == "__main__":
     print("Generating syscall alt_bn128 tests...")
@@ -453,11 +863,7 @@ if __name__ == "__main__":
         syscall_ctx.instr_ctx.program_id = bytes([0]*32) # solfuzz-agave expectes a program_id
         syscall_ctx.vm_ctx.rodata = b"x" # fd expects some bytes
 
-        syscall_ctx.instr_ctx.epoch_context.features.features.extend([
-            0xaaef1edeb6c5bf85,  # enable_alt_bn128_syscall
-            0x9bb55b5df1c396c5,  # enable_alt_bn128_compression_syscall
-            # 0x8ba9e9038d9fdcff,  # simplify_alt_bn128_syscall_error_codes
-        ])
+        syscall_ctx.instr_ctx.epoch_context.features.features.extend(features)
 
         filename = str(key) + "_" + hashlib.sha3_256(syscall_ctx.instr_ctx.data).hexdigest()[:16]
 
@@ -482,11 +888,7 @@ if __name__ == "__main__":
         syscall_ctx.instr_ctx.program_id = bytes([0]*32) # solfuzz-agave expectes a program_id
         syscall_ctx.vm_ctx.rodata = b"x" # fd expects some bytes
 
-        syscall_ctx.instr_ctx.epoch_context.features.features.extend([
-            0xaaef1edeb6c5bf85,  # enable_alt_bn128_syscall
-            0x9bb55b5df1c396c5,  # enable_alt_bn128_compression_syscall
-            0x8ba9e9038d9fdcff,  # simplify_alt_bn128_syscall_error_codes
-        ])
+        syscall_ctx.instr_ctx.epoch_context.features.features.extend(features)
 
         filename = str(key) + "_" + hashlib.sha3_256(syscall_ctx.instr_ctx.data).hexdigest()[:16]
 
