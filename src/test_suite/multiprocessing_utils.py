@@ -356,7 +356,7 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
     for target, result in results.items():
         # Create a Protobuf struct to compare and output, if applicable
         instruction_effects = None
-        if result:
+        if result is not None:
             # Turn bytes into human readable fields
             instruction_effects = globals.harness_ctx.effects_type()
             instruction_effects.ParseFromString(result)
