@@ -335,10 +335,12 @@ def run_tests(
     failed = 0
     skipped = 0
     failed_tests = []
+    skipped_tests = []
     target_log_files = {target: None for target in shared_libraries}
     for file_stem, status, stringified_results in test_case_results:
         if stringified_results is None:
             skipped += 1
+            skipped_tests.append(file_stem)
             continue
 
         for target, string_result in stringified_results.items():
@@ -377,6 +379,7 @@ def run_tests(
     print(f"Passed: {passed}, Failed: {failed}, Skipped: {skipped}")
     if verbose:
         print(f"Failed tests: {failed_tests}")
+        print(f"Skipped tests: {skipped_tests}")
 
 
 @app.command()
