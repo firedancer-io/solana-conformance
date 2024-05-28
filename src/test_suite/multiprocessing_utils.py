@@ -365,6 +365,9 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
 
         protobuf_structures[target] = instruction_effects
 
+    if protobuf_structures[globals.solana_shared_library] is None:
+        return 0, None
+
     test_case_passed = all(
         protobuf_structures[globals.solana_shared_library] == result
         for result in protobuf_structures.values()
