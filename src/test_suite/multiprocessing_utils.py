@@ -317,18 +317,16 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
         if target == globals.solana_shared_library:
             continue
         # Create a Protobuf struct to compare and output, if applicable
-        instruction_effects = None
+        effects = None
         if result is not None:
             # Turn bytes into human readable fields
-            instruction_effects = globals.harness_ctx.effects_type()
-            instruction_effects.ParseFromString(result)
-            globals.harness_ctx.effects_human_encode_fn(instruction_effects)
+            effects = globals.harness_ctx.effects_type()
+            effects.ParseFromString(result)
+            globals.harness_ctx.effects_human_encode_fn(effects)
 
             # Note: diff_effect_fn may modify effects in-place
-            all_passed &= globals.harness_ctx.diff_effect_fn(
-                ref_effects, instruction_effects
-            )
-            outputs[target] = text_format.MessageToString(instruction_effects)
+            all_passed &= globals.harness_ctx.diff_effect_fn(ref_effects, effects)
+            outputs[target] = text_format.MessageToString(effects)
 
     outputs[globals.solana_shared_library] = text_format.MessageToString(ref_effects)
 
