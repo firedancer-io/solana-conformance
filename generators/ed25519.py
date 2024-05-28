@@ -2,7 +2,6 @@ import fd58
 import hashlib
 import test_suite.invoke_pb2 as pb
 from dataclasses import dataclass
-import datetime
 import requests
 
 OUTPUT_DIR = "./test-vectors/instr/inputs/20240425/ed25519"

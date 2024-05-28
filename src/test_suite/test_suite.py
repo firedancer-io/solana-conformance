@@ -26,9 +26,10 @@ import test_suite.globals as globals
 from test_suite.debugger import debug_host
 import resource
 import tqdm
-from test_suite.fuzz_context import ElfHarness, InstrHarness
+from test_suite.fuzz_context import ElfHarness, InstrHarness, SyscallHarness
 
 globals.harness_ctx = InstrHarness
+# globals.harness_ctx = SyscallHarness
 
 
 app = typer.Typer(

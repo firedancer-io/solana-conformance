@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='invoke.proto',
   package='org.solana.sealevel.v1',
   syntax='proto3',
-  serialized_pb=_b('\n\x0cinvoke.proto\x12\x16org.solana.sealevel.v1\"\x1e\n\nFeatureSet\x12\x10\n\x08\x66\x65\x61tures\x18\x01 \x03(\x06\"s\n\tAcctState\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\x0c\x12\x10\n\x08lamports\x18\x02 \x01(\x04\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\x12\x12\n\nexecutable\x18\x04 \x01(\x08\x12\x12\n\nrent_epoch\x18\x05 \x01(\x04\x12\r\n\x05owner\x18\x06 \x01(\x0c\"D\n\x0c\x45pochContext\x12\x34\n\x08\x66\x65\x61tures\x18\x01 \x01(\x0b\x32\".org.solana.sealevel.v1.FeatureSet\"\r\n\x0bSlotContext\"\x0c\n\nTxnContext\"B\n\tInstrAcct\x12\r\n\x05index\x18\x01 \x01(\r\x12\x13\n\x0bis_writable\x18\x02 \x01(\x08\x12\x11\n\tis_signer\x18\x03 \x01(\x08\"\xf6\x02\n\x0cInstrContext\x12\x12\n\nprogram_id\x18\x01 \x01(\x0c\x12\x11\n\tloader_id\x18\x02 \x01(\x0c\x12\x33\n\x08\x61\x63\x63ounts\x18\x03 \x03(\x0b\x32!.org.solana.sealevel.v1.AcctState\x12\x39\n\x0einstr_accounts\x18\x04 \x03(\x0b\x32!.org.solana.sealevel.v1.InstrAcct\x12\x0c\n\x04\x64\x61ta\x18\x05 \x01(\x0c\x12\x10\n\x08\x63u_avail\x18\x06 \x01(\x04\x12\x37\n\x0btxn_context\x18\x07 \x01(\x0b\x32\".org.solana.sealevel.v1.TxnContext\x12\x39\n\x0cslot_context\x18\x08 \x01(\x0b\x32#.org.solana.sealevel.v1.SlotContext\x12;\n\repoch_context\x18\t \x01(\x0b\x32$.org.solana.sealevel.v1.EpochContext\"\x97\x01\n\x0cInstrEffects\x12\x0e\n\x06result\x18\x01 \x01(\x05\x12\x12\n\ncustom_err\x18\x02 \x01(\r\x12<\n\x11modified_accounts\x18\x03 \x03(\x0b\x32!.org.solana.sealevel.v1.AcctState\x12\x10\n\x08\x63u_avail\x18\x04 \x01(\x04\x12\x13\n\x0breturn_data\x18\x05 \x01(\x0c\"y\n\x0cInstrFixture\x12\x33\n\x05input\x18\x01 \x01(\x0b\x32$.org.solana.sealevel.v1.InstrContext\x12\x34\n\x06output\x18\x02 \x01(\x0b\x32$.org.solana.sealevel.v1.InstrEffects\"\x19\n\tELFBinary\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\"t\n\x0c\x45LFLoaderCtx\x12.\n\x03\x65lf\x18\x01 \x01(\x0b\x32!.org.solana.sealevel.v1.ELFBinary\x12\x34\n\x08\x66\x65\x61tures\x18\x02 \x01(\x0b\x32\".org.solana.sealevel.v1.FeatureSet\"~\n\x10\x45LFLoaderEffects\x12\x0e\n\x06rodata\x18\x01 \x01(\x0c\x12\x11\n\trodata_sz\x18\x02 \x01(\x04\x12\x10\n\x08text_cnt\x18\x04 \x01(\x04\x12\x10\n\x08text_off\x18\x05 \x01(\x04\x12\x10\n\x08\x65ntry_pc\x18\x06 \x01(\x04\x12\x11\n\tcalldests\x18\x07 \x03(\x04\"\x81\x01\n\x10\x45LFLoaderFixture\x12\x33\n\x05input\x18\x01 \x01(\x0b\x32$.org.solana.sealevel.v1.ELFLoaderCtx\x12\x38\n\x06output\x18\x02 \x01(\x0b\x32(.org.solana.sealevel.v1.ELFLoaderEffectsb\x06proto3')
+  serialized_pb=_b('\n\x0cinvoke.proto\x12\x16org.solana.sealevel.v1\"\x1e\n\nFeatureSet\x12\x10\n\x08\x66\x65\x61tures\x18\x01 \x03(\x06\"s\n\tAcctState\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\x0c\x12\x10\n\x08lamports\x18\x02 \x01(\x04\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\x12\x12\n\nexecutable\x18\x04 \x01(\x08\x12\x12\n\nrent_epoch\x18\x05 \x01(\x04\x12\r\n\x05owner\x18\x06 \x01(\x0c\"D\n\x0c\x45pochContext\x12\x34\n\x08\x66\x65\x61tures\x18\x01 \x01(\x0b\x32\".org.solana.sealevel.v1.FeatureSet\"\r\n\x0bSlotContext\"\x0c\n\nTxnContext\"B\n\tInstrAcct\x12\r\n\x05index\x18\x01 \x01(\r\x12\x13\n\x0bis_writable\x18\x02 \x01(\x08\x12\x11\n\tis_signer\x18\x03 \x01(\x08\"\xf6\x02\n\x0cInstrContext\x12\x12\n\nprogram_id\x18\x01 \x01(\x0c\x12\x11\n\tloader_id\x18\x02 \x01(\x0c\x12\x33\n\x08\x61\x63\x63ounts\x18\x03 \x03(\x0b\x32!.org.solana.sealevel.v1.AcctState\x12\x39\n\x0einstr_accounts\x18\x04 \x03(\x0b\x32!.org.solana.sealevel.v1.InstrAcct\x12\x0c\n\x04\x64\x61ta\x18\x05 \x01(\x0c\x12\x10\n\x08\x63u_avail\x18\x06 \x01(\x04\x12\x37\n\x0btxn_context\x18\x07 \x01(\x0b\x32\".org.solana.sealevel.v1.TxnContext\x12\x39\n\x0cslot_context\x18\x08 \x01(\x0b\x32#.org.solana.sealevel.v1.SlotContext\x12;\n\repoch_context\x18\t \x01(\x0b\x32$.org.solana.sealevel.v1.EpochContext\"\x97\x01\n\x0cInstrEffects\x12\x0e\n\x06result\x18\x01 \x01(\x05\x12\x12\n\ncustom_err\x18\x02 \x01(\r\x12<\n\x11modified_accounts\x18\x03 \x03(\x0b\x32!.org.solana.sealevel.v1.AcctState\x12\x10\n\x08\x63u_avail\x18\x04 \x01(\x04\x12\x13\n\x0breturn_data\x18\x05 \x01(\x0c\"y\n\x0cInstrFixture\x12\x33\n\x05input\x18\x01 \x01(\x0b\x32$.org.solana.sealevel.v1.InstrContext\x12\x34\n\x06output\x18\x02 \x01(\x0b\x32$.org.solana.sealevel.v1.InstrEffects\"\x19\n\tELFBinary\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\"t\n\x0c\x45LFLoaderCtx\x12.\n\x03\x65lf\x18\x01 \x01(\x0b\x32!.org.solana.sealevel.v1.ELFBinary\x12\x34\n\x08\x66\x65\x61tures\x18\x02 \x01(\x0b\x32\".org.solana.sealevel.v1.FeatureSet\"~\n\x10\x45LFLoaderEffects\x12\x0e\n\x06rodata\x18\x01 \x01(\x0c\x12\x11\n\trodata_sz\x18\x02 \x01(\x04\x12\x10\n\x08text_cnt\x18\x04 \x01(\x04\x12\x10\n\x08text_off\x18\x05 \x01(\x04\x12\x10\n\x08\x65ntry_pc\x18\x06 \x01(\x04\x12\x11\n\tcalldests\x18\x07 \x03(\x04\"\x81\x01\n\x10\x45LFLoaderFixture\x12\x33\n\x05input\x18\x01 \x01(\x0b\x32$.org.solana.sealevel.v1.ELFLoaderCtx\x12\x38\n\x06output\x18\x02 \x01(\x0b\x32(.org.solana.sealevel.v1.ELFLoaderEffects\"G\n\x0fInputDataRegion\x12\x0e\n\x06offset\x18\x01 \x01(\r\x12\x0f\n\x07\x63ontent\x18\x02 \x01(\x0c\x12\x13\n\x0bis_writable\x18\x03 \x01(\x08\"\xcc\x02\n\tVmContext\x12\x10\n\x08heap_max\x18\x01 \x01(\x04\x12\x0e\n\x06rodata\x18\x02 \x01(\x0c\x12\"\n\x1arodata_text_section_offset\x18\x03 \x01(\x04\x12\"\n\x1arodata_text_section_length\x18\x04 \x01(\x04\x12\x43\n\x12input_data_regions\x18\x05 \x03(\x0b\x32\'.org.solana.sealevel.v1.InputDataRegion\x12\n\n\x02r0\x18\x06 \x01(\x04\x12\n\n\x02r1\x18\x07 \x01(\x04\x12\n\n\x02r2\x18\x08 \x01(\x04\x12\n\n\x02r3\x18\t \x01(\x04\x12\n\n\x02r4\x18\n \x01(\x04\x12\n\n\x02r5\x18\x0b \x01(\x04\x12\n\n\x02r6\x18\x0c \x01(\x04\x12\n\n\x02r7\x18\r \x01(\x04\x12\n\n\x02r8\x18\x0e \x01(\x04\x12\n\n\x02r9\x18\x0f \x01(\x04\x12\x0b\n\x03r10\x18\x10 \x01(\x04\x12\x0b\n\x03r11\x18\x11 \x01(\x04\"?\n\x11SyscallInvocation\x12\x15\n\rfunction_name\x18\x01 \x01(\x0c\x12\x13\n\x0bheap_prefix\x18\x02 \x01(\x0c\"\xc3\x01\n\x0eSyscallContext\x12\x31\n\x06vm_ctx\x18\x01 \x01(\x0b\x32!.org.solana.sealevel.v1.VmContext\x12\x37\n\tinstr_ctx\x18\x02 \x01(\x0b\x32$.org.solana.sealevel.v1.InstrContext\x12\x45\n\x12syscall_invocation\x18\x03 \x01(\x0b\x32).org.solana.sealevel.v1.SyscallInvocation\"\x8f\x01\n\x0eSyscallEffects\x12\r\n\x05\x65rror\x18\x01 \x01(\x03\x12\n\n\x02r0\x18\x02 \x01(\x04\x12\x10\n\x08\x63u_avail\x18\x03 \x01(\x04\x12\x0c\n\x04heap\x18\x04 \x01(\x0c\x12\r\n\x05stack\x18\x05 \x01(\x0c\x12\x11\n\tinputdata\x18\x06 \x01(\x0c\x12\x13\n\x0b\x66rame_count\x18\x07 \x01(\x04\x12\x0b\n\x03log\x18\x08 \x01(\x0c\"\x7f\n\x0eSyscallFixture\x12\x35\n\x05input\x18\x01 \x01(\x0b\x32&.org.solana.sealevel.v1.SyscallContext\x12\x36\n\x06output\x18\x02 \x01(\x0b\x32&.org.solana.sealevel.v1.SyscallEffectsb\x06proto3')
 )
 
 
@@ -602,6 +602,395 @@ _ELFLOADERFIXTURE = _descriptor.Descriptor(
   serialized_end=1413,
 )
 
+
+_INPUTDATAREGION = _descriptor.Descriptor(
+  name='InputDataRegion',
+  full_name='org.solana.sealevel.v1.InputDataRegion',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='offset', full_name='org.solana.sealevel.v1.InputDataRegion.offset', index=0,
+      number=1, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='content', full_name='org.solana.sealevel.v1.InputDataRegion.content', index=1,
+      number=2, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='is_writable', full_name='org.solana.sealevel.v1.InputDataRegion.is_writable', index=2,
+      number=3, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1415,
+  serialized_end=1486,
+)
+
+
+_VMCONTEXT = _descriptor.Descriptor(
+  name='VmContext',
+  full_name='org.solana.sealevel.v1.VmContext',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='heap_max', full_name='org.solana.sealevel.v1.VmContext.heap_max', index=0,
+      number=1, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='rodata', full_name='org.solana.sealevel.v1.VmContext.rodata', index=1,
+      number=2, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='rodata_text_section_offset', full_name='org.solana.sealevel.v1.VmContext.rodata_text_section_offset', index=2,
+      number=3, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='rodata_text_section_length', full_name='org.solana.sealevel.v1.VmContext.rodata_text_section_length', index=3,
+      number=4, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='input_data_regions', full_name='org.solana.sealevel.v1.VmContext.input_data_regions', index=4,
+      number=5, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='r0', full_name='org.solana.sealevel.v1.VmContext.r0', index=5,
+      number=6, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='r1', full_name='org.solana.sealevel.v1.VmContext.r1', index=6,
+      number=7, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='r2', full_name='org.solana.sealevel.v1.VmContext.r2', index=7,
+      number=8, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='r3', full_name='org.solana.sealevel.v1.VmContext.r3', index=8,
+      number=9, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='r4', full_name='org.solana.sealevel.v1.VmContext.r4', index=9,
+      number=10, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='r5', full_name='org.solana.sealevel.v1.VmContext.r5', index=10,
+      number=11, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='r6', full_name='org.solana.sealevel.v1.VmContext.r6', index=11,
+      number=12, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='r7', full_name='org.solana.sealevel.v1.VmContext.r7', index=12,
+      number=13, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='r8', full_name='org.solana.sealevel.v1.VmContext.r8', index=13,
+      number=14, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='r9', full_name='org.solana.sealevel.v1.VmContext.r9', index=14,
+      number=15, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='r10', full_name='org.solana.sealevel.v1.VmContext.r10', index=15,
+      number=16, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='r11', full_name='org.solana.sealevel.v1.VmContext.r11', index=16,
+      number=17, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1489,
+  serialized_end=1821,
+)
+
+
+_SYSCALLINVOCATION = _descriptor.Descriptor(
+  name='SyscallInvocation',
+  full_name='org.solana.sealevel.v1.SyscallInvocation',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='function_name', full_name='org.solana.sealevel.v1.SyscallInvocation.function_name', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='heap_prefix', full_name='org.solana.sealevel.v1.SyscallInvocation.heap_prefix', index=1,
+      number=2, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1823,
+  serialized_end=1886,
+)
+
+
+_SYSCALLCONTEXT = _descriptor.Descriptor(
+  name='SyscallContext',
+  full_name='org.solana.sealevel.v1.SyscallContext',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='vm_ctx', full_name='org.solana.sealevel.v1.SyscallContext.vm_ctx', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='instr_ctx', full_name='org.solana.sealevel.v1.SyscallContext.instr_ctx', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='syscall_invocation', full_name='org.solana.sealevel.v1.SyscallContext.syscall_invocation', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1889,
+  serialized_end=2084,
+)
+
+
+_SYSCALLEFFECTS = _descriptor.Descriptor(
+  name='SyscallEffects',
+  full_name='org.solana.sealevel.v1.SyscallEffects',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='error', full_name='org.solana.sealevel.v1.SyscallEffects.error', index=0,
+      number=1, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='r0', full_name='org.solana.sealevel.v1.SyscallEffects.r0', index=1,
+      number=2, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='cu_avail', full_name='org.solana.sealevel.v1.SyscallEffects.cu_avail', index=2,
+      number=3, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='heap', full_name='org.solana.sealevel.v1.SyscallEffects.heap', index=3,
+      number=4, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='stack', full_name='org.solana.sealevel.v1.SyscallEffects.stack', index=4,
+      number=5, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='inputdata', full_name='org.solana.sealevel.v1.SyscallEffects.inputdata', index=5,
+      number=6, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='frame_count', full_name='org.solana.sealevel.v1.SyscallEffects.frame_count', index=6,
+      number=7, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='log', full_name='org.solana.sealevel.v1.SyscallEffects.log', index=7,
+      number=8, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=2087,
+  serialized_end=2230,
+)
+
+
+_SYSCALLFIXTURE = _descriptor.Descriptor(
+  name='SyscallFixture',
+  full_name='org.solana.sealevel.v1.SyscallFixture',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='input', full_name='org.solana.sealevel.v1.SyscallFixture.input', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='output', full_name='org.solana.sealevel.v1.SyscallFixture.output', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=2232,
+  serialized_end=2359,
+)
+
 _EPOCHCONTEXT.fields_by_name['features'].message_type = _FEATURESET
 _INSTRCONTEXT.fields_by_name['accounts'].message_type = _ACCTSTATE
 _INSTRCONTEXT.fields_by_name['instr_accounts'].message_type = _INSTRACCT
@@ -615,6 +1004,12 @@ _ELFLOADERCTX.fields_by_name['elf'].message_type = _ELFBINARY
 _ELFLOADERCTX.fields_by_name['features'].message_type = _FEATURESET
 _ELFLOADERFIXTURE.fields_by_name['input'].message_type = _ELFLOADERCTX
 _ELFLOADERFIXTURE.fields_by_name['output'].message_type = _ELFLOADEREFFECTS
+_VMCONTEXT.fields_by_name['input_data_regions'].message_type = _INPUTDATAREGION
+_SYSCALLCONTEXT.fields_by_name['vm_ctx'].message_type = _VMCONTEXT
+_SYSCALLCONTEXT.fields_by_name['instr_ctx'].message_type = _INSTRCONTEXT
+_SYSCALLCONTEXT.fields_by_name['syscall_invocation'].message_type = _SYSCALLINVOCATION
+_SYSCALLFIXTURE.fields_by_name['input'].message_type = _SYSCALLCONTEXT
+_SYSCALLFIXTURE.fields_by_name['output'].message_type = _SYSCALLEFFECTS
 DESCRIPTOR.message_types_by_name['FeatureSet'] = _FEATURESET
 DESCRIPTOR.message_types_by_name['AcctState'] = _ACCTSTATE
 DESCRIPTOR.message_types_by_name['EpochContext'] = _EPOCHCONTEXT
@@ -628,6 +1023,12 @@ DESCRIPTOR.message_types_by_name['ELFBinary'] = _ELFBINARY
 DESCRIPTOR.message_types_by_name['ELFLoaderCtx'] = _ELFLOADERCTX
 DESCRIPTOR.message_types_by_name['ELFLoaderEffects'] = _ELFLOADEREFFECTS
 DESCRIPTOR.message_types_by_name['ELFLoaderFixture'] = _ELFLOADERFIXTURE
+DESCRIPTOR.message_types_by_name['InputDataRegion'] = _INPUTDATAREGION
+DESCRIPTOR.message_types_by_name['VmContext'] = _VMCONTEXT
+DESCRIPTOR.message_types_by_name['SyscallInvocation'] = _SYSCALLINVOCATION
+DESCRIPTOR.message_types_by_name['SyscallContext'] = _SYSCALLCONTEXT
+DESCRIPTOR.message_types_by_name['SyscallEffects'] = _SYSCALLEFFECTS
+DESCRIPTOR.message_types_by_name['SyscallFixture'] = _SYSCALLFIXTURE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 FeatureSet = _reflection.GeneratedProtocolMessageType('FeatureSet', (_message.Message,), dict(
@@ -720,6 +1121,48 @@ ELFLoaderFixture = _reflection.GeneratedProtocolMessageType('ELFLoaderFixture', 
   # @@protoc_insertion_point(class_scope:org.solana.sealevel.v1.ELFLoaderFixture)
   ))
 _sym_db.RegisterMessage(ELFLoaderFixture)
+
+InputDataRegion = _reflection.GeneratedProtocolMessageType('InputDataRegion', (_message.Message,), dict(
+  DESCRIPTOR = _INPUTDATAREGION,
+  __module__ = 'invoke_pb2'
+  # @@protoc_insertion_point(class_scope:org.solana.sealevel.v1.InputDataRegion)
+  ))
+_sym_db.RegisterMessage(InputDataRegion)
+
+VmContext = _reflection.GeneratedProtocolMessageType('VmContext', (_message.Message,), dict(
+  DESCRIPTOR = _VMCONTEXT,
+  __module__ = 'invoke_pb2'
+  # @@protoc_insertion_point(class_scope:org.solana.sealevel.v1.VmContext)
+  ))
+_sym_db.RegisterMessage(VmContext)
+
+SyscallInvocation = _reflection.GeneratedProtocolMessageType('SyscallInvocation', (_message.Message,), dict(
+  DESCRIPTOR = _SYSCALLINVOCATION,
+  __module__ = 'invoke_pb2'
+  # @@protoc_insertion_point(class_scope:org.solana.sealevel.v1.SyscallInvocation)
+  ))
+_sym_db.RegisterMessage(SyscallInvocation)
+
+SyscallContext = _reflection.GeneratedProtocolMessageType('SyscallContext', (_message.Message,), dict(
+  DESCRIPTOR = _SYSCALLCONTEXT,
+  __module__ = 'invoke_pb2'
+  # @@protoc_insertion_point(class_scope:org.solana.sealevel.v1.SyscallContext)
+  ))
+_sym_db.RegisterMessage(SyscallContext)
+
+SyscallEffects = _reflection.GeneratedProtocolMessageType('SyscallEffects', (_message.Message,), dict(
+  DESCRIPTOR = _SYSCALLEFFECTS,
+  __module__ = 'invoke_pb2'
+  # @@protoc_insertion_point(class_scope:org.solana.sealevel.v1.SyscallEffects)
+  ))
+_sym_db.RegisterMessage(SyscallEffects)
+
+SyscallFixture = _reflection.GeneratedProtocolMessageType('SyscallFixture', (_message.Message,), dict(
+  DESCRIPTOR = _SYSCALLFIXTURE,
+  __module__ = 'invoke_pb2'
+  # @@protoc_insertion_point(class_scope:org.solana.sealevel.v1.SyscallFixture)
+  ))
+_sym_db.RegisterMessage(SyscallFixture)
 
 
 # @@protoc_insertion_point(module_scope)
