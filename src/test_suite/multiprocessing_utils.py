@@ -368,8 +368,9 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
     if protobuf_structures[globals.solana_shared_library] is None:
         return 0, None
 
+    diff_effect_fn = globals.harness_ctx.diff_effect_fn
     test_case_passed = all(
-        protobuf_structures[globals.solana_shared_library] == result
+        diff_effect_fn(protobuf_structures[globals.solana_shared_library], result)
         for result in protobuf_structures.values()
     )
 
