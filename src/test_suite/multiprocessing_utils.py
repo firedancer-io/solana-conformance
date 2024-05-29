@@ -327,6 +327,8 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
             # Note: diff_effect_fn may modify effects in-place
             all_passed &= globals.harness_ctx.diff_effect_fn(ref_effects, effects)
             outputs[target] = text_format.MessageToString(effects)
+        else:
+            all_passed = False
 
     outputs[globals.solana_shared_library] = text_format.MessageToString(ref_effects)
 
