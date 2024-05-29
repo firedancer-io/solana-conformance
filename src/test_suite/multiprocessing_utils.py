@@ -282,56 +282,6 @@ def prune_execution_result(
     return targets_to_serialized_pruned_instruction_effects
 
 
-def check_consistency_in_results(file_stem: str, results: dict) -> dict[str, bool]:
-    """
-    Check consistency for all target libraries over all iterations for a test case.
-
-    Args:
-        - file_stem (str): File stem of the test case.
-        - execution_results (dict): Dictionary of target library names and serialized instruction effects.
-
-    Returns:
-        - dict[str, bool]: For each target name, 1 if passed, -1 if failed, 0 if skipped.
-    """
-    if results is None:
-        return {target: 0 for target in globals.target_libraries}
-
-    results_per_target = {}
-    for target in globals.target_libraries:
-        protobuf_structures = {}
-        for iteration in range(globals.n_iterations):
-            # Create a Protobuf struct to compare and output, if applicable
-            protobuf_struct = None
-            if results[target][iteration]:
-                # Turn bytes into human readable fields
-                protobuf_struct = globals.harness_ctx.effects_type()
-                protobuf_struct.ParseFromString(results[target][iteration])
-                globals.harness_ctx.effects_human_encode_fn(protobuf_struct)
-
-            protobuf_structures[iteration] = protobuf_struct
-
-            # Write output Protobuf struct to logs
-            with open(
-                globals.output_dir
-                / target.stem
-                / str(iteration)
-                / (file_stem + ".txt"),
-                "w",
-            ) as f:
-                if protobuf_struct:
-                    f.write(text_format.MessageToString(protobuf_struct))
-                else:
-                    f.write(str(None))
-
-        test_case_passed = all(
-            protobuf_structures[iteration] == protobuf_structures[0]
-            for iteration in range(globals.n_iterations)
-        )
-        results_per_target[target] = 1 if test_case_passed else -1
-
-    return results_per_target
-
-
 def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None]:
     """
     Build a single result of single test execution and returns whether the test passed or failed.
@@ -351,31 +301,37 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
 
     outputs = {target: "None\n" for target in results}
 
-    # Log execution results
-    protobuf_structures = {}
-    for target, result in results.items():
-        # Create a Protobuf struct to compare and output, if applicable
-        instruction_effects = None
-        if result is not None:
-            # Turn bytes into human readable fields
-            instruction_effects = globals.harness_ctx.effects_type()
-            instruction_effects.ParseFromString(result)
-            globals.harness_ctx.effects_human_encode_fn(instruction_effects)
-            outputs[target] = text_format.MessageToString(instruction_effects)
+    ref_result = results[globals.solana_shared_library]
 
-        protobuf_structures[target] = instruction_effects
-
-    if protobuf_structures[globals.solana_shared_library] is None:
+    if ref_result is None:
+        print("Skipping test case due to Agave rejection")
         return 0, None
 
-    diff_effect_fn = globals.harness_ctx.diff_effect_fn
-    test_case_passed = all(
-        diff_effect_fn(protobuf_structures[globals.solana_shared_library], result)
-        for result in protobuf_structures.values()
-    )
+    ref_effects = globals.harness_ctx.effects_type()
+    ref_effects.ParseFromString(ref_result)
+    globals.harness_ctx.effects_human_encode_fn(ref_effects)
+
+    # Log execution results
+    all_passed = True
+    for target, result in results.items():
+        if target == globals.solana_shared_library:
+            continue
+        # Create a Protobuf struct to compare and output, if applicable
+        effects = None
+        if result is not None:
+            # Turn bytes into human readable fields
+            effects = globals.harness_ctx.effects_type()
+            effects.ParseFromString(result)
+            globals.harness_ctx.effects_human_encode_fn(effects)
+
+            # Note: diff_effect_fn may modify effects in-place
+            all_passed &= globals.harness_ctx.diff_effect_fn(ref_effects, effects)
+            outputs[target] = text_format.MessageToString(effects)
+
+    outputs[globals.solana_shared_library] = text_format.MessageToString(ref_effects)
 
     # 1 = passed, -1 = failed
-    return 1 if test_case_passed else -1, outputs
+    return 1 if all_passed else -1, outputs
 
 
 def initialize_process_output_buffers(randomize_output_buffer=False):

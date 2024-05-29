@@ -289,6 +289,12 @@ def run_tests(
         "-v",
         help="Verbose output: log failed test cases",
     ),
+    consensus_mode: bool = typer.Option(
+        False,
+        "--consensus-mode",
+        "-c",
+        help="Only fail on consensus failures. One such effect is to normalize error codes when comparing results",
+    ),
 ):
     # Add Solana library to shared libraries
     shared_libraries = [solana_shared_library] + shared_libraries
@@ -296,6 +302,27 @@ def run_tests(
     # Specify globals
     globals.output_dir = output_dir
     globals.solana_shared_library = solana_shared_library
+
+    if consensus_mode:
+        original_diff_effects_fn = globals.harness_ctx.diff_effect_fn
+
+        def diff_effect_wrapper(a, b):
+            if globals.harness_ctx.result_field_name:
+                a_res = getattr(a, globals.harness_ctx.result_field_name)
+                b_res = getattr(b, globals.harness_ctx.result_field_name)
+
+                if not (a_res == 0 or b_res == 0):
+                    # normalize error code. Modifies effects in place!
+                    setattr(a, globals.harness_ctx.result_field_name, 1)
+                    setattr(b, globals.harness_ctx.result_field_name, 1)
+            else:
+                print(
+                    "No result field name found in harness context, will not normalize error codes."
+                )
+
+            return original_diff_effects_fn(a, b)
+
+        globals.harness_ctx.diff_effect_fn = diff_effect_wrapper
 
     # Create the output directory, if necessary
     if globals.output_dir.exists():
