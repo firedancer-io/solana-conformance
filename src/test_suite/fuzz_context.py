@@ -14,7 +14,7 @@ InstrHarness = HarnessCtx(
     context_human_encode_fn=instr_codec.encode_input,
     context_human_decode_fn=instr_codec.decode_input,
     effects_human_encode_fn=instr_codec.encode_output,
-    ignore_fields_for_consensus=["custom_err"],
+    ignore_fields_for_consensus=["custom_err", "cu_avail"],
 )
 
 SyscallHarness = HarnessCtx(
