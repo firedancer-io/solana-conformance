@@ -321,6 +321,16 @@ def run_tests(
                     "No result field name found in harness context, will not normalize error codes."
                 )
 
+            for field in globals.harness_ctx.ignore_fields_for_consensus:
+                try:
+                    a.ClearField(field)
+                except:
+                    pass
+                try:
+                    b.ClearField(field)
+                except:
+                    pass
+
             return original_diff_effects_fn(a, b)
 
         globals.harness_ctx.diff_effect_fn = diff_effect_wrapper
