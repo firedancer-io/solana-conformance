@@ -296,6 +296,12 @@ def run_tests(
         "-c",
         help="Only fail on consensus failures. One such effect is to normalize error codes when comparing results",
     ),
+    failures_only: bool = typer.Option(
+        False,
+        "--failures-only",
+        "-f",
+        help="Only log failed test cases",
+    ),
 ):
     # Add Solana library to shared libraries
     shared_libraries = [solana_shared_library] + shared_libraries
@@ -389,14 +395,15 @@ def run_tests(
                     globals.output_dir / target.stem / (file_stem + ".txt"), "w"
                 )
 
-            target_log_files[target].write(
-                file_stem
-                + ":\n"
-                + string_result
-                + "\n"
-                + "-" * LOG_FILE_SEPARATOR_LENGTH
-                + "\n"
-            )
+            if not failures_only or status == -1:
+                target_log_files[target].write(
+                    file_stem
+                    + ":\n"
+                    + string_result
+                    + "\n"
+                    + "-" * LOG_FILE_SEPARATOR_LENGTH
+                    + "\n"
+                )
 
         if status == 1:
             passed += 1
