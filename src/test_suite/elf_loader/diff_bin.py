@@ -1,6 +1,10 @@
 import sys
 import subprocess
 
+"""
+Compares the contents of two ELF binaries and prints the differences as hexdumps
+"""
+
 
 def hexdump(file_path):
     # Run the hexdump command on the file and return the output
