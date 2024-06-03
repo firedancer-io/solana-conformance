@@ -302,6 +302,12 @@ def run_tests(
         "-f",
         help="Only log failed test cases",
     ),
+    save_failures: bool = typer.Option(
+        False,
+        "--save-failures",
+        "-sf",
+        help="Saves failed test cases to results directory",
+    ),
 ):
     # Add Solana library to shared libraries
     shared_libraries = [solana_shared_library] + shared_libraries
@@ -357,6 +363,11 @@ def run_tests(
         log_dir = globals.output_dir / target.stem
         log_dir.mkdir(parents=True, exist_ok=True)
 
+    # Make failed protobuf directory
+    if save_failures:
+        failed_protobufs_dir = globals.output_dir / "failed_protobufs"
+        failed_protobufs_dir.mkdir(parents=True, exist_ok=True)
+
     test_cases = list(input_dir.iterdir())
     num_test_cases = len(test_cases)
 
@@ -410,6 +421,10 @@ def run_tests(
         elif status == -1:
             failed += 1
             failed_tests.append(file_stem)
+            if save_failures:
+                failed_protobufs = list(input_dir.glob(f"{file_stem}*"))
+                for failed_protobuf in failed_protobufs:
+                    shutil.copy(failed_protobuf, failed_protobufs_dir)
 
     print("Cleaning up...")
     for target in shared_libraries:
