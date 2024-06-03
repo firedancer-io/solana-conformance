@@ -2,7 +2,7 @@ import hashlib
 import test_suite.invoke_pb2 as pb
 from eth_hash.auto import keccak
 
-OUTPUT_DIR = "./test-vectors/instr/inputs/20240425/syscalls/secp256k1"
+OUTPUT_DIR = "./test-vectors/syscall/tests/secp256k1"
 HEAP_START = 0x300000000
 CU_BASE = 25_000
 
@@ -197,9 +197,8 @@ if __name__ == "__main__":
             0x4ab8b2b10003ad50,  # secp256k1_recover_syscall_enabled
         ])
 
-        filename = str(key) + "_" + hashlib.sha3_256(syscall_ctx.instr_ctx.data).hexdigest()[:16]
-
         serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
+        filename = str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
         with open(f"{OUTPUT_DIR}/{filename}.bin", "wb") as f:
             f.write(serialized_instr)
 
