@@ -264,7 +264,10 @@ def run_tests(
         help="Solana (or ground truth) shared object (.so) target file path",
     ),
     shared_libraries: List[Path] = typer.Option(
-        [], "--target", "-t", help="Shared object (.so) target file paths"
+        [Path("impl/lib/libsolfuzz_firedancer.so")],
+        "--target",
+        "-t",
+        help="Shared object (.so) target file paths",
     ),
     output_dir: Path = typer.Option(
         Path("test_results"),
