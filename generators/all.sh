@@ -1,10 +1,42 @@
 #!/bin/bash
-TESTS_PATH=./test-vectors/instr/inputs/20240425
-rm ${TESTS_PATH}/ed25519/* ;            python3 generators/ed25519.py
-rm ${TESTS_PATH}/secp256k1/* ;          python3 generators/secp256k1.py
-rm ${TESTS_PATH}/syscalls/keccak256/*
-rm ${TESTS_PATH}/syscalls/blake3/*
-rm ${TESTS_PATH}/syscalls/sha256/* ;    python3 generators/syscalls_hash.py
-rm ${TESTS_PATH}/syscalls/secp256k1/* ; python3 generators/syscalls_secp256k1.py
-rm ${TESTS_PATH}/syscalls/poseidon/* ;  python3 generators/syscalls_poseidon.py
-rm ${TESTS_PATH}/syscalls/alt_bn128/* ; python3 generators/syscalls_alt_bn128.py
+TESTS_PATH=./test-vectors/precompile/tests
+FIXTS_PATH=./test-vectors/precompile/fixtures
+
+# rm -r ${TESTS_PATH}/ed25519   ; mkdir -p ${TESTS_PATH}/ed25519
+# python3 generators/ed25519.py
+# rm -r ${FIXTS_PATH}/ed25519   ; mkdir -p ${FIXTS_PATH}/ed25519
+# solana-test-suite create-fixtures -i ${TESTS_PATH}/ed25519 -o ${FIXTS_PATH}/ed25519 -s ./impl/lib/libsolfuzz_agave_v2.0.so
+
+# rm -r ${TESTS_PATH}/secp256k1 ; mkdir -p ${TESTS_PATH}/secp256k1
+# python3 generators/secp256k1.py
+# rm -r ${FIXTS_PATH}/secp256k1 ; mkdir -p ${FIXTS_PATH}/secp256k1
+# solana-test-suite create-fixtures -i ${TESTS_PATH}/secp256k1 -o ${FIXTS_PATH}/secp256k1 -s ./impl/lib/libsolfuzz_agave_v2.0.so
+
+TESTS_PATH=./test-vectors/syscall/tests
+FIXTS_PATH=./test-vectors/syscall/fixtures
+
+rm -r ${TESTS_PATH}/secp256k1 ; mkdir -p ${TESTS_PATH}/secp256k1
+python3 generators/syscalls_secp256k1.py
+rm -r ${FIXTS_PATH}/secp256k1 ; mkdir -p ${FIXTS_PATH}/secp256k1
+solana-test-suite create-fixtures -i ${TESTS_PATH}/secp256k1 -o ${FIXTS_PATH}/secp256k1 -s ./impl/lib/libsolfuzz_agave_v2.0.so
+
+rm -r ${TESTS_PATH}/poseidon ; mkdir -p ${TESTS_PATH}/poseidon
+python3 generators/syscalls_poseidon.py
+rm -r ${FIXTS_PATH}/poseidon ; mkdir -p ${FIXTS_PATH}/poseidon
+solana-test-suite create-fixtures -i ${TESTS_PATH}/poseidon -o ${FIXTS_PATH}/poseidon -s ./impl/lib/libsolfuzz_agave_v2.0.so
+
+rm -r ${TESTS_PATH}/alt_bn128 ; mkdir -p ${TESTS_PATH}/alt_bn128
+python3 generators/syscalls_alt_bn128.py
+rm -r ${FIXTS_PATH}/alt_bn128 ; mkdir -p ${FIXTS_PATH}/alt_bn128
+solana-test-suite create-fixtures -i ${TESTS_PATH}/alt_bn128 -o ${FIXTS_PATH}/alt_bn128 -s ./impl/lib/libsolfuzz_agave_v2.0.so
+
+rm -r ${TESTS_PATH}/sha256    ; mkdir -p ${TESTS_PATH}/sha256
+rm -r ${TESTS_PATH}/keccak256 ; mkdir -p ${TESTS_PATH}/keccak256
+rm -r ${TESTS_PATH}/blake3    ; mkdir -p ${TESTS_PATH}/blake3
+python3 generators/syscalls_hash.py
+rm -r ${FIXTS_PATH}/sha256    ; mkdir -p ${FIXTS_PATH}/sha256
+rm -r ${FIXTS_PATH}/keccak256 ; mkdir -p ${FIXTS_PATH}/keccak256
+rm -r ${FIXTS_PATH}/blake3    ; mkdir -p ${FIXTS_PATH}/blake3
+solana-test-suite create-fixtures -i ${TESTS_PATH}/sha256 -o ${FIXTS_PATH}/sha256 -s ./impl/lib/libsolfuzz_agave_v2.0.so
+solana-test-suite create-fixtures -i ${TESTS_PATH}/keccak256 -o ${FIXTS_PATH}/keccak256 -s ./impl/lib/libsolfuzz_agave_v2.0.so
+solana-test-suite create-fixtures -i ${TESTS_PATH}/blake3 -o ${FIXTS_PATH}/blake3 -s ./impl/lib/libsolfuzz_agave_v2.0.so

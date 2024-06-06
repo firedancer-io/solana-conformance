@@ -2,7 +2,7 @@ import hashlib
 import test_suite.invoke_pb2 as pb
 import struct
 
-OUTPUT_DIR = "./test-vectors/instr/inputs/20240425/syscalls"
+OUTPUT_DIR = "./test-vectors/syscall/tests/"
 HEAP_START = 0x300000000
 CU_BASE = 85
 CU_PER_BYTE = 1  # this is actually every 2 bytes...
@@ -199,9 +199,8 @@ if __name__ == "__main__":
 
             syscall_ctx.instr_ctx.epoch_context.features.features.extend([0xe994a4b8eeea84f4]) # enable blake3
 
-            filename = str(key) + "_" + hashlib.sha3_256(syscall_ctx.instr_ctx.data).hexdigest()[:16]
-
             serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
+            filename = str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
             with open(f"{OUTPUT_DIR}/{hash}/{filename}.bin", "wb") as f:
                 f.write(serialized_instr)
 

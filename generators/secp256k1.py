@@ -5,7 +5,7 @@ import test_suite.invoke_pb2 as pb
 from dataclasses import dataclass
 import requests
 
-OUTPUT_DIR = "./test-vectors/instr/inputs/20240425/secp256k1"
+OUTPUT_DIR = "./test-vectors/precompile/tests/secp256k1"
 
 program_id = "KeccakSecp256k11111111111111111111111111111"
 accounts = []
@@ -125,9 +125,8 @@ for (key, test) in test_vectors:
     instr_ctx.instr_accounts.extend([pb.InstrAcct()])
     instr_ctx.epoch_context.features.features.extend([0x1a6958db2ff09870])
 
-    filename = str(key) + "_" + hashlib.sha3_256(instr_ctx.data).hexdigest()[:16]
-
     serialized_instr = instr_ctx.SerializeToString(deterministic=True)
+    filename = str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
     with open(f"{OUTPUT_DIR}/{filename}.bin", "wb") as f:
         f.write(serialized_instr)
 
