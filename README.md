@@ -43,7 +43,7 @@ Optionally, instruction context messages may also be left in the original Protob
 To run the test suite, use the following command:
 
 ```sh
-solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_target.so> --target <firedancer.so> [--target <target_2> ...] --output-dir <log_output_dir> --num-processes <num_processes> --chunk-size <chunk_size> [--randomize-output-buffer]
+solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_target.so> --target <firedancer.so> [--target <target_2> ...] --output-dir <log_output_dir> --num-processes <num_processes> --chunk-size <chunk_size> [--randomize-output-buffer] [--verbose] [--consensus-mode] [--failures-only] [--save-failures]
 ```
 
 You can provide both `InstrContext` and `InstrFixture` within `--input-dir` - parsing is taken care of depending on the file extension `.bin` for `InstrContext` and `.fix` for `InstrFixture`.
@@ -58,6 +58,10 @@ You can provide both `InstrContext` and `InstrFixture` within `--input-dir` - pa
 | `--randomize-output-buffer`| Randomizes bytes in output buffer before shared library execution                                                        |
 | `--chunk-size`  | Number of test results per log file |
 | `--verbose`   | Verbose output: log failed test cases |
+| `--consensus-mode` | Only fail on consensus failures. One such effect is to normalize error codes when comparing results |
+| `--failures-only` | Only log failed test cases |
+| `--save-failures` | Saves failed test cases to results directory |
+
 
 **Note:** Each `.so` target file name should be unique.
 
