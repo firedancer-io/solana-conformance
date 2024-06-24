@@ -29,10 +29,22 @@ lib/libsolfuzz_firedancer.so:
 	ln -sf ../firedancer/build/native/clang/lib/libfd_exec_sol_compat.so lib/libsolfuzz_firedancer.so
 	ln -sf ../firedancer/build/native/clang/lib/libfd_ballet.a lib/libfd_ballet.a
 
+solfuzz/build/fuzz_sol_prog:
+	mkdir -p bin
+	[ ! -f solfuzz/shlr/protobuf ] && cd solfuzz && git submodule update --init --recursive && cd - || true
+	[ ! -f solfuzz/opt/bin/protoc ] && cd solfuzz && sys/deps.sh && cd - || true
+	cd solfuzz && cmake -B build -DCMAKE_CXX_COMPILER=clang++ . && cmake --build build && cd -
+
+bin/fuzz_sol_prog: solfuzz/build/fuzz_sol_prog
+	mkdir -p bin
+	ln -sf $(shell realpath $<) $@
+
 .PHONY: clean
 clean:
 	find lib -name '*.so' -delete || true
 	find lib -name '*.a' -delete || true
+	find bin -type l -delete || true
 	[ -d agave-v1.17 ] && $(MAKE) -C agave-v1.17 clean || true
 	[ -d agave-v2.0 ] && $(MAKE) -C agave-v2.0 clean || true
 	[ -d firedancer ] && rm -rf firedancer/opt && $(MAKE) -C firedancer distclean || true
+	[ -d solfuzz/build ] && rm -rf solfuzz/build || true

@@ -9,3 +9,7 @@
 	path = impl/agave-v2.0
 	url = https://github.com/firedancer-io/solfuzz-agave
 	branch = agave-v2.0
+[submodule "impl/solfuzz"]
+	path = impl/solfuzz
+	url = https://github.com/firedancer-io/solfuzz
+	branch = main
