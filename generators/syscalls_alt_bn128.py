@@ -1,6 +1,6 @@
 import base64
 import hashlib
-import test_suite.invoke_pb2 as pb
+import test_suite.vm_pb2 as vm_pb
 
 OUTPUT_DIR = "./test-vectors/syscall/tests/alt_bn128"
 HEAP_START = 0x300000000
@@ -9,15 +9,15 @@ CU_PER_ELEM = 61
 CU_MEM_OP = 10
 
 ADD_OP = 0
-ADD_SZ = 64+64
+ADD_SZ = 64 + 64
 ADD_CU = 334
 
 MUL_OP = 2
-MUL_SZ = 64+32
+MUL_SZ = 64 + 32
 MUL_CU = 3840
 
 PAIRING_OP = 3
-PAIRING_SZ = (64+128)*2
+PAIRING_SZ = (64 + 128) * 2
 PAIRING_CU = 36364 + 12121 + PAIRING_SZ + 85 + 32  # wtf!?
 
 COMP_G1_OP = 0
@@ -74,42 +74,46 @@ DECOMP_G2_CU = 13610 + 100
 # xprint("neg_y_of_half_p_neg1", lift(-sqrt(half_p_neg1^3+3)))
 
 # annoying values
-r                       = "30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001"
-r_plus1                 = "30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000002"
-r_neg1                  = "30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000"
-half_r_plus1            = "183227397098d014dc2822db40c0ac2e9419f4243cdcb848a1f0fac9f8000001"
-half_r_neg1             = "183227397098d014dc2822db40c0ac2e9419f4243cdcb848a1f0fac9f8000000"
-ff                      = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-three_f                 = "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-p                       = "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47"
-p_plus1                 = "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd48"
-p_plus2                 = "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd49"
-p_plus4                 = "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd4b"
-half_p_plus1            = "183227397098d014dc2822db40c0ac2ecbc0b548b438e5469e10460b6c3e7ea4"
-half_p_neg1             = "183227397098d014dc2822db40c0ac2ecbc0b548b438e5469e10460b6c3e7ea3"
-zero                    = "0000000000000000000000000000000000000000000000000000000000000000"
-one                     = "0000000000000000000000000000000000000000000000000000000000000001"
-two                     = "0000000000000000000000000000000000000000000000000000000000000002"
-four                    = "0000000000000000000000000000000000000000000000000000000000000004"
-sqrt_2                  = "08c6d2adffacbc8438f09f321874ea66e2fcc29f8dcfec2caefa21ec8c96a408"
-sqrt_11                 = "0ce2c194b86251806451ec04be095d60517130cff61fcb49c4ef4e708dac7f34"
-cbrt_neg2               = "2409ed9a7b7567337c6bfd3b97e9703c9deffb228c6c7324d8a447837238b15e"
-neg_one                 = "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd46"
-neg_two                 = "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd45"
-neg_four                = "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd43"
-neg_sqrt_2              = "279d7bc4e184e3a57f5fa684690c6df6b484a7f1daa1de608d266a2a4be6593f"
-neg_sqrt_11             = "23818cde28cf4ea953fe59b1c377fafd461039c17251ff4377313da64ad07e13"
-neg_cbrt_neg2           = "0c5a60d865bc38f63be4487ae997e820f9916f6edc055768637c449366444be9"
-y_of_half_p_plus1       = "0af887597f97eba5472cc6fe9e9225009bbbf3477143e737dab8aa67afbc4d0a"
-neg_y_of_half_p_plus1   = "256bc7196199b48471237eb7e2ef335cfbc57749f72de3556167e1af28c0b03d"
-y_of_half_p_neg1        = "0a6ea289876b139cfe2cd1f08c065a2ab4aad542eaccb013520ea36934e877b4"
-neg_y_of_half_p_neg1    = "25f5abe959c68c8cba2373c5f57afe32e2d6954e7da51a79ea11e8ada3948593"
-threef_mod_p	        = "0f9bb18d1ece5fd647afba497e7ea7a2687e956e978e3572c3df73e9278302b8"
-y_of_threef         	= "050627a03f77e36ba8541ff3e600a32a4792560aeb37454c810120db7063b653"
-neg_y_of_threef	        = "2b5e26d2a1b9bcbe0ffc25c29b80b5334fef14867d3a8540bb1f6b3b681946f4"
-x_of_p_plus1_half	    = "113568bcb08769c966ff32fc8d27c3d0bbaf342cdc318bddcbd287f8a5b99a52"
-p_plus1_half	        = "183227397098d014dc2822db40c0ac2ecbc0b548b438e5469e10460b6c3e7ea4"
-neg_p_plus1_half	    = "183227397098d014dc2822db40c0ac2ecbc0b548b438e5469e10460b6c3e7ea3"
+r = "30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001"
+r_plus1 = "30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000002"
+r_neg1 = "30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000"
+half_r_plus1 = "183227397098d014dc2822db40c0ac2e9419f4243cdcb848a1f0fac9f8000001"
+half_r_neg1 = "183227397098d014dc2822db40c0ac2e9419f4243cdcb848a1f0fac9f8000000"
+ff = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+three_f = "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+p = "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47"
+p_plus1 = "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd48"
+p_plus2 = "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd49"
+p_plus4 = "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd4b"
+half_p_plus1 = "183227397098d014dc2822db40c0ac2ecbc0b548b438e5469e10460b6c3e7ea4"
+half_p_neg1 = "183227397098d014dc2822db40c0ac2ecbc0b548b438e5469e10460b6c3e7ea3"
+zero = "0000000000000000000000000000000000000000000000000000000000000000"
+one = "0000000000000000000000000000000000000000000000000000000000000001"
+two = "0000000000000000000000000000000000000000000000000000000000000002"
+four = "0000000000000000000000000000000000000000000000000000000000000004"
+sqrt_2 = "08c6d2adffacbc8438f09f321874ea66e2fcc29f8dcfec2caefa21ec8c96a408"
+sqrt_11 = "0ce2c194b86251806451ec04be095d60517130cff61fcb49c4ef4e708dac7f34"
+cbrt_neg2 = "2409ed9a7b7567337c6bfd3b97e9703c9deffb228c6c7324d8a447837238b15e"
+neg_one = "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd46"
+neg_two = "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd45"
+neg_four = "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd43"
+neg_sqrt_2 = "279d7bc4e184e3a57f5fa684690c6df6b484a7f1daa1de608d266a2a4be6593f"
+neg_sqrt_11 = "23818cde28cf4ea953fe59b1c377fafd461039c17251ff4377313da64ad07e13"
+neg_cbrt_neg2 = "0c5a60d865bc38f63be4487ae997e820f9916f6edc055768637c449366444be9"
+y_of_half_p_plus1 = "0af887597f97eba5472cc6fe9e9225009bbbf3477143e737dab8aa67afbc4d0a"
+neg_y_of_half_p_plus1 = (
+    "256bc7196199b48471237eb7e2ef335cfbc57749f72de3556167e1af28c0b03d"
+)
+y_of_half_p_neg1 = "0a6ea289876b139cfe2cd1f08c065a2ab4aad542eaccb013520ea36934e877b4"
+neg_y_of_half_p_neg1 = (
+    "25f5abe959c68c8cba2373c5f57afe32e2d6954e7da51a79ea11e8ada3948593"
+)
+threef_mod_p = "0f9bb18d1ece5fd647afba497e7ea7a2687e956e978e3572c3df73e9278302b8"
+y_of_threef = "050627a03f77e36ba8541ff3e600a32a4792560aeb37454c810120db7063b653"
+neg_y_of_threef = "2b5e26d2a1b9bcbe0ffc25c29b80b5334fef14867d3a8540bb1f6b3b681946f4"
+x_of_p_plus1_half = "113568bcb08769c966ff32fc8d27c3d0bbaf342cdc318bddcbd287f8a5b99a52"
+p_plus1_half = "183227397098d014dc2822db40c0ac2ecbc0b548b438e5469e10460b6c3e7ea4"
+neg_p_plus1_half = "183227397098d014dc2822db40c0ac2ecbc0b548b438e5469e10460b6c3e7ea3"
 
 annoying_scalars = [
     # valid
@@ -124,42 +128,43 @@ annoying_scalars = [
     three_f,
     ff,
 ]
-annoying_scalars = [
-    base64.b16decode(scalar, True) for scalar in annoying_scalars
-]
+annoying_scalars = [base64.b16decode(scalar, True) for scalar in annoying_scalars]
 
 annoying_points = [
     # there's no point with x=0 or y=0
     # valid
-    [ zero, zero ],  # point at infinity
-    [ one, two ],
-    [ one, neg_two ],
-    [ neg_one, sqrt_2 ],
-    [ neg_one, neg_sqrt_2 ],
-    [ two, sqrt_11 ],
-    [ two, neg_sqrt_11 ],
-    [ cbrt_neg2, one ],
-    [ cbrt_neg2, neg_one ],
-    [ half_p_plus1, y_of_half_p_plus1 ],
-    [ half_p_plus1, neg_y_of_half_p_plus1 ],
-    [ half_p_neg1, y_of_half_p_neg1 ],
-    [ half_p_neg1, neg_y_of_half_p_neg1 ],
-    [ threef_mod_p, y_of_threef ],
-    [ threef_mod_p, neg_y_of_threef ],
-    [ x_of_p_plus1_half, p_plus1_half ],  # this is annoying because sqrt(.) = (p+1)/2 which is exactly at the cut off of neg vs pos
-    [ x_of_p_plus1_half, neg_p_plus1_half ],
+    [zero, zero],  # point at infinity
+    [one, two],
+    [one, neg_two],
+    [neg_one, sqrt_2],
+    [neg_one, neg_sqrt_2],
+    [two, sqrt_11],
+    [two, neg_sqrt_11],
+    [cbrt_neg2, one],
+    [cbrt_neg2, neg_one],
+    [half_p_plus1, y_of_half_p_plus1],
+    [half_p_plus1, neg_y_of_half_p_plus1],
+    [half_p_neg1, y_of_half_p_neg1],
+    [half_p_neg1, neg_y_of_half_p_neg1],
+    [threef_mod_p, y_of_threef],
+    [threef_mod_p, neg_y_of_threef],
+    [
+        x_of_p_plus1_half,
+        p_plus1_half,
+    ],  # this is annoying because sqrt(.) = (p+1)/2 which is exactly at the cut off of neg vs pos
+    [x_of_p_plus1_half, neg_p_plus1_half],
     # invalid
-    [ p_plus1, neg_two ],           # invalid x>=p
-    [ p_plus2, sqrt_11 ],           # invalid x>=p
-    [ three_f, y_of_threef ],       # invalid x>=p
-    [ three_f, neg_y_of_threef ],   # invalid x>=p
-    [ one, p_plus2 ],               # invalid y>=p
-    [ cbrt_neg2, p_plus1 ],         # invalid y>=p
-    [ p, one ],                     # invalid x>=p + not on curve
-    [ one, p ],                     # invalid y>=p + not on curve
-    [ zero, one ],                  # not on curve
-    [ one, zero ],                  # not on curve
-    [ two, one ],                   # not on curve
+    [p_plus1, neg_two],  # invalid x>=p
+    [p_plus2, sqrt_11],  # invalid x>=p
+    [three_f, y_of_threef],  # invalid x>=p
+    [three_f, neg_y_of_threef],  # invalid x>=p
+    [one, p_plus2],  # invalid y>=p
+    [cbrt_neg2, p_plus1],  # invalid y>=p
+    [p, one],  # invalid x>=p + not on curve
+    [one, p],  # invalid y>=p + not on curve
+    [zero, one],  # not on curve
+    [one, zero],  # not on curve
+    [two, one],  # not on curve
 ]
 annoying_points = [
     [base64.b16decode(coord, True) for coord in point] for point in annoying_points
@@ -169,24 +174,12 @@ very_annoying_points = [point for point in annoying_points]
 for point in annoying_points:
     x = point[0]
     y = point[1]
-    very_annoying_points.append([
-        bytes([x[0] | 0x80]) + x[1:], y
-    ])
-    very_annoying_points.append([
-        bytes([x[0] | 0x40]) + x[1:], y
-    ])
-    very_annoying_points.append([
-        bytes([x[0] | 0xC0]) + x[1:], y
-    ])
-    very_annoying_points.append([
-        x, bytes([y[0] | 0x80]) + y[1:]
-    ])
-    very_annoying_points.append([
-        x, bytes([y[0] | 0x40]) + y[1:]
-    ])
-    very_annoying_points.append([
-        x, bytes([y[0] | 0xC0]) + y[1:]
-    ])
+    very_annoying_points.append([bytes([x[0] | 0x80]) + x[1:], y])
+    very_annoying_points.append([bytes([x[0] | 0x40]) + x[1:], y])
+    very_annoying_points.append([bytes([x[0] | 0xC0]) + x[1:], y])
+    very_annoying_points.append([x, bytes([y[0] | 0x80]) + y[1:]])
+    very_annoying_points.append([x, bytes([y[0] | 0x40]) + y[1:]])
+    very_annoying_points.append([x, bytes([y[0] | 0xC0]) + y[1:]])
 
 # def xprint2(name, val):
 #     print(name+"\t= [\""+lift(val[0]).hex().rjust(64, "0")+"\",\n\t   \""+lift(val[1]).hex().rjust(64, "0")+"\"]")
@@ -218,120 +211,132 @@ for point in annoying_points:
 # xprint2("q_x", Q[0])
 # xprint2("q_y", Q[1])
 # xprint2("-q_y", -Q[1])
-zero_fp2                = [ zero, zero ]
-one_fp2                 = [ one, zero ]
-four_fp2                = [ four, zero ]
-neg_one_fp2             = [ neg_one, zero ]
-neg_four_fp2            = [ neg_four, zero ]
-u_fp2                   = [ zero, one ]
-sqrt_b_plus1            = ["07fb3d558dafafb6bf6dd326a5fefe0beca3f9ac3bd999a390d504fad34b0b8c",
-                           "2351dcdda257b62181cbd745dfee16d5fdf4eb185bbcf33c20a0fe6eaa9cb4a3"]
-neg_sqrt_b_plus1        = ["2869111d5381f072f8e2728fdb825a51aadd70e52c9830e9ab4b871c0531f1bb",
-                           "0d1271953ed9ea0836846e70a1934187998c7f790cb4d7511b7f8da82de048a4"]
-sqrt_b_plus8            = ["181604d0560080401c08b557815482553e278257d98100d193a011c42782474d",
-                           "04f21f9d99cc25f694cf22ff70dc0ac4692e7a721b725dc454a217f04bd03e33"]
-neg_sqrt_b_plus8        = ["184e49a28b311fe99c47905f002cd6085959e8398ef0c9bba8807a52b0fab5fa",
-                           "2b722ed547657a33238122b710a54d992e52f01f4cff6cc8e77e74268cacbf14"]
-sqrt_b_plus_u3          = ["23712136978ed49faf2120ca4f7f71cfd4e7b46ffa0ea89edbc94ddc59238e9f",
-                           "28a7a81c6bf2a75dc9f0125bb581747e9e6b33fc3b2710a2309cef97a3163c65"]
-neg_sqrt_b_plus_u3      = ["0cf32d3c49a2cb8a092f24ec3201e68dc299b6216e6321ee60573e3a7f596ea8",
-                           "07bca656753ef8cbee60335acbffe3def91636952d4ab9eb0b839c7f3566c0e2"]
-x_of_4_neg_b            = ["2546ace32139a7a3c69640d9df58e150b88a42c976cafdef331b58675f396376",
-                           "2994b43083ae5696b5cceb1ac5215caea04df0465b26971adc5ce02d0eb9cf1e"]
-p0_x                    = ["2596bb90715dfa4741dcbeaf28c320208deb53db69c03bdc77f94bfa8d9c5009",
-                           "149c5d10b3868d761097695617918ab5e34e0738d6599f2b819039699b0b67bd"]
-p0_y                    = ["090b286ef054afb53f78b704798292c0a34050335d9e5ffde8c44ccce1b7ce65",
-                           "017bcb12e82231f89202cad867962b32340b4fb0feac5c4a9b54e71818a4e995"]
-p0_neg_y                = ["27592603f0dcf07478d78eb207fec59cf4411a5e0ad36a8f535c3f49f6c52ee2",
-                           "2ee8835ff90f6e31264d7ade19eb2d2b63761ae069c56e42a0cba4febfd813b2"]
-p1_x                    = ["2dfdbddb35cd04b9ce74a7a70a01cb33c68438b1f204f7eedb9cb04b80059a57",
-                           "195a872169329de142bed50d425185fbca9cb6a98705001a4ac22a88844146c5"]
-p1_y                    = ["24d32fefd984c28bfd9adf9fbc87b8e942127e8c65185f836bf305ac110f882f",
-                           "041122306036b204a1fbf64c80d523315dda91df56a9542308f4cd4a2ab178ed"]
-p1_neg_y                = ["0b911e8307acdd9dbab56616c4f99f74556eec0503596b09d02d866ac76d7518",
-                           "2c532c4280faee2516544f6a00ac352c39a6d8b211c8766a332bbeccadcb845a"]
+zero_fp2 = [zero, zero]
+one_fp2 = [one, zero]
+four_fp2 = [four, zero]
+neg_one_fp2 = [neg_one, zero]
+neg_four_fp2 = [neg_four, zero]
+u_fp2 = [zero, one]
+sqrt_b_plus1 = [
+    "07fb3d558dafafb6bf6dd326a5fefe0beca3f9ac3bd999a390d504fad34b0b8c",
+    "2351dcdda257b62181cbd745dfee16d5fdf4eb185bbcf33c20a0fe6eaa9cb4a3",
+]
+neg_sqrt_b_plus1 = [
+    "2869111d5381f072f8e2728fdb825a51aadd70e52c9830e9ab4b871c0531f1bb",
+    "0d1271953ed9ea0836846e70a1934187998c7f790cb4d7511b7f8da82de048a4",
+]
+sqrt_b_plus8 = [
+    "181604d0560080401c08b557815482553e278257d98100d193a011c42782474d",
+    "04f21f9d99cc25f694cf22ff70dc0ac4692e7a721b725dc454a217f04bd03e33",
+]
+neg_sqrt_b_plus8 = [
+    "184e49a28b311fe99c47905f002cd6085959e8398ef0c9bba8807a52b0fab5fa",
+    "2b722ed547657a33238122b710a54d992e52f01f4cff6cc8e77e74268cacbf14",
+]
+sqrt_b_plus_u3 = [
+    "23712136978ed49faf2120ca4f7f71cfd4e7b46ffa0ea89edbc94ddc59238e9f",
+    "28a7a81c6bf2a75dc9f0125bb581747e9e6b33fc3b2710a2309cef97a3163c65",
+]
+neg_sqrt_b_plus_u3 = [
+    "0cf32d3c49a2cb8a092f24ec3201e68dc299b6216e6321ee60573e3a7f596ea8",
+    "07bca656753ef8cbee60335acbffe3def91636952d4ab9eb0b839c7f3566c0e2",
+]
+x_of_4_neg_b = [
+    "2546ace32139a7a3c69640d9df58e150b88a42c976cafdef331b58675f396376",
+    "2994b43083ae5696b5cceb1ac5215caea04df0465b26971adc5ce02d0eb9cf1e",
+]
+p0_x = [
+    "2596bb90715dfa4741dcbeaf28c320208deb53db69c03bdc77f94bfa8d9c5009",
+    "149c5d10b3868d761097695617918ab5e34e0738d6599f2b819039699b0b67bd",
+]
+p0_y = [
+    "090b286ef054afb53f78b704798292c0a34050335d9e5ffde8c44ccce1b7ce65",
+    "017bcb12e82231f89202cad867962b32340b4fb0feac5c4a9b54e71818a4e995",
+]
+p0_neg_y = [
+    "27592603f0dcf07478d78eb207fec59cf4411a5e0ad36a8f535c3f49f6c52ee2",
+    "2ee8835ff90f6e31264d7ade19eb2d2b63761ae069c56e42a0cba4febfd813b2",
+]
+p1_x = [
+    "2dfdbddb35cd04b9ce74a7a70a01cb33c68438b1f204f7eedb9cb04b80059a57",
+    "195a872169329de142bed50d425185fbca9cb6a98705001a4ac22a88844146c5",
+]
+p1_y = [
+    "24d32fefd984c28bfd9adf9fbc87b8e942127e8c65185f836bf305ac110f882f",
+    "041122306036b204a1fbf64c80d523315dda91df56a9542308f4cd4a2ab178ed",
+]
+p1_neg_y = [
+    "0b911e8307acdd9dbab56616c4f99f74556eec0503596b09d02d866ac76d7518",
+    "2c532c4280faee2516544f6a00ac352c39a6d8b211c8766a332bbeccadcb845a",
+]
 
 annoying_points_g2 = [
     # there's no point with y=0
     # valid
-    [ zero_fp2, zero_fp2 ],                     # point at infinity
-    [ p0_x, p0_y ],                             # y[0], y[1] have the same sign
-    [ p0_x, p0_neg_y ],
-    [ p1_x, p1_y ],                             # y[0], y[1] have opposite signs
-    [ p1_x, p1_neg_y ],
+    [zero_fp2, zero_fp2],  # point at infinity
+    [p0_x, p0_y],  # y[0], y[1] have the same sign
+    [p0_x, p0_neg_y],
+    [p1_x, p1_y],  # y[0], y[1] have opposite signs
+    [p1_x, p1_neg_y],
     # invalid
-    [ [p, zero], [zero, zero] ],                # point at infinity - invalid x[0]>=p
-    [ [zero, p], [zero, zero] ],                # point at infinity - invalid x[1]>=p
-    [ [zero, zero], [p, zero] ],                # point at infinity - invalid y[0]>=p
-    [ [zero, zero], [zero, p] ],                # point at infinity - invalid y[1]>=p
-    [ [p_plus1, zero], sqrt_b_plus1 ],          # invalid x[0]>=p
-    [ [one, p], sqrt_b_plus1 ],                 # invalid x[1]>=p
-    [ x_of_4_neg_b, [p_plus4, zero] ],          # invalid y[0]>=p
-    [ x_of_4_neg_b, [four, p] ],                # invalid y[1]>=p
-    [ zero_fp2, one_fp2 ],                      # not on curve (decompressed x to point at infinity)
-    [ one_fp2, zero_fp2 ],                      # not on curve (can decompress x)
-    [ four_fp2, zero_fp2 ],                     # not on curve (can't decompress x)
-    [ one_fp2, sqrt_b_plus1 ],                  # on curve, not in group - y[0], y[1] have opposite signs
-    [ one_fp2, neg_sqrt_b_plus1 ],
-    [ u_fp2, sqrt_b_plus_u3 ],                  # on curve, not in group - y[0], y[1] have the same sign
-    [ u_fp2, neg_sqrt_b_plus_u3 ],
+    [[p, zero], [zero, zero]],  # point at infinity - invalid x[0]>=p
+    [[zero, p], [zero, zero]],  # point at infinity - invalid x[1]>=p
+    [[zero, zero], [p, zero]],  # point at infinity - invalid y[0]>=p
+    [[zero, zero], [zero, p]],  # point at infinity - invalid y[1]>=p
+    [[p_plus1, zero], sqrt_b_plus1],  # invalid x[0]>=p
+    [[one, p], sqrt_b_plus1],  # invalid x[1]>=p
+    [x_of_4_neg_b, [p_plus4, zero]],  # invalid y[0]>=p
+    [x_of_4_neg_b, [four, p]],  # invalid y[1]>=p
+    [zero_fp2, one_fp2],  # not on curve (decompressed x to point at infinity)
+    [one_fp2, zero_fp2],  # not on curve (can decompress x)
+    [four_fp2, zero_fp2],  # not on curve (can't decompress x)
+    [one_fp2, sqrt_b_plus1],  # on curve, not in group - y[0], y[1] have opposite signs
+    [one_fp2, neg_sqrt_b_plus1],
+    [u_fp2, sqrt_b_plus_u3],  # on curve, not in group - y[0], y[1] have the same sign
+    [u_fp2, neg_sqrt_b_plus_u3],
 ]
 annoying_points_g2 = [
     # coord[1] coord[0] because big endian
-    [base64.b16decode(coord[1], True)+base64.b16decode(coord[0], True) for coord in point] for point in annoying_points_g2
+    [
+        base64.b16decode(coord[1], True) + base64.b16decode(coord[0], True)
+        for coord in point
+    ]
+    for point in annoying_points_g2
 ]
 very_annoying_points_g2 = [point for point in annoying_points_g2]
 for point in annoying_points_g2:
     x = point[0]
     y = point[1]
-    very_annoying_points_g2.append([
-        bytes([x[0] | 0x80]) + x[1:], y
-    ])
-    very_annoying_points_g2.append([
-        bytes([x[0] | 0x40]) + x[1:], y
-    ])
-    very_annoying_points_g2.append([
-        bytes([x[0] | 0xC0]) + x[1:], y
-    ])
-    very_annoying_points_g2.append([
-        x[:32] + bytes([x[32] | 0x80]) + x[33:], y
-    ])
-    very_annoying_points_g2.append([
-        x[:32] + bytes([x[32] | 0x40]) + x[33:], y
-    ])
-    very_annoying_points_g2.append([
-        x[:32] + bytes([x[32] | 0xC0]) + x[33:], y
-    ])
-    very_annoying_points_g2.append([
-        x, bytes([y[0] | 0x80]) + y[1:]
-    ])
-    very_annoying_points_g2.append([
-        x, bytes([y[0] | 0x40]) + y[1:]
-    ])
-    very_annoying_points_g2.append([
-        x, bytes([y[0] | 0xC0]) + y[1:]
-    ])
-    very_annoying_points_g2.append([
-        x, y[:32] + bytes([y[32] | 0x80]) + y[33:]
-    ])
-    very_annoying_points_g2.append([
-        x, y[:32] + bytes([y[32] | 0x40]) + y[33:]
-    ])
-    very_annoying_points_g2.append([
-        x, y[:32] + bytes([y[32] | 0xC0]) + y[33:]
-    ])
+    very_annoying_points_g2.append([bytes([x[0] | 0x80]) + x[1:], y])
+    very_annoying_points_g2.append([bytes([x[0] | 0x40]) + x[1:], y])
+    very_annoying_points_g2.append([bytes([x[0] | 0xC0]) + x[1:], y])
+    very_annoying_points_g2.append([x[:32] + bytes([x[32] | 0x80]) + x[33:], y])
+    very_annoying_points_g2.append([x[:32] + bytes([x[32] | 0x40]) + x[33:], y])
+    very_annoying_points_g2.append([x[:32] + bytes([x[32] | 0xC0]) + x[33:], y])
+    very_annoying_points_g2.append([x, bytes([y[0] | 0x80]) + y[1:]])
+    very_annoying_points_g2.append([x, bytes([y[0] | 0x40]) + y[1:]])
+    very_annoying_points_g2.append([x, bytes([y[0] | 0xC0]) + y[1:]])
+    very_annoying_points_g2.append([x, y[:32] + bytes([y[32] | 0x80]) + y[33:]])
+    very_annoying_points_g2.append([x, y[:32] + bytes([y[32] | 0x40]) + y[33:]])
+    very_annoying_points_g2.append([x, y[:32] + bytes([y[32] | 0xC0]) + y[33:]])
+
 
 def exact_cu_cost(data_vec):
     return CU_BASE + CU_PER_ELEM * len(data_vec) * len(data_vec)
 
+
 def _into_key_data(key_prefix, test_vectors):
     return [(key_prefix + str(j), data) for j, data in enumerate(test_vectors)]
+
 
 test_vectors_add = [
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1547
     # invalid op
     {
-        "heap_prefix": base64.b16decode("18b18acfb4c2c30276db5411368e7185b311dd124691610c5d3b74034e093dc9063c909c4720840cb5134cb9f59fa749755796819658d32efc0d288198f3726607c2b7f58a84bd6145f00c9c2bc0bb1a187f20ff2c92963a88019e7c6a014eed06614e20c147e940f2d70da3f74c9a17df361706a4485c742bd6788478fa17d7", True),
+        "heap_prefix": base64.b16decode(
+            "18b18acfb4c2c30276db5411368e7185b311dd124691610c5d3b74034e093dc9063c909c4720840cb5134cb9f59fa749755796819658d32efc0d288198f3726607c2b7f58a84bd6145f00c9c2bc0bb1a187f20ff2c92963a88019e7c6a014eed06614e20c147e940f2d70da3f74c9a17df361706a4485c742bd6788478fa17d7",
+            True,
+        ),
         "op": 1,  # sub not implemented
         "input_addr": HEAP_START,
         "input_size": ADD_SZ,
@@ -339,29 +344,36 @@ test_vectors_add = [
         "cu_avail": ADD_CU,
     },
     {
-        "heap_prefix": base64.b16decode("18b18acfb4c2c30276db5411368e7185b311dd124691610c5d3b74034e093dc9063c909c4720840cb5134cb9f59fa749755796819658d32efc0d288198f3726607c2b7f58a84bd6145f00c9c2bc0bb1a187f20ff2c92963a88019e7c6a014eed06614e20c147e940f2d70da3f74c9a17df361706a4485c742bd6788478fa17d7", True),
+        "heap_prefix": base64.b16decode(
+            "18b18acfb4c2c30276db5411368e7185b311dd124691610c5d3b74034e093dc9063c909c4720840cb5134cb9f59fa749755796819658d32efc0d288198f3726607c2b7f58a84bd6145f00c9c2bc0bb1a187f20ff2c92963a88019e7c6a014eed06614e20c147e940f2d70da3f74c9a17df361706a4485c742bd6788478fa17d7",
+            True,
+        ),
         "op": 4,
         "input_addr": HEAP_START,
         "input_size": ADD_SZ,
         "result_addr": HEAP_START,
         "cu_avail": ADD_CU,
     },
-
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1551
     # cost
     {
-        "heap_prefix": base64.b16decode("18b18acfb4c2c30276db5411368e7185b311dd124691610c5d3b74034e093dc9063c909c4720840cb5134cb9f59fa749755796819658d32efc0d288198f3726607c2b7f58a84bd6145f00c9c2bc0bb1a187f20ff2c92963a88019e7c6a014eed06614e20c147e940f2d70da3f74c9a17df361706a4485c742bd6788478fa17d7", True),
+        "heap_prefix": base64.b16decode(
+            "18b18acfb4c2c30276db5411368e7185b311dd124691610c5d3b74034e093dc9063c909c4720840cb5134cb9f59fa749755796819658d32efc0d288198f3726607c2b7f58a84bd6145f00c9c2bc0bb1a187f20ff2c92963a88019e7c6a014eed06614e20c147e940f2d70da3f74c9a17df361706a4485c742bd6788478fa17d7",
+            True,
+        ),
         "op": ADD_OP,
         "input_addr": HEAP_START,
         "input_size": ADD_SZ,
         "result_addr": HEAP_START,
         "cu_avail": ADD_CU - 1,
     },
-
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1553-L1565
     # i/o
     {
-        "heap_prefix": base64.b16decode("18b18acfb4c2c30276db5411368e7185b311dd124691610c5d3b74034e093dc9063c909c4720840cb5134cb9f59fa749755796819658d32efc0d288198f3726607c2b7f58a84bd6145f00c9c2bc0bb1a187f20ff2c92963a88019e7c6a014eed06614e20c147e940f2d70da3f74c9a17df361706a4485c742bd6788478fa17d7", True),
+        "heap_prefix": base64.b16decode(
+            "18b18acfb4c2c30276db5411368e7185b311dd124691610c5d3b74034e093dc9063c909c4720840cb5134cb9f59fa749755796819658d32efc0d288198f3726607c2b7f58a84bd6145f00c9c2bc0bb1a187f20ff2c92963a88019e7c6a014eed06614e20c147e940f2d70da3f74c9a17df361706a4485c742bd6788478fa17d7",
+            True,
+        ),
         "op": ADD_OP,
         "input_addr": HEAP_START + 1,
         "input_size": ADD_SZ,
@@ -369,18 +381,23 @@ test_vectors_add = [
         "cu_avail": ADD_CU,
     },
     {
-        "heap_prefix": base64.b16decode("18b18acfb4c2c30276db5411368e7185b311dd124691610c5d3b74034e093dc9063c909c4720840cb5134cb9f59fa749755796819658d32efc0d288198f3726607c2b7f58a84bd6145f00c9c2bc0bb1a187f20ff2c92963a88019e7c6a014eed06614e20c147e940f2d70da3f74c9a17df361706a4485c742bd6788478fa17d7", True),
+        "heap_prefix": base64.b16decode(
+            "18b18acfb4c2c30276db5411368e7185b311dd124691610c5d3b74034e093dc9063c909c4720840cb5134cb9f59fa749755796819658d32efc0d288198f3726607c2b7f58a84bd6145f00c9c2bc0bb1a187f20ff2c92963a88019e7c6a014eed06614e20c147e940f2d70da3f74c9a17df361706a4485c742bd6788478fa17d7",
+            True,
+        ),
         "op": ADD_OP,
         "input_addr": HEAP_START,
         "input_size": ADD_SZ,
         "result_addr": HEAP_START + 100,
         "cu_avail": ADD_CU,
     },
-
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1580-L1589
     # actual op - all these tests either return Ok(0) or Ok(1)
     {
-        "heap_prefix": base64.b16decode("18b18acfb4c2c30276db5411368e7185b311dd124691610c5d3b74034e093dc9063c909c4720840cb5134cb9f59fa749755796819658d32efc0d288198f3726607c2b7f58a84bd6145f00c9c2bc0bb1a187f20ff2c92963a88019e7c6a014eed06614e20c147e940f2d70da3f74c9a17df361706a4485c742bd6788478fa17d7", True),
+        "heap_prefix": base64.b16decode(
+            "18b18acfb4c2c30276db5411368e7185b311dd124691610c5d3b74034e093dc9063c909c4720840cb5134cb9f59fa749755796819658d32efc0d288198f3726607c2b7f58a84bd6145f00c9c2bc0bb1a187f20ff2c92963a88019e7c6a014eed06614e20c147e940f2d70da3f74c9a17df361706a4485c742bd6788478fa17d7",
+            True,
+        ),
         "op": ADD_OP,
         "input_addr": HEAP_START,
         "input_size": ADD_SZ,
@@ -389,7 +406,10 @@ test_vectors_add = [
     },
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/program/src/alt_bn128/mod.rs#L164
     {
-        "heap_prefix": base64.b16decode("18b18acfb4c2c30276db5411368e7185b311dd124691610c5d3b74034e093dc9063c909c4720840cb5134cb9f59fa749755796819658d32efc0d288198f3726607c2b7f58a84bd6145f00c9c2bc0bb1a187f20ff2c92963a88019e7c6a014eed06614e20c147e940f2d70da3f74c9a17df361706a4485c742bd6788478fa17d700", True),
+        "heap_prefix": base64.b16decode(
+            "18b18acfb4c2c30276db5411368e7185b311dd124691610c5d3b74034e093dc9063c909c4720840cb5134cb9f59fa749755796819658d32efc0d288198f3726607c2b7f58a84bd6145f00c9c2bc0bb1a187f20ff2c92963a88019e7c6a014eed06614e20c147e940f2d70da3f74c9a17df361706a4485c742bd6788478fa17d700",
+            True,
+        ),
         "op": ADD_OP,
         "input_addr": HEAP_START,
         "input_size": ADD_SZ + 1,
@@ -400,7 +420,10 @@ test_vectors_add = [
     # this can never happen
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/program/src/alt_bn128/mod.rs#L175
     {
-        "heap_prefix": base64.b16decode("ffb18acfb4c2c30276db5411368e7185b311dd124691610c5d3b74034e093dc9063c909c4720840cb5134cb9f59fa749755796819658d32efc0d288198f3726607c2b7f58a84bd6145f00c9c2bc0bb1a187f20ff2c92963a88019e7c6a014eed06614e20c147e940f2d70da3f74c9a17df361706a4485c742bd6788478fa17d7", True),
+        "heap_prefix": base64.b16decode(
+            "ffb18acfb4c2c30276db5411368e7185b311dd124691610c5d3b74034e093dc9063c909c4720840cb5134cb9f59fa749755796819658d32efc0d288198f3726607c2b7f58a84bd6145f00c9c2bc0bb1a187f20ff2c92963a88019e7c6a014eed06614e20c147e940f2d70da3f74c9a17df361706a4485c742bd6788478fa17d7",
+            True,
+        ),
         "op": ADD_OP,
         "input_addr": HEAP_START,
         "input_size": ADD_SZ,
@@ -411,7 +434,10 @@ test_vectors_add = [
     # this can never happen
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/program/src/alt_bn128/mod.rs#L181
     {
-        "heap_prefix": base64.b16decode("18b18acfb4c2c30276db5411368e7185b311dd124691610c5d3b74034e093dc9063c909c4720840cb5134cb9f59fa749755796819658d32efc0d288198f3726607c2b7f58a84bd6145f00c9c2bc0bb1a187f20ff2c92963a88019e7c6a014eed06614e20c147e940f2d70da3f74c9a17df361706a4485c742bd6788478fa17ff", True),
+        "heap_prefix": base64.b16decode(
+            "18b18acfb4c2c30276db5411368e7185b311dd124691610c5d3b74034e093dc9063c909c4720840cb5134cb9f59fa749755796819658d32efc0d288198f3726607c2b7f58a84bd6145f00c9c2bc0bb1a187f20ff2c92963a88019e7c6a014eed06614e20c147e940f2d70da3f74c9a17df361706a4485c742bd6788478fa17ff",
+            True,
+        ),
         "op": ADD_OP,
         "input_addr": HEAP_START,
         "input_size": ADD_SZ,
@@ -422,7 +448,6 @@ test_vectors_add = [
     # this can never happen
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/program/src/alt_bn128/mod.rs#L195
     # this can never happen
-
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1594
     # this can never happen
 ]
@@ -442,32 +467,39 @@ add_inputs = [
 ]
 for test in add_inputs:
     input = base64.b16decode(test, True)
-    test_vectors_add.append({
-        "heap_prefix": bytes([0] * 64) + input,
-        "op": ADD_OP,
-        "input_addr": HEAP_START + 64,
-        "input_size": len(input),
-        "result_addr": HEAP_START,
-        "cu_avail": ADD_CU,
-    })
+    test_vectors_add.append(
+        {
+            "heap_prefix": bytes([0] * 64) + input,
+            "op": ADD_OP,
+            "input_addr": HEAP_START + 64,
+            "input_size": len(input),
+            "result_addr": HEAP_START,
+            "cu_avail": ADD_CU,
+        }
+    )
 
 
 test_vectors_mul = [
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1551
     # cost
     {
-        "heap_prefix": base64.b16decode("2bd3e6d0f3b142924f5ca7b49ce5b9d54c4703d7ae5648e61d02268b1a0a9fb721611ce0a6af85915e2f1d70300909ce2e49dfad4a4619c8390cae66cefdb20400000000000000000000000000000000000000000000000011138ce750fa15c2", True),
+        "heap_prefix": base64.b16decode(
+            "2bd3e6d0f3b142924f5ca7b49ce5b9d54c4703d7ae5648e61d02268b1a0a9fb721611ce0a6af85915e2f1d70300909ce2e49dfad4a4619c8390cae66cefdb20400000000000000000000000000000000000000000000000011138ce750fa15c2",
+            True,
+        ),
         "op": MUL_OP,
         "input_addr": HEAP_START,
         "input_size": MUL_SZ,
         "result_addr": HEAP_START,
         "cu_avail": MUL_CU - 1,
     },
-
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1553-L1565
     # i/o
     {
-        "heap_prefix": base64.b16decode("2bd3e6d0f3b142924f5ca7b49ce5b9d54c4703d7ae5648e61d02268b1a0a9fb721611ce0a6af85915e2f1d70300909ce2e49dfad4a4619c8390cae66cefdb20400000000000000000000000000000000000000000000000011138ce750fa15c2", True),
+        "heap_prefix": base64.b16decode(
+            "2bd3e6d0f3b142924f5ca7b49ce5b9d54c4703d7ae5648e61d02268b1a0a9fb721611ce0a6af85915e2f1d70300909ce2e49dfad4a4619c8390cae66cefdb20400000000000000000000000000000000000000000000000011138ce750fa15c2",
+            True,
+        ),
         "op": MUL_OP,
         "input_addr": HEAP_START + 1,
         "input_size": MUL_SZ,
@@ -475,18 +507,23 @@ test_vectors_mul = [
         "cu_avail": MUL_CU,
     },
     {
-        "heap_prefix": base64.b16decode("2bd3e6d0f3b142924f5ca7b49ce5b9d54c4703d7ae5648e61d02268b1a0a9fb721611ce0a6af85915e2f1d70300909ce2e49dfad4a4619c8390cae66cefdb20400000000000000000000000000000000000000000000000011138ce750fa15c2", True),
+        "heap_prefix": base64.b16decode(
+            "2bd3e6d0f3b142924f5ca7b49ce5b9d54c4703d7ae5648e61d02268b1a0a9fb721611ce0a6af85915e2f1d70300909ce2e49dfad4a4619c8390cae66cefdb20400000000000000000000000000000000000000000000000011138ce750fa15c2",
+            True,
+        ),
         "op": MUL_OP,
         "input_addr": HEAP_START,
         "input_size": MUL_SZ,
         "result_addr": HEAP_START + 100,
         "cu_avail": MUL_CU,
     },
-
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1580-L1589
     # actual op - all these tests either return Ok(0) or Ok(1)
     {
-        "heap_prefix": base64.b16decode("2bd3e6d0f3b142924f5ca7b49ce5b9d54c4703d7ae5648e61d02268b1a0a9fb721611ce0a6af85915e2f1d70300909ce2e49dfad4a4619c8390cae66cefdb20400000000000000000000000000000000000000000000000011138ce750fa15c2", True),
+        "heap_prefix": base64.b16decode(
+            "2bd3e6d0f3b142924f5ca7b49ce5b9d54c4703d7ae5648e61d02268b1a0a9fb721611ce0a6af85915e2f1d70300909ce2e49dfad4a4619c8390cae66cefdb20400000000000000000000000000000000000000000000000011138ce750fa15c2",
+            True,
+        ),
         "op": MUL_OP,
         "input_addr": HEAP_START,
         "input_size": MUL_SZ,
@@ -495,7 +532,10 @@ test_vectors_mul = [
     },
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/program/src/alt_bn128/mod.rs#L202
     {
-        "heap_prefix": base64.b16decode("2bd3e6d0f3b142924f5ca7b49ce5b9d54c4703d7ae5648e61d02268b1a0a9fb721611ce0a6af85915e2f1d70300909ce2e49dfad4a4619c8390cae66cefdb20400000000000000000000000000000000000000000000000011138ce750fa15c200", True),
+        "heap_prefix": base64.b16decode(
+            "2bd3e6d0f3b142924f5ca7b49ce5b9d54c4703d7ae5648e61d02268b1a0a9fb721611ce0a6af85915e2f1d70300909ce2e49dfad4a4619c8390cae66cefdb20400000000000000000000000000000000000000000000000011138ce750fa15c200",
+            True,
+        ),
         "op": MUL_OP,
         "input_addr": HEAP_START,
         "input_size": MUL_SZ + 1,  # implementation bug
@@ -503,7 +543,11 @@ test_vectors_mul = [
         "cu_avail": MUL_CU,
     },
     {
-        "heap_prefix": base64.b16decode("2bd3e6d0f3b142924f5ca7b49ce5b9d54c4703d7ae5648e61d02268b1a0a9fb721611ce0a6af85915e2f1d70300909ce2e49dfad4a4619c8390cae66cefdb20400000000000000000000000000000000000000000000000011138ce750fa15c200", True) + bytes([0]*32),
+        "heap_prefix": base64.b16decode(
+            "2bd3e6d0f3b142924f5ca7b49ce5b9d54c4703d7ae5648e61d02268b1a0a9fb721611ce0a6af85915e2f1d70300909ce2e49dfad4a4619c8390cae66cefdb20400000000000000000000000000000000000000000000000011138ce750fa15c200",
+            True,
+        )
+        + bytes([0] * 32),
         "op": MUL_OP,
         "input_addr": HEAP_START,
         "input_size": MUL_SZ + 33,
@@ -514,7 +558,10 @@ test_vectors_mul = [
     # this can never happen
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/program/src/alt_bn128/mod.rs#L213
     {
-        "heap_prefix": base64.b16decode("ffd3e6d0f3b142924f5ca7b49ce5b9d54c4703d7ae5648e61d02268b1a0a9fb721611ce0a6af85915e2f1d70300909ce2e49dfad4a4619c8390cae66cefdb20400000000000000000000000000000000000000000000000011138ce750fa15c2", True),
+        "heap_prefix": base64.b16decode(
+            "ffd3e6d0f3b142924f5ca7b49ce5b9d54c4703d7ae5648e61d02268b1a0a9fb721611ce0a6af85915e2f1d70300909ce2e49dfad4a4619c8390cae66cefdb20400000000000000000000000000000000000000000000000011138ce750fa15c2",
+            True,
+        ),
         "op": MUL_OP,
         "input_addr": HEAP_START,
         "input_size": MUL_SZ,
@@ -523,7 +570,10 @@ test_vectors_mul = [
     },
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/program/src/alt_bn128/mod.rs#L217
     {
-        "heap_prefix": base64.b16decode("2bd3e6d0f3b142924f5ca7b49ce5b9d54c4703d7ae5648e61d02268b1a0a9fb721611ce0a6af85915e2f1d70300909ce2e49dfad4a4619c8390cae66cefdb204ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", True),
+        "heap_prefix": base64.b16decode(
+            "2bd3e6d0f3b142924f5ca7b49ce5b9d54c4703d7ae5648e61d02268b1a0a9fb721611ce0a6af85915e2f1d70300909ce2e49dfad4a4619c8390cae66cefdb204ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            True,
+        ),
         "op": MUL_OP,
         "input_addr": HEAP_START,
         "input_size": MUL_SZ,
@@ -556,42 +606,51 @@ mul_inputs = [
 ]
 for test in mul_inputs:
     input = base64.b16decode(test, True)
-    test_vectors_mul.append({
-        "heap_prefix": bytes([0] * 64) + input,
-        "op": MUL_OP,
-        "input_addr": HEAP_START + 64,
-        "input_size": len(input),
-        "result_addr": HEAP_START,
-        "cu_avail": MUL_CU,
-    })
-for point in very_annoying_points:
-    for scalar in annoying_scalars:
-        input = point[0] + point[1] + scalar
-        test_vectors_mul.append({
+    test_vectors_mul.append(
+        {
             "heap_prefix": bytes([0] * 64) + input,
             "op": MUL_OP,
             "input_addr": HEAP_START + 64,
             "input_size": len(input),
             "result_addr": HEAP_START,
             "cu_avail": MUL_CU,
-        })
+        }
+    )
+for point in very_annoying_points:
+    for scalar in annoying_scalars:
+        input = point[0] + point[1] + scalar
+        test_vectors_mul.append(
+            {
+                "heap_prefix": bytes([0] * 64) + input,
+                "op": MUL_OP,
+                "input_addr": HEAP_START + 64,
+                "input_size": len(input),
+                "result_addr": HEAP_START,
+                "cu_avail": MUL_CU,
+            }
+        )
 
 test_vectors_pairing = [
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1551
     # cost
     {
-        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550111e129f1cf1097710d41c4ac70fcdfa5ba2023c6ff1cbeac322de49d1b6df7c2032c61a830e3c17286de9462bf242fca2883585b93870a73853face6a6bf411198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa", True),
+        "heap_prefix": base64.b16decode(
+            "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550111e129f1cf1097710d41c4ac70fcdfa5ba2023c6ff1cbeac322de49d1b6df7c2032c61a830e3c17286de9462bf242fca2883585b93870a73853face6a6bf411198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa",
+            True,
+        ),
         "op": PAIRING_OP,
         "input_addr": HEAP_START,
         "input_size": PAIRING_SZ,
         "result_addr": HEAP_START,
         "cu_avail": PAIRING_CU - 1,
     },
-
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1553-L1565
     # i/o
     {
-        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550111e129f1cf1097710d41c4ac70fcdfa5ba2023c6ff1cbeac322de49d1b6df7c2032c61a830e3c17286de9462bf242fca2883585b93870a73853face6a6bf411198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa", True),
+        "heap_prefix": base64.b16decode(
+            "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550111e129f1cf1097710d41c4ac70fcdfa5ba2023c6ff1cbeac322de49d1b6df7c2032c61a830e3c17286de9462bf242fca2883585b93870a73853face6a6bf411198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa",
+            True,
+        ),
         "op": PAIRING_OP,
         "input_addr": HEAP_START + 1,
         "input_size": PAIRING_SZ,
@@ -599,18 +658,23 @@ test_vectors_pairing = [
         "cu_avail": PAIRING_CU,
     },
     {
-        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550111e129f1cf1097710d41c4ac70fcdfa5ba2023c6ff1cbeac322de49d1b6df7c2032c61a830e3c17286de9462bf242fca2883585b93870a73853face6a6bf411198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa", True),
+        "heap_prefix": base64.b16decode(
+            "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550111e129f1cf1097710d41c4ac70fcdfa5ba2023c6ff1cbeac322de49d1b6df7c2032c61a830e3c17286de9462bf242fca2883585b93870a73853face6a6bf411198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa",
+            True,
+        ),
         "op": PAIRING_OP,
         "input_addr": HEAP_START,
         "input_size": PAIRING_SZ,
         "result_addr": HEAP_START + 360,
         "cu_avail": PAIRING_CU,
     },
-
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1580-L1589
     # actual op - all these tests either return Ok(0) or Ok(1)
     {
-        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550111e129f1cf1097710d41c4ac70fcdfa5ba2023c6ff1cbeac322de49d1b6df7c2032c61a830e3c17286de9462bf242fca2883585b93870a73853face6a6bf411198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa", True),
+        "heap_prefix": base64.b16decode(
+            "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550111e129f1cf1097710d41c4ac70fcdfa5ba2023c6ff1cbeac322de49d1b6df7c2032c61a830e3c17286de9462bf242fca2883585b93870a73853face6a6bf411198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa",
+            True,
+        ),
         "op": PAIRING_OP,
         "input_addr": HEAP_START,
         "input_size": PAIRING_SZ,
@@ -627,7 +691,10 @@ test_vectors_pairing = [
     },
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/program/src/alt_bn128/mod.rs#L244
     {
-        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550111e129f1cf1097710d41c4ac70fcdfa5ba2023c6ff1cbeac322de49d1b6df7c2032c61a830e3c17286de9462bf242fca2883585b93870a73853face6a6bf411198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa", True),
+        "heap_prefix": base64.b16decode(
+            "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550111e129f1cf1097710d41c4ac70fcdfa5ba2023c6ff1cbeac322de49d1b6df7c2032c61a830e3c17286de9462bf242fca2883585b93870a73853face6a6bf411198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa",
+            True,
+        ),
         "op": PAIRING_OP,
         "input_addr": HEAP_START,
         "input_size": PAIRING_SZ - 1,  # implementation bug
@@ -635,7 +702,10 @@ test_vectors_pairing = [
         "cu_avail": PAIRING_CU,
     },
     {
-        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550111e129f1cf1097710d41c4ac70fcdfa5ba2023c6ff1cbeac322de49d1b6df7c2032c61a830e3c17286de9462bf242fca2883585b93870a73853face6a6bf411198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa", True),
+        "heap_prefix": base64.b16decode(
+            "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550111e129f1cf1097710d41c4ac70fcdfa5ba2023c6ff1cbeac322de49d1b6df7c2032c61a830e3c17286de9462bf242fca2883585b93870a73853face6a6bf411198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa",
+            True,
+        ),
         "op": PAIRING_OP,
         "input_addr": HEAP_START,
         "input_size": 191,  # implementation bug
@@ -644,7 +714,10 @@ test_vectors_pairing = [
     },
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/program/src/alt_bn128/mod.rs#L261
     {
-        "heap_prefix": base64.b16decode("ff76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550111e129f1cf1097710d41c4ac70fcdfa5ba2023c6ff1cbeac322de49d1b6df7c2032c61a830e3c17286de9462bf242fca2883585b93870a73853face6a6bf411198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa", True),
+        "heap_prefix": base64.b16decode(
+            "ff76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550111e129f1cf1097710d41c4ac70fcdfa5ba2023c6ff1cbeac322de49d1b6df7c2032c61a830e3c17286de9462bf242fca2883585b93870a73853face6a6bf411198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa",
+            True,
+        ),
         "op": PAIRING_OP,
         "input_addr": HEAP_START,
         "input_size": PAIRING_SZ,
@@ -653,7 +726,10 @@ test_vectors_pairing = [
     },
     # https://github.com/anza-xyz/agave/blob/v1.18.12/sdk/program/src/alt_bn128/mod.rs#L273
     {
-        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550111e129f1cf1097710d41c4ac70fcdfa5ba2023c6ff1cbeac322de49d1b6df7c2032c61a830e3c17286de9462bf242fca2883585b93870a73853face6a6bf411198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7dff", True),
+        "heap_prefix": base64.b16decode(
+            "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550111e129f1cf1097710d41c4ac70fcdfa5ba2023c6ff1cbeac322de49d1b6df7c2032c61a830e3c17286de9462bf242fca2883585b93870a73853face6a6bf411198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7dff",
+            True,
+        ),
         "op": PAIRING_OP,
         "input_addr": HEAP_START,
         "input_size": PAIRING_SZ,
@@ -680,65 +756,78 @@ pairing_inputs = [
 ]
 for test in pairing_inputs:
     input = base64.b16decode(test, True)
-    test_vectors_pairing.append({
-        "heap_prefix": bytes([0] * 32) + input,
-        "op": PAIRING_OP,
-        "input_addr": HEAP_START + 32,
-        "input_size": len(input),
-        "result_addr": HEAP_START,
-        "cu_avail": PAIRING_CU + 12121 * 20,  # enough CUs for all tests
-    })
+    test_vectors_pairing.append(
+        {
+            "heap_prefix": bytes([0] * 32) + input,
+            "op": PAIRING_OP,
+            "input_addr": HEAP_START + 32,
+            "input_size": len(input),
+            "result_addr": HEAP_START,
+            "cu_avail": PAIRING_CU + 12121 * 20,  # enough CUs for all tests
+        }
+    )
 # pairing checks G2 subgroup membership, so we should run through the G2 (very) annoying points
 for g2 in very_annoying_points_g2:
     input = annoying_points[1][0] + annoying_points[1][1] + g2[0] + g2[1]
-    test_vectors_pairing.append({
-        "heap_prefix": bytes([0] * 32) + input,
-        "op": PAIRING_OP,
-        "input_addr": HEAP_START + 32,
-        "input_size": len(input),
-        "result_addr": HEAP_START,
-        "cu_avail": PAIRING_CU + 12121 * 20,  # enough CUs for all tests
-    })
+    test_vectors_pairing.append(
+        {
+            "heap_prefix": bytes([0] * 32) + input,
+            "op": PAIRING_OP,
+            "input_addr": HEAP_START + 32,
+            "input_size": len(input),
+            "result_addr": HEAP_START,
+            "cu_avail": PAIRING_CU + 12121 * 20,  # enough CUs for all tests
+        }
+    )
 # pairing checks G2 subgroup membership, so we should run through the G2 (very) annoying points
 for g1 in very_annoying_points:
     input = g1[0] + g1[1] + annoying_points_g2[1][0] + annoying_points_g2[1][1]
-    test_vectors_pairing.append({
-        "heap_prefix": bytes([0] * 32) + input,
-        "op": PAIRING_OP,
-        "input_addr": HEAP_START + 32,
-        "input_size": len(input),
-        "result_addr": HEAP_START,
-        "cu_avail": PAIRING_CU + 12121 * 20,  # enough CUs for all tests
-    })
+    test_vectors_pairing.append(
+        {
+            "heap_prefix": bytes([0] * 32) + input,
+            "op": PAIRING_OP,
+            "input_addr": HEAP_START + 32,
+            "input_size": len(input),
+            "result_addr": HEAP_START,
+            "cu_avail": PAIRING_CU + 12121 * 20,  # enough CUs for all tests
+        }
+    )
 
 
 test_vectors_compress_g1 = [
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1890
     # invalid op
     {
-        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41", True),
+        "heap_prefix": base64.b16decode(
+            "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41",
+            True,
+        ),
         "op": 4,
         "input_addr": HEAP_START,
         "input_size": COMP_G1_SZ,
         "result_addr": HEAP_START,
         "cu_avail": COMP_G1_CU,
     },
-
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1813
     # cost
     {
-        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41", True),
+        "heap_prefix": base64.b16decode(
+            "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41",
+            True,
+        ),
         "op": COMP_G1_OP,
         "input_addr": HEAP_START,
         "input_size": COMP_G1_SZ,
         "result_addr": HEAP_START,
         "cu_avail": COMP_G1_CU - 1,
     },
-
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1815-L1827
     # i/o
     {
-        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41", True),
+        "heap_prefix": base64.b16decode(
+            "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41",
+            True,
+        ),
         "op": COMP_G1_OP,
         "input_addr": HEAP_START,
         "input_size": COMP_G1_SZ - 1,
@@ -746,7 +835,10 @@ test_vectors_compress_g1 = [
         "cu_avail": COMP_G1_CU,
     },
     {
-        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41", True),
+        "heap_prefix": base64.b16decode(
+            "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41",
+            True,
+        ),
         "op": COMP_G1_OP,
         "input_addr": HEAP_START + 1,
         "input_size": COMP_G1_SZ,
@@ -754,18 +846,23 @@ test_vectors_compress_g1 = [
         "cu_avail": COMP_G1_CU,
     },
     {
-        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41", True),
+        "heap_prefix": base64.b16decode(
+            "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41",
+            True,
+        ),
         "op": COMP_G1_OP,
         "input_addr": HEAP_START,
         "input_size": COMP_G1_SZ,
         "result_addr": HEAP_START + 33,
         "cu_avail": COMP_G1_CU,
     },
-
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1834-L1847
     # actual op - all these tests either return Ok(0) or Ok(1)
     {
-        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41", True),
+        "heap_prefix": base64.b16decode(
+            "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f593034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41",
+            True,
+        ),
         "op": COMP_G1_OP,
         "input_addr": HEAP_START,
         "input_size": COMP_G1_SZ,
@@ -773,14 +870,16 @@ test_vectors_compress_g1 = [
         "cu_avail": COMP_G1_CU,
     },
     {
-        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59002f7149c03b2c47b35163356519d1179affcf3b9487f7f857c3f11331120e06", True),
+        "heap_prefix": base64.b16decode(
+            "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59002f7149c03b2c47b35163356519d1179affcf3b9487f7f857c3f11331120e06",
+            True,
+        ),
         "op": COMP_G1_OP,
         "input_addr": HEAP_START,
         "input_size": COMP_G1_SZ,
         "result_addr": HEAP_START,
         "cu_avail": COMP_G1_CU,
     },
-
     # firedancer
     # https://github.com/firedancer-io/firedancer/blob/a8c2e27b/src/ballet/bn254/fd_bn254.c#L17
     # - https://github.com/firedancer-io/firedancer/blob/a8c2e27b/src/ballet/bn254/fd_bn254_g1.c#L263
@@ -793,31 +892,38 @@ test_vectors_compress_g1 = [
 ]
 for point in very_annoying_points:
     input = point[0] + point[1]
-    test_vectors_compress_g1.append({
-        "heap_prefix": bytes([0] * 32) + input,
-        "op": COMP_G1_OP,
-        "input_addr": HEAP_START + 32,
-        "input_size": COMP_G1_SZ,
-        "result_addr": HEAP_START,
-        "cu_avail": COMP_G1_CU,
-    })
+    test_vectors_compress_g1.append(
+        {
+            "heap_prefix": bytes([0] * 32) + input,
+            "op": COMP_G1_OP,
+            "input_addr": HEAP_START + 32,
+            "input_size": COMP_G1_SZ,
+            "result_addr": HEAP_START,
+            "cu_avail": COMP_G1_CU,
+        }
+    )
 
 test_vectors_decompress_g1 = [
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1813
     # cost
     {
-        "heap_prefix": base64.b16decode("9c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59", True) + bytes([0]*32),
+        "heap_prefix": base64.b16decode(
+            "9c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59", True
+        )
+        + bytes([0] * 32),
         "op": DECOMP_G1_OP,
         "input_addr": HEAP_START,
         "input_size": DECOMP_G1_SZ,
         "result_addr": HEAP_START,
         "cu_avail": DECOMP_G1_CU - 1,
     },
-
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1815-L1827
     # i/o
     {
-        "heap_prefix": base64.b16decode("9c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59", True) + bytes([0]*32),
+        "heap_prefix": base64.b16decode(
+            "9c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59", True
+        )
+        + bytes([0] * 32),
         "op": DECOMP_G1_OP,
         "input_addr": HEAP_START,
         "input_size": DECOMP_G1_SZ - 1,
@@ -825,7 +931,10 @@ test_vectors_decompress_g1 = [
         "cu_avail": DECOMP_G1_CU,
     },
     {
-        "heap_prefix": base64.b16decode("9c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59", True) + bytes([0]*32),
+        "heap_prefix": base64.b16decode(
+            "9c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59", True
+        )
+        + bytes([0] * 32),
         "op": DECOMP_G1_OP,
         "input_addr": HEAP_START + 33,
         "input_size": DECOMP_G1_SZ,
@@ -833,18 +942,23 @@ test_vectors_decompress_g1 = [
         "cu_avail": DECOMP_G1_CU,
     },
     {
-        "heap_prefix": base64.b16decode("9c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59", True) + bytes([0]*32),
+        "heap_prefix": base64.b16decode(
+            "9c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59", True
+        )
+        + bytes([0] * 32),
         "op": DECOMP_G1_OP,
         "input_addr": HEAP_START,
         "input_size": DECOMP_G1_SZ,
         "result_addr": HEAP_START + 1,
         "cu_avail": DECOMP_G1_CU,
     },
-
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1834-L1847
     # actual op - all these tests either return Ok(0) or Ok(1)
     {
-        "heap_prefix": base64.b16decode("9c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59", True) + bytes([0]*32),
+        "heap_prefix": base64.b16decode(
+            "9c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59", True
+        )
+        + bytes([0] * 32),
         "op": DECOMP_G1_OP,
         "input_addr": HEAP_START,
         "input_size": DECOMP_G1_SZ,
@@ -852,14 +966,16 @@ test_vectors_decompress_g1 = [
         "cu_avail": DECOMP_G1_CU,
     },
     {
-        "heap_prefix": base64.b16decode("1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59", True) + bytes([0]*32),
+        "heap_prefix": base64.b16decode(
+            "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59", True
+        )
+        + bytes([0] * 32),
         "op": DECOMP_G1_OP,
         "input_addr": HEAP_START,
         "input_size": DECOMP_G1_SZ,
         "result_addr": HEAP_START,
         "cu_avail": DECOMP_G1_CU,
     },
-
     # firedancer
     # https://github.com/firedancer-io/firedancer/blob/a8c2e27b/src/ballet/bn254/fd_bn254.c#L43
     # - https://github.com/firedancer-io/firedancer/blob/a8c2e27b/src/ballet/bn254/fd_bn254_field.c#78
@@ -872,31 +988,38 @@ test_vectors_decompress_g1 = [
 ]
 for point in very_annoying_points:
     input = point[0]
-    test_vectors_decompress_g1.append({
-        "heap_prefix": bytes([0] * 64) + input,
-        "op": DECOMP_G1_OP,
-        "input_addr": HEAP_START + 64,
-        "input_size": len(input),
-        "result_addr": HEAP_START,
-        "cu_avail": DECOMP_G1_CU,
-    })
+    test_vectors_decompress_g1.append(
+        {
+            "heap_prefix": bytes([0] * 64) + input,
+            "op": DECOMP_G1_OP,
+            "input_addr": HEAP_START + 64,
+            "input_size": len(input),
+            "result_addr": HEAP_START,
+            "cu_avail": DECOMP_G1_CU,
+        }
+    )
 
 test_vectors_compress_g2 = [
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1813
     # cost
     {
-        "heap_prefix": base64.b16decode("209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550", True),
+        "heap_prefix": base64.b16decode(
+            "209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550",
+            True,
+        ),
         "op": COMP_G2_OP,
         "input_addr": HEAP_START,
         "input_size": COMP_G2_SZ,
         "result_addr": HEAP_START,
         "cu_avail": COMP_G2_CU - 1,
     },
-
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1815-L1827
     # i/o
     {
-        "heap_prefix": base64.b16decode("209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550", True),
+        "heap_prefix": base64.b16decode(
+            "209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550",
+            True,
+        ),
         "op": COMP_G2_OP,
         "input_addr": HEAP_START,
         "input_size": COMP_G2_SZ - 1,
@@ -904,7 +1027,10 @@ test_vectors_compress_g2 = [
         "cu_avail": COMP_G2_CU,
     },
     {
-        "heap_prefix": base64.b16decode("209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550", True),
+        "heap_prefix": base64.b16decode(
+            "209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550",
+            True,
+        ),
         "op": COMP_G2_OP,
         "input_addr": HEAP_START + 1,
         "input_size": COMP_G2_SZ,
@@ -912,18 +1038,23 @@ test_vectors_compress_g2 = [
         "cu_avail": COMP_G2_CU,
     },
     {
-        "heap_prefix": base64.b16decode("209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550", True),
+        "heap_prefix": base64.b16decode(
+            "209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550",
+            True,
+        ),
         "op": COMP_G2_OP,
         "input_addr": HEAP_START,
         "input_size": COMP_G2_SZ,
         "result_addr": HEAP_START + 65,
         "cu_avail": COMP_G2_CU,
     },
-
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1834-L1847
     # actual op - all these tests either return Ok(0) or Ok(1)
     {
-        "heap_prefix": base64.b16decode("209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550", True),
+        "heap_prefix": base64.b16decode(
+            "209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a416782bb8324af6cfc93537a2ad1a445cfd0ca2a71acd7ac41fadbf933c2a51be344d120a2a4cf30c1bf9845f20c6fe39e07ea2cce61f0c9bb048165fe5e4de877550",
+            True,
+        ),
         "op": COMP_G2_OP,
         "input_addr": HEAP_START,
         "input_size": COMP_G2_SZ,
@@ -931,7 +1062,10 @@ test_vectors_compress_g2 = [
         "cu_avail": COMP_G2_CU,
     },
     {
-        "heap_prefix": base64.b16decode("209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a4167804ac1c27ea61d6f480ad989c3d245b50f4da4fc3edadaadf7c8d4fec86bec8fa1e5a2425ee25843033f124ef834777def4b484725bd61a4525c0a631f9f587f7", True),
+        "heap_prefix": base64.b16decode(
+            "209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a4167804ac1c27ea61d6f480ad989c3d245b50f4da4fc3edadaadf7c8d4fec86bec8fa1e5a2425ee25843033f124ef834777def4b484725bd61a4525c0a631f9f587f7",
+            True,
+        ),
         "op": COMP_G2_OP,
         "input_addr": HEAP_START,
         "input_size": COMP_G2_SZ,
@@ -941,31 +1075,40 @@ test_vectors_compress_g2 = [
 ]
 for point in very_annoying_points_g2:
     input = point[0] + point[1]
-    test_vectors_compress_g2.append({
-        "heap_prefix": bytes([0] * 64) + input,
-        "op": COMP_G2_OP,
-        "input_addr": HEAP_START + 64,
-        "input_size": len(input),
-        "result_addr": HEAP_START,
-        "cu_avail": COMP_G2_CU,
-    })
+    test_vectors_compress_g2.append(
+        {
+            "heap_prefix": bytes([0] * 64) + input,
+            "op": COMP_G2_OP,
+            "input_addr": HEAP_START + 64,
+            "input_size": len(input),
+            "result_addr": HEAP_START,
+            "cu_avail": COMP_G2_CU,
+        }
+    )
 
 test_vectors_decompress_g2 = [
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1813
     # cost
     {
-        "heap_prefix": base64.b16decode("a09dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a41678", True) + bytes([0]*64),
+        "heap_prefix": base64.b16decode(
+            "a09dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a41678",
+            True,
+        )
+        + bytes([0] * 64),
         "op": DECOMP_G2_OP,
         "input_addr": HEAP_START,
         "input_size": DECOMP_G2_SZ,
         "result_addr": HEAP_START,
         "cu_avail": DECOMP_G2_CU - 1,
     },
-
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1815-L1827
     # i/o
     {
-        "heap_prefix": base64.b16decode("a09dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a41678", True) + bytes([0]*64),
+        "heap_prefix": base64.b16decode(
+            "a09dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a41678",
+            True,
+        )
+        + bytes([0] * 64),
         "op": DECOMP_G2_OP,
         "input_addr": HEAP_START,
         "input_size": DECOMP_G2_SZ - 1,
@@ -973,7 +1116,11 @@ test_vectors_decompress_g2 = [
         "cu_avail": DECOMP_G2_CU,
     },
     {
-        "heap_prefix": base64.b16decode("a09dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a41678", True) + bytes([0]*64),
+        "heap_prefix": base64.b16decode(
+            "a09dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a41678",
+            True,
+        )
+        + bytes([0] * 64),
         "op": DECOMP_G2_OP,
         "input_addr": HEAP_START + 65,
         "input_size": DECOMP_G2_SZ,
@@ -981,18 +1128,25 @@ test_vectors_decompress_g2 = [
         "cu_avail": DECOMP_G2_CU,
     },
     {
-        "heap_prefix": base64.b16decode("a09dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a41678", True) + bytes([0]*64),
+        "heap_prefix": base64.b16decode(
+            "a09dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a41678",
+            True,
+        )
+        + bytes([0] * 64),
         "op": DECOMP_G2_OP,
         "input_addr": HEAP_START,
         "input_size": DECOMP_G2_SZ,
         "result_addr": HEAP_START + 1,
         "cu_avail": DECOMP_G2_CU,
     },
-
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1834-L1847
     # actual op - all these tests either return Ok(0) or Ok(1)
     {
-        "heap_prefix": base64.b16decode("a09dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a41678", True) + bytes([0]*64),
+        "heap_prefix": base64.b16decode(
+            "a09dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a41678",
+            True,
+        )
+        + bytes([0] * 64),
         "op": DECOMP_G2_OP,
         "input_addr": HEAP_START,
         "input_size": DECOMP_G2_SZ,
@@ -1000,7 +1154,11 @@ test_vectors_decompress_g2 = [
         "cu_avail": DECOMP_G2_CU,
     },
     {
-        "heap_prefix": base64.b16decode("209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a41678", True) + bytes([0]*64),
+        "heap_prefix": base64.b16decode(
+            "209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf704bf11ca01483bfa8b34b43561848d28905960114c8ac04049af4b6315a41678",
+            True,
+        )
+        + bytes([0] * 64),
         "op": DECOMP_G2_OP,
         "input_addr": HEAP_START,
         "input_size": DECOMP_G2_SZ,
@@ -1010,38 +1168,42 @@ test_vectors_decompress_g2 = [
 ]
 for point in very_annoying_points_g2:
     input = point[0]
-    test_vectors_decompress_g2.append({
-        "heap_prefix": bytes([0] * 128) + input,
-        "op": DECOMP_G2_OP,
-        "input_addr": HEAP_START + 128,
-        "input_size": len(input),
-        "result_addr": HEAP_START,
-        "cu_avail": DECOMP_G2_CU,
-    })
+    test_vectors_decompress_g2.append(
+        {
+            "heap_prefix": bytes([0] * 128) + input,
+            "op": DECOMP_G2_OP,
+            "input_addr": HEAP_START + 128,
+            "input_size": len(input),
+            "result_addr": HEAP_START,
+            "cu_avail": DECOMP_G2_CU,
+        }
+    )
 
-test_vectors_group = \
-    _into_key_data("a", test_vectors_add) + \
-    _into_key_data("m", test_vectors_mul) + \
-    _into_key_data("p", test_vectors_pairing)
+test_vectors_group = (
+    _into_key_data("a", test_vectors_add)
+    + _into_key_data("m", test_vectors_mul)
+    + _into_key_data("p", test_vectors_pairing)
+)
 
-test_vectors_compression = \
-    _into_key_data("c1", test_vectors_compress_g1) + \
-    _into_key_data("d1", test_vectors_decompress_g1) + \
-    _into_key_data("c2", test_vectors_compress_g2) + \
-    _into_key_data("d2", test_vectors_decompress_g2)
+test_vectors_compression = (
+    _into_key_data("c1", test_vectors_compress_g1)
+    + _into_key_data("d1", test_vectors_decompress_g1)
+    + _into_key_data("c2", test_vectors_compress_g2)
+    + _into_key_data("d2", test_vectors_decompress_g2)
+)
 
 features = [
-    0xaaef1edeb6c5bf85,  # enable_alt_bn128_syscall
-    0x9bb55b5df1c396c5,  # enable_alt_bn128_compression_syscall
-    0x8ba9e9038d9fdcff,  # simplify_alt_bn128_syscall_error_codes
+    0xAAEF1EDEB6C5BF85,  # enable_alt_bn128_syscall
+    0x9BB55B5DF1C396C5,  # enable_alt_bn128_compression_syscall
+    0x8BA9E9038D9FDCFF,  # simplify_alt_bn128_syscall_error_codes
 ]
 
 if __name__ == "__main__":
     print("Generating syscall alt_bn128 tests...")
 
-    for (key, test) in test_vectors_group:
+    for key, test in test_vectors_group:
         heap_prefix = test.get("heap_prefix", [])
-        syscall_ctx = pb.SyscallContext()
+        syscall_ctx = vm_pb.SyscallContext()
         syscall_ctx.syscall_invocation.function_name = b"sol_alt_bn128_group_op"
         syscall_ctx.syscall_invocation.heap_prefix = bytes(heap_prefix)
         syscall_ctx.vm_ctx.heap_max = len(heap_prefix)
@@ -1050,8 +1212,10 @@ if __name__ == "__main__":
         syscall_ctx.vm_ctx.r3 = test.get("input_size", 0)
         syscall_ctx.vm_ctx.r4 = test.get("result_addr", 0)
         syscall_ctx.instr_ctx.cu_avail = test.get("cu_avail", 0)
-        syscall_ctx.instr_ctx.program_id = bytes([0]*32) # solfuzz-agave expectes a program_id
-        syscall_ctx.vm_ctx.rodata = b"x" # fd expects some bytes
+        syscall_ctx.instr_ctx.program_id = bytes(
+            [0] * 32
+        )  # solfuzz-agave expectes a program_id
+        syscall_ctx.vm_ctx.rodata = b"x"  # fd expects some bytes
 
         syscall_ctx.instr_ctx.epoch_context.features.features.extend(features)
 
@@ -1063,9 +1227,9 @@ if __name__ == "__main__":
     print("done!")
     print("Generating syscall alt_bn128_compression tests...")
 
-    for (key, test) in test_vectors_compression:
+    for key, test in test_vectors_compression:
         heap_prefix = test.get("heap_prefix", [])
-        syscall_ctx = pb.SyscallContext()
+        syscall_ctx = vm_pb.SyscallContext()
         syscall_ctx.syscall_invocation.function_name = b"sol_alt_bn128_compression"
         syscall_ctx.syscall_invocation.heap_prefix = bytes(heap_prefix)
         syscall_ctx.vm_ctx.heap_max = len(heap_prefix)
@@ -1074,8 +1238,10 @@ if __name__ == "__main__":
         syscall_ctx.vm_ctx.r3 = test.get("input_size", 0)
         syscall_ctx.vm_ctx.r4 = test.get("result_addr", 0)
         syscall_ctx.instr_ctx.cu_avail = test.get("cu_avail", 0)
-        syscall_ctx.instr_ctx.program_id = bytes([0]*32) # solfuzz-agave expectes a program_id
-        syscall_ctx.vm_ctx.rodata = b"x" # fd expects some bytes
+        syscall_ctx.instr_ctx.program_id = bytes(
+            [0] * 32
+        )  # solfuzz-agave expectes a program_id
+        syscall_ctx.vm_ctx.rodata = b"x"  # fd expects some bytes
 
         syscall_ctx.instr_ctx.epoch_context.features.features.extend(features)
 
