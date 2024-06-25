@@ -19,6 +19,7 @@ from test_suite.multiprocessing_utils import (
 )
 import test_suite.globals as globals
 from test_suite.debugger import debug_host
+from test_suite.util import set_ld_preload_asan
 import resource
 import tqdm
 from test_suite.fuzz_context import ElfHarness, InstrHarness, SyscallHarness
@@ -58,7 +59,10 @@ def exec_instr(
 
     # Initialize output buffers and shared library
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
-    lib = ctypes.CDLL(shared_library)
+    try:
+        lib = ctypes.CDLL(shared_library)
+    except:
+        set_ld_preload_asan()
     lib.sol_compat_init()
 
     # Execute and cleanup
