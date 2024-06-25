@@ -7,7 +7,7 @@ from test_suite.multiprocessing_utils import (
     prune_execution_result,
 )
 import test_suite.globals as globals
-import test_suite.invoke_pb2 as pb
+import test_suite.invoke_pb2 as invoke_pb
 from google.protobuf import text_format
 from pathlib import Path
 
@@ -81,7 +81,7 @@ def write_fixture_to_disk(file_stem: str, serialized_fixture: str) -> int:
 
     if globals.readable:
         # Deserialize fixture
-        fixture = pb.InstrFixture()
+        fixture = invoke_pb.InstrFixture()
         fixture.ParseFromString(serialized_fixture)
 
         # Encode fields for instruction context and effects
@@ -129,12 +129,12 @@ def extract_context_from_fixture(fixture_file: Path):
     return 1
 
 
-def get_program_type(instr_fixture: pb.InstrFixture) -> str:
+def get_program_type(instr_fixture: invoke_pb.InstrFixture) -> str:
     """
     Get the program type based on the program / loader id.
 
     Args:
-        - fixture (pb.InstrFixture): Instruction fixture
+        - fixture (invoke_pb.InstrFixture): Instruction fixture
 
     Returns:
         - str | None: Program type (unknown if not found)

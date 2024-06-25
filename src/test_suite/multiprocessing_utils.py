@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from test_suite.constants import OUTPUT_BUFFER_SIZE
-import test_suite.invoke_pb2 as pb
+import test_suite.invoke_pb2 as invoke_pb
+import test_suite.context_pb2 as context_pb
 from test_suite.validation_utils import check_account_unchanged
 import ctypes
 from ctypes import c_uint64, c_int, POINTER, Structure
@@ -12,7 +13,7 @@ import os
 
 def process_target(
     library: ctypes.CDLL, serialized_instruction_context: str
-) -> pb.InstrEffects | None:
+) -> invoke_pb.InstrEffects | None:
     """
     Process an instruction through a provided shared library and return the result.
 
@@ -21,7 +22,7 @@ def process_target(
         - serialized_instruction_context (str): Serialized instruction context message.
 
     Returns:
-        - pb.InstrEffects | None: Result of instruction execution.
+        - invoke_pb.InstrEffects | None: Result of instruction execution.
     """
 
     # Define argument and return types
@@ -51,7 +52,7 @@ def process_target(
 
     # Process the output
     output_data = bytearray(globals.output_buffer_pointer[: out_sz.value])
-    output_object = pb.InstrEffects()
+    output_object = invoke_pb.InstrEffects()
     output_object.ParseFromString(output_data)
 
     return output_object
@@ -261,7 +262,7 @@ def prune_execution_result(
         instruction_effects.ParseFromString(serialized_instruction_effects)
 
         # O(n^2) because not performance sensitive
-        new_modified_accounts: list[pb.AcctState] = []
+        new_modified_accounts: list[context_pb.AcctState] = []
         for modified_account in instruction_effects.modified_accounts:
             account_unchanged = False
             for beginning_account_state in context.accounts:

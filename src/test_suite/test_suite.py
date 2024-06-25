@@ -1,25 +1,20 @@
-from collections import Counter
-import functools
 import shutil
 from typing import List
 import typer
 import ctypes
 from multiprocessing import Pool
 from pathlib import Path
-from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH, NATIVE_PROGRAM_MAPPING
+from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
 from test_suite.fixture_utils import (
     create_fixture,
     extract_context_from_fixture,
 )
-import test_suite.invoke_pb2 as pb
-from test_suite.instr.codec_utils import encode_output
 from test_suite.multiprocessing_utils import (
     decode_single_test_case,
     read_context,
     initialize_process_output_buffers,
     process_target,
     prune_execution_result,
-    get_feature_pool,
     run_test,
 )
 import test_suite.globals as globals
