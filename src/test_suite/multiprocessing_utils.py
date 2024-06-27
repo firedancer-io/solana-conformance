@@ -24,16 +24,6 @@ def process_target(
     Returns:
         - invoke_pb.InstrEffects | None: Result of instruction execution.
     """
-
-    # Define argument and return types
-    library.sol_compat_instr_execute_v1.argtypes = [
-        POINTER(ctypes.c_uint8),  # out_ptr
-        POINTER(c_uint64),  # out_psz
-        POINTER(ctypes.c_uint8),  # in_ptr
-        c_uint64,  # in_sz
-    ]
-    library.sol_compat_instr_execute_v1.restype = c_int
-
     # Prepare input data and output buffers
     in_data = serialized_instruction_context
     in_ptr = (ctypes.c_uint8 * len(in_data))(*in_data)
@@ -42,6 +32,16 @@ def process_target(
 
     # Call the function
     sol_compat_fn = getattr(library, globals.harness_ctx.fuzz_fn_name)
+
+    # Define argument and return types
+    sol_compat_fn.argtypes = [
+        POINTER(ctypes.c_uint8),  # out_ptr
+        POINTER(c_uint64),  # out_psz
+        POINTER(ctypes.c_uint8),  # in_ptr
+        c_uint64,  # in_sz
+    ]
+
+    sol_compat_fn.restype = c_int
     result = sol_compat_fn(
         globals.output_buffer_pointer, ctypes.byref(out_sz), in_ptr, in_sz
     )
@@ -52,7 +52,7 @@ def process_target(
 
     # Process the output
     output_data = bytearray(globals.output_buffer_pointer[: out_sz.value])
-    output_object = invoke_pb.InstrEffects()
+    output_object = globals.harness_ctx.effects_type()
     output_object.ParseFromString(output_data)
 
     return output_object

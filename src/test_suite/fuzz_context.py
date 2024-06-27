@@ -1,7 +1,9 @@
 from test_suite.fuzz_interface import HarnessCtx
+import test_suite.txn_pb2 as txn_pb
 import test_suite.invoke_pb2 as invoke_pb
 import test_suite.elf_pb2 as elf_pb
 import test_suite.vm_pb2 as vm_pb
+import test_suite.txn.codec_utils as txn_codec
 import test_suite.instr.codec_utils as instr_codec
 import test_suite.syscall.codec_utils as syscall_codec
 
@@ -24,4 +26,12 @@ SyscallHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_vm_syscall_execute_v1",
     fixture_desc=vm_pb.SyscallFixture.DESCRIPTOR,
     effects_human_encode_fn=syscall_codec.encode_output,
+)
+
+TxnHarness = HarnessCtx(
+    fuzz_fn_name="sol_compat_txn_execute_v1",
+    fixture_desc=txn_pb.TxnFixture.DESCRIPTOR,
+    context_human_encode_fn=txn_codec.encode_input,
+    context_human_decode_fn=txn_codec.decode_input,
+    effects_human_encode_fn=txn_codec.encode_output,
 )
