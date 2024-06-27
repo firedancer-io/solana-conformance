@@ -13,8 +13,6 @@ def decode_input(instruction_context: invoke_pb.InstrContext):
     """
     if instruction_context.program_id:
         instruction_context.program_id = fd58.dec32(instruction_context.program_id)
-    if instruction_context.loader_id:
-        instruction_context.loader_id = fd58.dec32(instruction_context.loader_id)
 
     for i in range(len(instruction_context.accounts)):
         if instruction_context.accounts[i].address:
@@ -44,8 +42,6 @@ def encode_input(instruction_context: invoke_pb.InstrContext):
     """
     if instruction_context.program_id:
         instruction_context.program_id = fd58.enc32(instruction_context.program_id)
-    if instruction_context.loader_id:
-        instruction_context.loader_id = fd58.enc32(instruction_context.loader_id)
 
     for i in range(len(instruction_context.accounts)):
         if instruction_context.accounts[i].address:

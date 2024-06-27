@@ -27,6 +27,7 @@ from test_suite.fuzz_context import *
 globals.harness_ctx = InstrHarness
 # globals.harness_ctx = SyscallHarness
 # globals.harness_ctx = ValidateVM
+# globals.harness_ctx = TxnHarness
 
 
 app = typer.Typer(
