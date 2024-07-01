@@ -9,15 +9,16 @@ from google.protobuf import descriptor_pb2
 
 _sym_db = _symbol_database.Default()
 from . import invoke_pb2 as invoke__pb2
+from . import context_pb2 as context__pb2
 
 DESCRIPTOR = _descriptor.FileDescriptor(
     name="vm.proto",
     package="org.solana.sealevel.v1",
     syntax="proto3",
     serialized_pb=_b(
-        '\n\x08vm.proto\x12\x16org.solana.sealevel.v1\x1a\x0cinvoke.proto"G\n\x0fInputDataRegion\x12\x0e\n\x06offset\x18\x01 \x01(\x04\x12\x0f\n\x07content\x18\x02 \x01(\x0c\x12\x13\n\x0bis_writable\x18\x03 \x01(\x08"Ì\x02\n\tVmContext\x12\x10\n\x08heap_max\x18\x01 \x01(\x04\x12\x0e\n\x06rodata\x18\x02 \x01(\x0c\x12"\n\x1arodata_text_section_offset\x18\x03 \x01(\x04\x12"\n\x1arodata_text_section_length\x18\x04 \x01(\x04\x12C\n\x12input_data_regions\x18\x05 \x03(\x0b2\'.org.solana.sealevel.v1.InputDataRegion\x12\n\n\x02r0\x18\x06 \x01(\x04\x12\n\n\x02r1\x18\x07 \x01(\x04\x12\n\n\x02r2\x18\x08 \x01(\x04\x12\n\n\x02r3\x18\t \x01(\x04\x12\n\n\x02r4\x18\n \x01(\x04\x12\n\n\x02r5\x18\x0b \x01(\x04\x12\n\n\x02r6\x18\x0c \x01(\x04\x12\n\n\x02r7\x18\r \x01(\x04\x12\n\n\x02r8\x18\x0e \x01(\x04\x12\n\n\x02r9\x18\x0f \x01(\x04\x12\x0b\n\x03r10\x18\x10 \x01(\x04\x12\x0b\n\x03r11\x18\x11 \x01(\x04"?\n\x11SyscallInvocation\x12\x15\n\rfunction_name\x18\x01 \x01(\t\x12\x13\n\x0bheap_prefix\x18\x02 \x01(\x0c"Ã\x01\n\x0eSyscallContext\x121\n\x06vm_ctx\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.VmContext\x127\n\tinstr_ctx\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.InstrContext\x12E\n\x12syscall_invocation\x18\x03 \x01(\x0b2).org.solana.sealevel.v1.SyscallInvocation"\x8f\x01\n\x0eSyscallEffects\x12\r\n\x05error\x18\x01 \x01(\x03\x12\n\n\x02r0\x18\x02 \x01(\x04\x12\x10\n\x08cu_avail\x18\x03 \x01(\x04\x12\x0c\n\x04heap\x18\x04 \x01(\x0c\x12\r\n\x05stack\x18\x05 \x01(\x0c\x12\x11\n\tinputdata\x18\x06 \x01(\x0c\x12\x13\n\x0bframe_count\x18\x07 \x01(\x04\x12\x0b\n\x03log\x18\x08 \x01(\x0c"\x7f\n\x0eSyscallFixture\x125\n\x05input\x18\x01 \x01(\x0b2&.org.solana.sealevel.v1.SyscallContext\x126\n\x06output\x18\x02 \x01(\x0b2&.org.solana.sealevel.v1.SyscallEffects"4\n\x11ValidateVmEffects\x12\x0e\n\x06result\x18\x01 \x01(\x05\x12\x0f\n\x07success\x18\x02 \x01(\x08b\x06proto3'
+        '\n\x08vm.proto\x12\x16org.solana.sealevel.v1\x1a\x0cinvoke.proto\x1a\rcontext.proto"G\n\x0fInputDataRegion\x12\x0e\n\x06offset\x18\x01 \x01(\x04\x12\x0f\n\x07content\x18\x02 \x01(\x0c\x12\x13\n\x0bis_writable\x18\x03 \x01(\x08"Ì\x02\n\tVmContext\x12\x10\n\x08heap_max\x18\x01 \x01(\x04\x12\x0e\n\x06rodata\x18\x02 \x01(\x0c\x12"\n\x1arodata_text_section_offset\x18\x03 \x01(\x04\x12"\n\x1arodata_text_section_length\x18\x04 \x01(\x04\x12C\n\x12input_data_regions\x18\x05 \x03(\x0b2\'.org.solana.sealevel.v1.InputDataRegion\x12\n\n\x02r0\x18\x06 \x01(\x04\x12\n\n\x02r1\x18\x07 \x01(\x04\x12\n\n\x02r2\x18\x08 \x01(\x04\x12\n\n\x02r3\x18\t \x01(\x04\x12\n\n\x02r4\x18\n \x01(\x04\x12\n\n\x02r5\x18\x0b \x01(\x04\x12\n\n\x02r6\x18\x0c \x01(\x04\x12\n\n\x02r7\x18\r \x01(\x04\x12\n\n\x02r8\x18\x0e \x01(\x04\x12\n\n\x02r9\x18\x0f \x01(\x04\x12\x0b\n\x03r10\x18\x10 \x01(\x04\x12\x0b\n\x03r11\x18\x11 \x01(\x04"?\n\x11SyscallInvocation\x12\x15\n\rfunction_name\x18\x01 \x01(\t\x12\x13\n\x0bheap_prefix\x18\x02 \x01(\x0c"Ã\x01\n\x0eSyscallContext\x121\n\x06vm_ctx\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.VmContext\x127\n\tinstr_ctx\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.InstrContext\x12E\n\x12syscall_invocation\x18\x03 \x01(\x0b2).org.solana.sealevel.v1.SyscallInvocation"\x8f\x01\n\x0eSyscallEffects\x12\r\n\x05error\x18\x01 \x01(\x03\x12\n\n\x02r0\x18\x02 \x01(\x04\x12\x10\n\x08cu_avail\x18\x03 \x01(\x04\x12\x0c\n\x04heap\x18\x04 \x01(\x0c\x12\r\n\x05stack\x18\x05 \x01(\x0c\x12\x11\n\tinputdata\x18\x06 \x01(\x0c\x12\x13\n\x0bframe_count\x18\x07 \x01(\x04\x12\x0b\n\x03log\x18\x08 \x01(\x0c"\x7f\n\x0eSyscallFixture\x125\n\x05input\x18\x01 \x01(\x0b2&.org.solana.sealevel.v1.SyscallContext\x126\n\x06output\x18\x02 \x01(\x0b2&.org.solana.sealevel.v1.SyscallEffects"x\n\rFullVmContext\x121\n\x06vm_ctx\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.VmContext\x124\n\x08features\x18\x03 \x01(\x0b2".org.solana.sealevel.v1.FeatureSet"4\n\x11ValidateVmEffects\x12\x0e\n\x06result\x18\x01 \x01(\x05\x12\x0f\n\x07success\x18\x02 \x01(\x08"\x84\x01\n\x11ValidateVmFixture\x124\n\x05input\x18\x01 \x01(\x0b2%.org.solana.sealevel.v1.FullVmContext\x129\n\x06output\x18\x02 \x01(\x0b2).org.solana.sealevel.v1.ValidateVmEffectsb\x06proto3'
     ),
-    dependencies=[invoke__pb2.DESCRIPTOR],
+    dependencies=[invoke__pb2.DESCRIPTOR, context__pb2.DESCRIPTOR],
 )
 _INPUTDATAREGION = _descriptor.Descriptor(
     name="InputDataRegion",
@@ -89,8 +90,8 @@ _INPUTDATAREGION = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=50,
-    serialized_end=121,
+    serialized_start=65,
+    serialized_end=136,
 )
 _VMCONTEXT = _descriptor.Descriptor(
     name="VmContext",
@@ -414,8 +415,8 @@ _VMCONTEXT = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=124,
-    serialized_end=456,
+    serialized_start=139,
+    serialized_end=471,
 )
 _SYSCALLINVOCATION = _descriptor.Descriptor(
     name="SyscallInvocation",
@@ -469,8 +470,8 @@ _SYSCALLINVOCATION = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=458,
-    serialized_end=521,
+    serialized_start=473,
+    serialized_end=536,
 )
 _SYSCALLCONTEXT = _descriptor.Descriptor(
     name="SyscallContext",
@@ -542,8 +543,8 @@ _SYSCALLCONTEXT = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=524,
-    serialized_end=719,
+    serialized_start=539,
+    serialized_end=734,
 )
 _SYSCALLEFFECTS = _descriptor.Descriptor(
     name="SyscallEffects",
@@ -705,8 +706,8 @@ _SYSCALLEFFECTS = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=722,
-    serialized_end=865,
+    serialized_start=737,
+    serialized_end=880,
 )
 _SYSCALLFIXTURE = _descriptor.Descriptor(
     name="SyscallFixture",
@@ -760,8 +761,63 @@ _SYSCALLFIXTURE = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=867,
-    serialized_end=994,
+    serialized_start=882,
+    serialized_end=1009,
+)
+_FULLVMCONTEXT = _descriptor.Descriptor(
+    name="FullVmContext",
+    full_name="org.solana.sealevel.v1.FullVmContext",
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name="vm_ctx",
+            full_name="org.solana.sealevel.v1.FullVmContext.vm_ctx",
+            index=0,
+            number=1,
+            type=11,
+            cpp_type=10,
+            label=1,
+            has_default_value=False,
+            default_value=None,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+        _descriptor.FieldDescriptor(
+            name="features",
+            full_name="org.solana.sealevel.v1.FullVmContext.features",
+            index=1,
+            number=3,
+            type=11,
+            cpp_type=10,
+            label=1,
+            has_default_value=False,
+            default_value=None,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    options=None,
+    is_extendable=False,
+    syntax="proto3",
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=1011,
+    serialized_end=1131,
 )
 _VALIDATEVMEFFECTS = _descriptor.Descriptor(
     name="ValidateVmEffects",
@@ -815,8 +871,63 @@ _VALIDATEVMEFFECTS = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=996,
-    serialized_end=1048,
+    serialized_start=1133,
+    serialized_end=1185,
+)
+_VALIDATEVMFIXTURE = _descriptor.Descriptor(
+    name="ValidateVmFixture",
+    full_name="org.solana.sealevel.v1.ValidateVmFixture",
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name="input",
+            full_name="org.solana.sealevel.v1.ValidateVmFixture.input",
+            index=0,
+            number=1,
+            type=11,
+            cpp_type=10,
+            label=1,
+            has_default_value=False,
+            default_value=None,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+        _descriptor.FieldDescriptor(
+            name="output",
+            full_name="org.solana.sealevel.v1.ValidateVmFixture.output",
+            index=1,
+            number=2,
+            type=11,
+            cpp_type=10,
+            label=1,
+            has_default_value=False,
+            default_value=None,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    options=None,
+    is_extendable=False,
+    syntax="proto3",
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=1188,
+    serialized_end=1320,
 )
 _VMCONTEXT.fields_by_name["input_data_regions"].message_type = _INPUTDATAREGION
 _SYSCALLCONTEXT.fields_by_name["vm_ctx"].message_type = _VMCONTEXT
@@ -824,13 +935,19 @@ _SYSCALLCONTEXT.fields_by_name["instr_ctx"].message_type = invoke__pb2._INSTRCON
 _SYSCALLCONTEXT.fields_by_name["syscall_invocation"].message_type = _SYSCALLINVOCATION
 _SYSCALLFIXTURE.fields_by_name["input"].message_type = _SYSCALLCONTEXT
 _SYSCALLFIXTURE.fields_by_name["output"].message_type = _SYSCALLEFFECTS
+_FULLVMCONTEXT.fields_by_name["vm_ctx"].message_type = _VMCONTEXT
+_FULLVMCONTEXT.fields_by_name["features"].message_type = context__pb2._FEATURESET
+_VALIDATEVMFIXTURE.fields_by_name["input"].message_type = _FULLVMCONTEXT
+_VALIDATEVMFIXTURE.fields_by_name["output"].message_type = _VALIDATEVMEFFECTS
 DESCRIPTOR.message_types_by_name["InputDataRegion"] = _INPUTDATAREGION
 DESCRIPTOR.message_types_by_name["VmContext"] = _VMCONTEXT
 DESCRIPTOR.message_types_by_name["SyscallInvocation"] = _SYSCALLINVOCATION
 DESCRIPTOR.message_types_by_name["SyscallContext"] = _SYSCALLCONTEXT
 DESCRIPTOR.message_types_by_name["SyscallEffects"] = _SYSCALLEFFECTS
 DESCRIPTOR.message_types_by_name["SyscallFixture"] = _SYSCALLFIXTURE
+DESCRIPTOR.message_types_by_name["FullVmContext"] = _FULLVMCONTEXT
 DESCRIPTOR.message_types_by_name["ValidateVmEffects"] = _VALIDATEVMEFFECTS
+DESCRIPTOR.message_types_by_name["ValidateVmFixture"] = _VALIDATEVMFIXTURE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 InputDataRegion = _reflection.GeneratedProtocolMessageType(
     "InputDataRegion",
@@ -866,9 +983,21 @@ SyscallFixture = _reflection.GeneratedProtocolMessageType(
     dict(DESCRIPTOR=_SYSCALLFIXTURE, __module__="vm_pb2"),
 )
 _sym_db.RegisterMessage(SyscallFixture)
+FullVmContext = _reflection.GeneratedProtocolMessageType(
+    "FullVmContext",
+    (_message.Message,),
+    dict(DESCRIPTOR=_FULLVMCONTEXT, __module__="vm_pb2"),
+)
+_sym_db.RegisterMessage(FullVmContext)
 ValidateVmEffects = _reflection.GeneratedProtocolMessageType(
     "ValidateVmEffects",
     (_message.Message,),
     dict(DESCRIPTOR=_VALIDATEVMEFFECTS, __module__="vm_pb2"),
 )
 _sym_db.RegisterMessage(ValidateVmEffects)
+ValidateVmFixture = _reflection.GeneratedProtocolMessageType(
+    "ValidateVmFixture",
+    (_message.Message,),
+    dict(DESCRIPTOR=_VALIDATEVMFIXTURE, __module__="vm_pb2"),
+)
+_sym_db.RegisterMessage(ValidateVmFixture)

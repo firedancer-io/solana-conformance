@@ -22,10 +22,11 @@ from test_suite.debugger import debug_host
 from test_suite.util import set_ld_preload_asan
 import resource
 import tqdm
-from test_suite.fuzz_context import ElfHarness, InstrHarness, SyscallHarness
+from test_suite.fuzz_context import *
 
 globals.harness_ctx = InstrHarness
 # globals.harness_ctx = SyscallHarness
+# globals.harness_ctx = ValidateVM
 
 
 app = typer.Typer(

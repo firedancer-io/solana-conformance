@@ -22,16 +22,16 @@ solana-test-suite = "test_suite.test_suite:app"
 
 [project.optional-dependencies]
 test = [
-  "black>=22.10.0",
-  "pre-commit>=2.20.0",
   "pytest-clarity>=1.0.1",
   "pytest-cov>=4.0.0",
   "pytest>=7.2.0",
 ]
 
 dev = [
+  "pre-commit>=2.20.0",
   "solana-test-suite[test]",
   "build>=0.10.0",
+  "black>=22.10.0",
 ]
 
 [build-system]
