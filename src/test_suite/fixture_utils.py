@@ -4,7 +4,6 @@ from test_suite.multiprocessing_utils import (
     build_test_results,
     read_context,
     process_single_test_case,
-    prune_execution_result,
 )
 import test_suite.globals as globals
 import test_suite.invoke_pb2 as invoke_pb
@@ -25,7 +24,7 @@ def create_fixture(test_file: Path) -> int:
     serialized_context = read_context(test_file)
     results = process_single_test_case(serialized_context)
 
-    pruned_results = prune_execution_result(serialized_context, results)
+    pruned_results = globals.harness_ctx.prune_effects_fn(serialized_context, results)
 
     # This is only relevant when you gather results for multiple targets
     if globals.only_keep_passing:

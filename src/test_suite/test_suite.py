@@ -14,7 +14,6 @@ from test_suite.multiprocessing_utils import (
     read_context,
     initialize_process_output_buffers,
     process_target,
-    prune_execution_result,
     run_test,
 )
 import test_suite.globals as globals
@@ -77,7 +76,7 @@ def exec_instr(
     serialized_effects = effects.SerializeToString(deterministic=True)
 
     # Prune execution results
-    serialized_effects = prune_execution_result(
+    serialized_effects = globals.harness_ctx.prune_effects_fn(
         context,
         {shared_library: serialized_effects},
     )[shared_library]
