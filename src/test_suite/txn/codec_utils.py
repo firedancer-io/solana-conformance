@@ -13,6 +13,9 @@ def decode_input(txn_context: txn_pb.TxnContext):
     # Message hash
     txn_context.tx.message_hash = fd58.dec32(txn_context.tx.message_hash)
 
+    # Genesis hash
+    txn_context.genesis_hash = fd58.dec32(txn_context.genesis_hash)
+
     # Signatures
     for i in range(len(txn_context.tx.signatures)):
         if txn_context.tx.signatures[i]:
@@ -40,6 +43,11 @@ def decode_input(txn_context: txn_pb.TxnContext):
             txn_context.tx.message.account_shared_data[i].owner = fd58.dec32(
                 txn_context.tx.message.account_shared_data[i].owner
             )
+
+    # Recent blockhash
+    txn_context.tx.message.recent_blockhash = fd58.dec32(
+        txn_context.tx.message.recent_blockhash
+    )
 
     # Address table lookups
     for i in range(len(txn_context.tx.message.address_table_lookups)):
@@ -72,6 +80,9 @@ def encode_input(txn_context: txn_pb.TxnContext):
     # Message hash
     txn_context.tx.message_hash = fd58.enc32(txn_context.tx.message_hash)
 
+    # Genesis hash
+    txn_context.genesis_hash = fd58.enc32(txn_context.genesis_hash)
+
     # Signatures
     for i in range(len(txn_context.tx.signatures)):
         if txn_context.tx.signatures[i]:
@@ -99,6 +110,11 @@ def encode_input(txn_context: txn_pb.TxnContext):
             txn_context.tx.message.account_shared_data[i].owner = fd58.enc32(
                 txn_context.tx.message.account_shared_data[i].owner
             )
+
+    # Recent blockhash
+    txn_context.tx.message.recent_blockhash = fd58.enc32(
+        txn_context.tx.message.recent_blockhash
+    )
 
     # Address table lookups
     for i in range(len(txn_context.tx.message.address_table_lookups)):
