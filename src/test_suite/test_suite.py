@@ -23,10 +23,10 @@ import resource
 import tqdm
 from test_suite.fuzz_context import *
 
-globals.harness_ctx = InstrHarness
+# globals.harness_ctx = InstrHarness
 # globals.harness_ctx = SyscallHarness
 # globals.harness_ctx = ValidateVM
-# globals.harness_ctx = TxnHarness
+globals.harness_ctx = TxnHarness
 
 app = typer.Typer(
     help="Validate instruction effects from clients using instruction context Protobuf messages."

@@ -27,8 +27,10 @@ The following defines the interface:
 
 
 def generic_effects_prune(
-    ctx: ContextType, effects: dict[str, EffectsType]
-) -> dict[str, EffectsType]:
+    ctx: str | None, effects: dict[str, str | None]
+) -> dict[str, str | None] | None:
+    if ctx is None:
+        return None
     return effects
 
 
@@ -52,7 +54,7 @@ class HarnessCtx:
     ignore_fields_for_consensus: list[str] = field(default_factory=list)
     diff_effect_fn: Callable[[EffectsType, EffectsType], bool] = generic_effects_diff
     prune_effects_fn: Callable[
-        [ContextType, dict[str, EffectsType]], dict[str, EffectsType]
+        [str | None, dict[str, str | None]], dict[str, str | None] | None
     ] = generic_effects_prune
     context_human_encode_fn: Callable[[ContextType], None] = generic_human_encode
     context_human_decode_fn: Callable[[ContextType], None] = generic_human_decode

@@ -4,14 +4,14 @@ from test_suite.validation_utils import check_account_unchanged
 
 
 def prune_execution_result(
-    serialized_context: str,
+    serialized_context: str | None,
     targets_to_serialized_effects: dict[str, str | None],
 ) -> dict[str, str | None] | None:
     """
     Prune execution result to only include actually modified accounts.
 
     Args:
-        - serialized_context (str): Serialized context.
+        - serialized_context (str | None): Serialized context.
         - targets_to_serialized_effects (dict[str, str | None]): Dictionary of target library names and serialized effects.
 
     Returns:
