@@ -28,7 +28,6 @@ globals.harness_ctx = InstrHarness
 # globals.harness_ctx = ValidateVM
 # globals.harness_ctx = TxnHarness
 
-
 app = typer.Typer(
     help="Validate instruction effects from clients using instruction context Protobuf messages."
 )

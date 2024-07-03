@@ -22,10 +22,6 @@ def process_target(
     Returns:
         - invoke_pb.InstrEffects | None: Result of instruction execution.
     """
-<<<<<<< HEAD
-
-=======
->>>>>>> ea09bea (Transaction harness fixes)
     # Prepare input data and output buffers
     in_data = serialized_instruction_context
     in_ptr = (ctypes.c_uint8 * len(in_data))(*in_data)
@@ -42,14 +38,9 @@ def process_target(
         POINTER(ctypes.c_uint8),  # in_ptr
         c_uint64,  # in_sz
     ]
-<<<<<<< HEAD
     sol_compat_fn.restype = c_int
 
     # Call the function
-=======
-
-    sol_compat_fn.restype = c_int
->>>>>>> ea09bea (Transaction harness fixes)
     result = sol_compat_fn(
         globals.output_buffer_pointer, ctypes.byref(out_sz), in_ptr, in_sz
     )

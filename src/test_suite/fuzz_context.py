@@ -31,11 +31,11 @@ SyscallHarness = HarnessCtx(
     effects_human_encode_fn=syscall_codec.encode_output,
 )
 
-<<<<<<< HEAD
 ValidateVM = HarnessCtx(
     fuzz_fn_name="sol_compat_vm_validate_v1",
     fixture_desc=vm_pb.ValidateVmFixture.DESCRIPTOR,
-=======
+)
+
 TxnHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_txn_execute_v1",
     fixture_desc=txn_pb.TxnFixture.DESCRIPTOR,
@@ -43,5 +43,4 @@ TxnHarness = HarnessCtx(
     context_human_encode_fn=txn_codec.encode_input,
     context_human_decode_fn=txn_codec.decode_input,
     effects_human_encode_fn=txn_codec.encode_output,
->>>>>>> ea09bea (Transaction harness fixes)
 )

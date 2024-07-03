@@ -16,11 +16,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     package="org.solana.sealevel.v1",
     syntax="proto3",
     serialized_pb=_b(
-<<<<<<< HEAD
         '\n\x08vm.proto\x12\x16org.solana.sealevel.v1\x1a\x0cinvoke.proto\x1a\rcontext.proto"G\n\x0fInputDataRegion\x12\x0e\n\x06offset\x18\x01 \x01(\x04\x12\x0f\n\x07content\x18\x02 \x01(\x0c\x12\x13\n\x0bis_writable\x18\x03 \x01(\x08"Ì\x02\n\tVmContext\x12\x10\n\x08heap_max\x18\x01 \x01(\x04\x12\x0e\n\x06rodata\x18\x02 \x01(\x0c\x12"\n\x1arodata_text_section_offset\x18\x03 \x01(\x04\x12"\n\x1arodata_text_section_length\x18\x04 \x01(\x04\x12C\n\x12input_data_regions\x18\x05 \x03(\x0b2\'.org.solana.sealevel.v1.InputDataRegion\x12\n\n\x02r0\x18\x06 \x01(\x04\x12\n\n\x02r1\x18\x07 \x01(\x04\x12\n\n\x02r2\x18\x08 \x01(\x04\x12\n\n\x02r3\x18\t \x01(\x04\x12\n\n\x02r4\x18\n \x01(\x04\x12\n\n\x02r5\x18\x0b \x01(\x04\x12\n\n\x02r6\x18\x0c \x01(\x04\x12\n\n\x02r7\x18\r \x01(\x04\x12\n\n\x02r8\x18\x0e \x01(\x04\x12\n\n\x02r9\x18\x0f \x01(\x04\x12\x0b\n\x03r10\x18\x10 \x01(\x04\x12\x0b\n\x03r11\x18\x11 \x01(\x04"?\n\x11SyscallInvocation\x12\x15\n\rfunction_name\x18\x01 \x01(\t\x12\x13\n\x0bheap_prefix\x18\x02 \x01(\x0c"Ã\x01\n\x0eSyscallContext\x121\n\x06vm_ctx\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.VmContext\x127\n\tinstr_ctx\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.InstrContext\x12E\n\x12syscall_invocation\x18\x03 \x01(\x0b2).org.solana.sealevel.v1.SyscallInvocation"\x8f\x01\n\x0eSyscallEffects\x12\r\n\x05error\x18\x01 \x01(\x03\x12\n\n\x02r0\x18\x02 \x01(\x04\x12\x10\n\x08cu_avail\x18\x03 \x01(\x04\x12\x0c\n\x04heap\x18\x04 \x01(\x0c\x12\r\n\x05stack\x18\x05 \x01(\x0c\x12\x11\n\tinputdata\x18\x06 \x01(\x0c\x12\x13\n\x0bframe_count\x18\x07 \x01(\x04\x12\x0b\n\x03log\x18\x08 \x01(\x0c"\x7f\n\x0eSyscallFixture\x125\n\x05input\x18\x01 \x01(\x0b2&.org.solana.sealevel.v1.SyscallContext\x126\n\x06output\x18\x02 \x01(\x0b2&.org.solana.sealevel.v1.SyscallEffects"x\n\rFullVmContext\x121\n\x06vm_ctx\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.VmContext\x124\n\x08features\x18\x03 \x01(\x0b2".org.solana.sealevel.v1.FeatureSet"4\n\x11ValidateVmEffects\x12\x0e\n\x06result\x18\x01 \x01(\x05\x12\x0f\n\x07success\x18\x02 \x01(\x08"\x84\x01\n\x11ValidateVmFixture\x124\n\x05input\x18\x01 \x01(\x0b2%.org.solana.sealevel.v1.FullVmContext\x129\n\x06output\x18\x02 \x01(\x0b2).org.solana.sealevel.v1.ValidateVmEffectsb\x06proto3'
-=======
-        '\n\x08vm.proto\x12\x16org.solana.sealevel.v1\x1a\x0cinvoke.proto\x1a\rcontext.proto"G\n\x0fInputDataRegion\x12\x0e\n\x06offset\x18\x01 \x01(\x04\x12\x0f\n\x07content\x18\x02 \x01(\x0c\x12\x13\n\x0bis_writable\x18\x03 \x01(\x08"Ì\x02\n\tVmContext\x12\x10\n\x08heap_max\x18\x01 \x01(\x04\x12\x0e\n\x06rodata\x18\x02 \x01(\x0c\x12"\n\x1arodata_text_section_offset\x18\x03 \x01(\x04\x12"\n\x1arodata_text_section_length\x18\x04 \x01(\x04\x12C\n\x12input_data_regions\x18\x05 \x03(\x0b2\'.org.solana.sealevel.v1.InputDataRegion\x12\n\n\x02r0\x18\x06 \x01(\x04\x12\n\n\x02r1\x18\x07 \x01(\x04\x12\n\n\x02r2\x18\x08 \x01(\x04\x12\n\n\x02r3\x18\t \x01(\x04\x12\n\n\x02r4\x18\n \x01(\x04\x12\n\n\x02r5\x18\x0b \x01(\x04\x12\n\n\x02r6\x18\x0c \x01(\x04\x12\n\n\x02r7\x18\r \x01(\x04\x12\n\n\x02r8\x18\x0e \x01(\x04\x12\n\n\x02r9\x18\x0f \x01(\x04\x12\x0b\n\x03r10\x18\x10 \x01(\x04\x12\x0b\n\x03r11\x18\x11 \x01(\x04"?\n\x11SyscallInvocation\x12\x15\n\rfunction_name\x18\x01 \x01(\t\x12\x13\n\x0bheap_prefix\x18\x02 \x01(\x0c"Ã\x01\n\x0eSyscallContext\x121\n\x06vm_ctx\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.VmContext\x127\n\tinstr_ctx\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.InstrContext\x12E\n\x12syscall_invocation\x18\x03 \x01(\x0b2).org.solana.sealevel.v1.SyscallInvocation"\x8f\x01\n\x0eSyscallEffects\x12\r\n\x05error\x18\x01 \x01(\x03\x12\n\n\x02r0\x18\x02 \x01(\x04\x12\x10\n\x08cu_avail\x18\x03 \x01(\x04\x12\x0c\n\x04heap\x18\x04 \x01(\x0c\x12\r\n\x05stack\x18\x05 \x01(\x0c\x12\x11\n\tinputdata\x18\x06 \x01(\x0c\x12\x13\n\x0bframe_count\x18\x07 \x01(\x04\x12\x0b\n\x03log\x18\x08 \x01(\x0c"\x7f\n\x0eSyscallFixture\x125\n\x05input\x18\x01 \x01(\x0b2&.org.solana.sealevel.v1.SyscallContext\x126\n\x06output\x18\x02 \x01(\x0b2&.org.solana.sealevel.v1.SyscallEffects"x\n\rFullVmContext\x121\n\x06vm_ctx\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.VmContext\x124\n\x08features\x18\x03 \x01(\x0b2".org.solana.sealevel.v1.FeatureSet"4\n\x11ValidateVmEffects\x12\x0e\n\x06result\x18\x01 \x01(\x05\x12\x0f\n\x07success\x18\x02 \x01(\x08b\x06proto3'
->>>>>>> ea09bea (Transaction harness fixes)
     ),
     dependencies=[invoke__pb2.DESCRIPTOR, context__pb2.DESCRIPTOR],
 )
@@ -877,7 +873,6 @@ _VALIDATEVMEFFECTS = _descriptor.Descriptor(
     oneofs=[],
     serialized_start=1133,
     serialized_end=1185,
-<<<<<<< HEAD
 )
 _VALIDATEVMFIXTURE = _descriptor.Descriptor(
     name="ValidateVmFixture",
@@ -933,8 +928,6 @@ _VALIDATEVMFIXTURE = _descriptor.Descriptor(
     oneofs=[],
     serialized_start=1188,
     serialized_end=1320,
-=======
->>>>>>> ea09bea (Transaction harness fixes)
 )
 _VMCONTEXT.fields_by_name["input_data_regions"].message_type = _INPUTDATAREGION
 _SYSCALLCONTEXT.fields_by_name["vm_ctx"].message_type = _VMCONTEXT
@@ -944,11 +937,8 @@ _SYSCALLFIXTURE.fields_by_name["input"].message_type = _SYSCALLCONTEXT
 _SYSCALLFIXTURE.fields_by_name["output"].message_type = _SYSCALLEFFECTS
 _FULLVMCONTEXT.fields_by_name["vm_ctx"].message_type = _VMCONTEXT
 _FULLVMCONTEXT.fields_by_name["features"].message_type = context__pb2._FEATURESET
-<<<<<<< HEAD
 _VALIDATEVMFIXTURE.fields_by_name["input"].message_type = _FULLVMCONTEXT
 _VALIDATEVMFIXTURE.fields_by_name["output"].message_type = _VALIDATEVMEFFECTS
-=======
->>>>>>> ea09bea (Transaction harness fixes)
 DESCRIPTOR.message_types_by_name["InputDataRegion"] = _INPUTDATAREGION
 DESCRIPTOR.message_types_by_name["VmContext"] = _VMCONTEXT
 DESCRIPTOR.message_types_by_name["SyscallInvocation"] = _SYSCALLINVOCATION
