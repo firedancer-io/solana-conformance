@@ -1,8 +1,6 @@
 from dataclasses import dataclass, field
 from test_suite.constants import OUTPUT_BUFFER_SIZE
 import test_suite.invoke_pb2 as invoke_pb
-import test_suite.context_pb2 as context_pb
-from test_suite.validation_utils import check_account_unchanged
 import ctypes
 from ctypes import c_uint64, c_int, POINTER, Structure
 from pathlib import Path
@@ -24,7 +22,6 @@ def process_target(
     Returns:
         - invoke_pb.InstrEffects | None: Result of instruction execution.
     """
-
     # Prepare input data and output buffers
     in_data = serialized_instruction_context
     in_ptr = (ctypes.c_uint8 * len(in_data))(*in_data)
@@ -223,67 +220,6 @@ def merge_results_over_iterations(results: tuple) -> tuple[str, dict]:
     return file, merged_results
 
 
-def prune_execution_result(
-    serialized_context: str,
-    targets_to_serialized_effects: dict[str, str | None],
-) -> dict[str, str | None] | None:
-    """
-    Prune execution result to only include actually modified accounts.
-
-    Args:
-        - serialized_instruction_context (str): Serialized instruction context.
-        - serialized_instruction_effects (dict[str, str | None]): Dictionary of target library names and serialized instruction effects.
-
-    Returns:
-        - dict[str, str | None] | None: Serialized pruned instruction effects for each target.
-    """
-    if serialized_context is None:
-        return None
-
-    EffectsT = globals.harness_ctx.effects_type
-
-    if not hasattr(EffectsT(), "modified_accounts"):
-        # no execution results to prune
-        # TODO: perform this check in a more robust way
-        return targets_to_serialized_effects
-
-    context = globals.harness_ctx.context_type()
-    context.ParseFromString(serialized_context)
-
-    targets_to_serialized_pruned_instruction_effects = {}
-    for (
-        target,
-        serialized_instruction_effects,
-    ) in targets_to_serialized_effects.items():
-        if serialized_instruction_effects is None:
-            targets_to_serialized_pruned_instruction_effects[target] = None
-            continue
-
-        instruction_effects = EffectsT()
-        instruction_effects.ParseFromString(serialized_instruction_effects)
-
-        # O(n^2) because not performance sensitive
-        new_modified_accounts: list[context_pb.AcctState] = []
-        for modified_account in instruction_effects.modified_accounts:
-            account_unchanged = False
-            for beginning_account_state in context.accounts:
-                account_unchanged |= check_account_unchanged(
-                    modified_account, beginning_account_state
-                )
-
-            if not account_unchanged:
-                new_modified_accounts.append(modified_account)
-
-        # Assign new modified accounts
-        del instruction_effects.modified_accounts[:]
-        instruction_effects.modified_accounts.extend(new_modified_accounts)
-        targets_to_serialized_pruned_instruction_effects[target] = (
-            instruction_effects.SerializeToString(deterministic=True)
-        )
-
-    return targets_to_serialized_pruned_instruction_effects
-
-
 def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None]:
     """
     Build a single result of single test execution and returns whether the test passed or failed.
@@ -408,5 +344,7 @@ def run_test(test_file: Path) -> tuple[str, int, dict | None]:
     else:
         serialized_instr_context = read_context(test_file)
     results = process_single_test_case(serialized_instr_context)
-    pruned_results = prune_execution_result(serialized_instr_context, results)
+    pruned_results = globals.harness_ctx.prune_effects_fn(
+        serialized_instr_context, results
+    )
     return test_file.stem, *build_test_results(pruned_results)
