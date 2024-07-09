@@ -25,6 +25,22 @@ class ix(Enum):
     VerifyGroupedCiphertext3HandlesValidity = 11,
     VerifyBatchedGroupedCiphertext3HandlesValidity = 12,
 
+CTX_STATE_LEN = [
+    0,
+    3 * 32,      # VerifyZeroCiphertext
+    6 * 32,      # VerifyCiphertextCiphertextEquality
+    4 * 32,      # VerifyCiphertextCommitmentEquality
+    1 * 32,      # VerifyPubkeyValidity
+    3 * 32 + 8,  # VerifyPercentageWithCap
+    8 * 32 + 8,  # VerifyBatchedRangeProofU64
+    8 * 32 + 8,  # VerifyBatchedRangeProofU128
+    8 * 32 + 8,  # VerifyBatchedRangeProofU256
+    5 * 32,      # VerifyGroupedCiphertext2HandlesValidity
+    8 * 32,      # VerifyBatchedGroupedCiphertext2HandlesValidity
+    7 * 32,      # VerifyGroupedCiphertext3HandlesValidity
+    11 * 32,     # VerifyBatchedGroupedCiphertext3HandlesValidity
+]
+
 test_vectors_agave = [
     # {
     #     "ix": ix.CloseContextState,
@@ -153,8 +169,8 @@ test_vectors_agave = [
             "c033774789b2fc16b632192638070e15b6b59852488d9f2a92c758e90b30a45f", # context
             "f8691d53d5d8e1444e9a3eefd1f6e0fb6c6ed08f31a0b86e265454e097e1f219",
             "7649f6d240769e77c186a610ea5a9c9942d1e6f98031ac38693f1f63d9023107",
-            "0300000000000000",
-            "747e6ea4ae760a10728adf0916526562f3ce32e905c4fc724a6ae4be7cca1e1b", # proof
+            "0300000000000000",                                                 # proof
+            "747e6ea4ae760a10728adf0916526562f3ce32e905c4fc724a6ae4be7cca1e1b",
             "8bb081de00196a204258893e3b1b6af6c55b2e90f91a2d91fbc01c0fe8f20a08",
             "d3b14114d91fee677cbd6471a27a2c3df2cfe680cd9f169cc19a3837668e5209",
             "34e57f984a4928baae7a39c0788104630dc80382414ed991cc669ac6ca762749",
@@ -171,8 +187,8 @@ test_vectors_agave = [
             "1223b394709edb8003d23630597f5a58eac0894d1bcef409cbb597e8b5269f5f", # context
             "242777cd165c5b2931163d1712bf0aaba3ee58176b01d29afe5ab424d5b7b705",
             "dc4ccbd5728ceb309b1d49d18f3bee3f62b4e290a514a8e28d0600245b99722c",
-            "0300000000000000",
-            "5678659d22f233faf43255f4e2965f01eb9bcb6081ef5638e8547b40e048d452", # proof
+            "0300000000000000",                                                 # proof
+            "5678659d22f233faf43255f4e2965f01eb9bcb6081ef5638e8547b40e048d452",
             "8525ea544486c7d5c0c49367fc195023e734a81f97eb27f5ac7846dab4a34407",
             "b94684c2752461882c61b7d202d8885aeda0356629265ae7427d69f6fd62fb0f",
             "e2587b37d430ca559fd179174798480bb65ed8bce322e4c678b0b694b41f470d",
@@ -494,6 +510,253 @@ test_vectors_agave = [
 for test in test_vectors_agave:
     test["data"] = base64.b16decode(''.join(test.get("data")), True)
 
+# test cases for close_context_state ix
+test_vectors_close = [
+    {
+        # success
+        "ix": ix.CloseContextState,
+        "cu": 3300,
+        "data": [
+        ],
+        "accounts": [
+            {
+                # proof
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                "lamports": 12345,
+                "data": [
+                    "be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb",
+                    "00"
+                ],
+                "is_writable": True,
+            },
+            {
+                # destination
+                "address": base64.b16decode("246965896e3577be29b6edcd2b9a986539ce7a5478e89a029067e3f999b23fb5", True),
+                "is_writable": True,
+            },
+            {
+                # owner
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+                # "is_writable": True,
+                "is_signer": True,
+            },
+        ],
+    },
+    {
+        # success
+        "ix": ix.CloseContextState,
+        "cu": 3300,
+        "data": [
+        ],
+        "accounts": [
+            {
+                # proof
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                "lamports": 12345,
+                "data": [
+                    "be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb",
+                    "ff"
+                ],
+                "is_writable": True,
+            },
+            {
+                # destination + owner
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+                "is_writable": True,
+                "is_signer": True,
+            },
+        ],
+        "instr_accounts": [0, 1, 1],
+    },
+    {
+        # success with unnecessary data
+        "ix": ix.CloseContextState,
+        "cu": 3300,
+        "data": [
+            "00ff",
+        ],
+        "accounts": [
+            {
+                # proof
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                "lamports": 12345,
+                "data": [
+                    "be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb",
+                    "00"
+                ],
+                "is_writable": True,
+            },
+            {
+                # destination
+                "address": base64.b16decode("246965896e3577be29b6edcd2b9a986539ce7a5478e89a029067e3f999b23fb5", True),
+                "is_writable": True,
+            },
+            {
+                # owner
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+                "is_signer": True,
+            },
+        ],
+    },
+    {
+        # invalid proof account's owner
+        "ix": ix.CloseContextState,
+        "cu": 3300,
+        "data": [
+        ],
+        "accounts": [
+            {
+                # proof
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                # "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                "lamports": 12345,
+                "data": [
+                    "be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb",
+                    "00"
+                ],
+                "is_writable": True,
+            },
+            {
+                # destination
+                "address": base64.b16decode("246965896e3577be29b6edcd2b9a986539ce7a5478e89a029067e3f999b23fb5", True),
+                "is_writable": True,
+            },
+            {
+                # owner
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+                "is_signer": True,
+            },
+        ],
+    },
+    {
+        # missing signature
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L136
+        "ix": ix.CloseContextState,
+        "cu": 3300,
+        "data": [
+        ],
+        "accounts": [
+            {
+                # proof
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                "lamports": 12345,
+                "data": [
+                    "be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb",
+                    "01"
+                ],
+                "is_writable": True,
+            },
+            {
+                # destination
+                "address": base64.b16decode("246965896e3577be29b6edcd2b9a986539ce7a5478e89a029067e3f999b23fb5", True),
+                "is_writable": True,
+            },
+            {
+                # owner
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+                # "is_signer": True,
+            },
+        ],
+    },
+    {
+        # dest == proof
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L148
+        "ix": ix.CloseContextState,
+        "cu": 3300,
+        "data": [
+        ],
+        "accounts": [
+            {
+                # proof == dest
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                "lamports": 12345,
+                "data": [
+                    "be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb",
+                    "01"
+                ],
+                "is_writable": True,
+            },
+            {
+                # owner
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+                "is_signer": True,
+            },
+        ],
+        "instr_accounts": [0, 0, 1],
+    },
+    {
+        # invalid ProofContextStateMeta
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L153-L154
+        "ix": ix.CloseContextState,
+        "cu": 3300,
+        "data": [
+        ],
+        "accounts": [
+            {
+                # proof
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                "lamports": 12345,
+                "data": [
+                    "be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb",
+                    # "01"
+                ],
+                "is_writable": True,
+            },
+            {
+                # destination
+                "address": base64.b16decode("246965896e3577be29b6edcd2b9a986539ce7a5478e89a029067e3f999b23fb5", True),
+                "is_writable": True,
+            },
+            {
+                # owner
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+                "is_signer": True,
+            },
+        ],
+    },
+    {
+        # invalid owner
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L158
+        "ix": ix.CloseContextState,
+        "cu": 3300,
+        "data": [
+        ],
+        "accounts": [
+            {
+                # proof
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                "lamports": 12345,
+                "data": [
+                    "ff5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb",
+                    "01"
+                ],
+                "is_writable": True,
+            },
+            {
+                # destination
+                "address": base64.b16decode("246965896e3577be29b6edcd2b9a986539ce7a5478e89a029067e3f999b23fb5", True),
+                "is_writable": True,
+            },
+            {
+                # owner
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+                "is_signer": True,
+            },
+        ],
+    },
+]
+for test in test_vectors_close:
+    test["data"] = base64.b16decode(''.join(test.get("data", [])), True)
+    for account in test["accounts"]:
+        account["data"] = base64.b16decode(''.join(account.get("data", [])), True)
+
 test_vectors_cu = [
     {
         "ix": ix.CloseContextState,
@@ -506,6 +769,7 @@ for test in test_vectors_agave:
     new_test["cu"] = new_test.get("cu") - 1
     test_vectors_cu.append(new_test)
 
+# failure tests because ctx is invalid
 test_vectors_ctx = []
 for test in test_vectors_agave:
     new_test = test.copy()
@@ -514,6 +778,7 @@ for test in test_vectors_agave:
         new_test["data"] = bytes([(data[0] + 1)]) + bytes(data[1:])  # modify context
     test_vectors_ctx.append(new_test)
 
+# failure tests because zkp is invalid
 test_vectors_proof = []
 for test in test_vectors_agave:
     new_test = test.copy()
@@ -522,6 +787,714 @@ for test in test_vectors_agave:
         new_test["data"] = bytes(data[:-1]) + bytes([(data[-1] + 1)])  # modify proof
     test_vectors_proof.append(new_test)
 
+# success tests where proof_data is read from an account
+test_vectors_account = []
+for test in test_vectors_agave:
+    new_test = test.copy()
+    new_test["accounts"] = [{
+        "address": base64.b16decode("246965896e3577be29b6edcd2b9a986539ce7a5478e89a029067e3f999b23fb5", True),
+        "data": test.get("data"),
+    }]
+    new_test["data"] = bytes([0]*4) # offset in account data
+    test_vectors_account.append(new_test)
+
+# success tests where ctx is written in an account
+test_vectors_write = []
+for test in test_vectors_agave:
+    new_test = test.copy()
+    ctx_state_len = 33 + CTX_STATE_LEN[test.get("ix").value[0]]
+    new_test["accounts"] = [{
+        "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+        "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+        "data": bytes([0]*ctx_state_len),
+        "is_writable": True,
+    }, {
+        "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+    }]
+    test_vectors_write.append(new_test)
+
+# success tests where proof_data is read from an account and ctx is written in an account
+test_vectors_account_write = []
+for test in test_vectors_agave:
+    new_test = test.copy()
+    ctx_state_len = 33 + CTX_STATE_LEN[test.get("ix").value[0]]
+    new_test["accounts"] = [{
+        "address": base64.b16decode("246965896e3577be29b6edcd2b9a986539ce7a5478e89a029067e3f999b23fb5", True),
+        "data": test.get("data"),
+    }, {
+        "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+        "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+        "data": bytes([0]*ctx_state_len),
+        "is_writable": True,
+    }, {
+        "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+    }]
+    new_test["data"] = bytes([0]*4) # offset in account data
+    test_vectors_account_write.append(new_test)
+
+# test cases for process_verify_proof workflow
+# we use VerifyZeroCiphertext as an example of ZKP
+test_vectors_verify = [
+    # Part I. Verify ZKP.
+
+    # Case 1. Proof data from account data.
+    # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L45-L76
+    {
+        # success
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "00000000",
+        ],
+        # [
+        #     "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+        #     "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+        #     "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+        #     "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+        #     "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+        #     "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+        # ],
+        "accounts": [
+            {
+                "address": base64.b16decode("246965896e3577be29b6edcd2b9a986539ce7a5478e89a029067e3f999b23fb5", True),
+                "data": [
+                    "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+                    "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+                    "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+                    "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+                    "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+                    "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+                ],
+            }, {
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                "data": [
+                    "000000000000000000000000000000000000000000000000000000000000000000", # authority + proof
+                    "0000000000000000000000000000000000000000000000000000000000000000", # context
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                ],
+                "is_writable": True,
+            }, {
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+            },
+        ],
+    },
+    {
+        # fail - empty data => proof_data from ix => invalid instr data
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L81
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [],
+    },
+    {
+        # fail - proof_data from account, no accounts
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L46-L47
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "00000000",
+        ],
+    },
+    {
+        # fail - proof_data from account, account with no data
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L65
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "00000000",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("246965896e3577be29b6edcd2b9a986539ce7a5478e89a029067e3f999b23fb5", True),
+            }
+        ],
+    },
+    {
+        # fail - proof_data from account, account with not enough data
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L65
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "00000000",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("246965896e3577be29b6edcd2b9a986539ce7a5478e89a029067e3f999b23fb5", True),
+                "data": [
+                    "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+                    "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+                    "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+                    "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+                    "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+                    # "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+                ],
+            }
+        ],
+    },
+    {
+        # success - proof_data from account, account with extra data
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "00000000",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("246965896e3577be29b6edcd2b9a986539ce7a5478e89a029067e3f999b23fb5", True),
+                "data": [
+                    "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+                    "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+                    "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+                    "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+                    "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+                    "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+                    "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f", # extra
+                ],
+            }
+        ],
+    },
+    {
+        # success - proof_data from account, offset
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "20000000",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("246965896e3577be29b6edcd2b9a986539ce7a5478e89a029067e3f999b23fb5", True),
+                "data": [
+                    "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f", # extra
+                    "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+                    "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+                    "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+                    "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+                    "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+                    "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+                    "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f", # extra
+                ],
+            }
+        ],
+    },
+    {
+        # success - proof_data from account, offset
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L65
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "ffffffff",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("246965896e3577be29b6edcd2b9a986539ce7a5478e89a029067e3f999b23fb5", True),
+                "data": [
+                    "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f", # extra
+                    "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+                    "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+                    "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+                    "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+                    "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+                    "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+                    "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f", # extra
+                ],
+            }
+        ],
+    },
+    # Case 2. Proof data from ix data.
+    # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L77-L89
+    # Most cases are already covered by previous tests.
+    {
+        # fail - too much data in account is ok, but in ix fails
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+            "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+            "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+            "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+            "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+            "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+            "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f", # extra
+        ],
+    },
+
+
+    # Part II. Store context data.
+    {
+        # fail - no accounts
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L92-L98
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+            "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+            "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+            "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+            "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+            "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+        ],
+        "accounts": []
+    },
+    {
+        # fail - missing one account
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L92-L98
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+            "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+            "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+            "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+            "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+            "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+            },
+        ],
+    },
+    {
+        # fail - no(t enough) accounts
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L92-L98
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "00000000",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("246965896e3577be29b6edcd2b9a986539ce7a5478e89a029067e3f999b23fb5", True),
+                "data": [
+                    "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+                    "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+                    "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+                    "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+                    "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+                    "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+                ],
+            },
+        ],
+    },
+    {
+        # fail - missing one account
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L100-L101
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "00000000",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("246965896e3577be29b6edcd2b9a986539ce7a5478e89a029067e3f999b23fb5", True),
+                "data": [
+                    "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+                    "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+                    "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+                    "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+                    "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+                    "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+                ],
+            },
+            {
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+            },
+        ],
+    },
+    {
+        # fail - read only account + wrong owner + wrong data
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L103-L105
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+            "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+            "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+            "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+            "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+            "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                # "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                # "data": [
+                #     "000000000000000000000000000000000000000000000000000000000000000000", # authority + proof
+                #     "0000000000000000000000000000000000000000000000000000000000000000", # context
+                #     "0000000000000000000000000000000000000000000000000000000000000000",
+                #     "0000000000000000000000000000000000000000000000000000000000000000",
+                # ],
+                # "is_writable": True,
+            },
+            {
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+            }
+        ],
+    },
+    {
+        # fail - read only account + wrong owner
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L103-L105
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+            "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+            "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+            "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+            "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+            "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                # "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                "data": [
+                    "000000000000000000000000000000000000000000000000000000000000000000", # authority + proof
+                    "0000000000000000000000000000000000000000000000000000000000000000", # context
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                ],
+                # "is_writable": True,
+            },
+            {
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+            }
+        ],
+    },
+    {
+        # fail - read only account + wrong data
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+            "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+            "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+            "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+            "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+            "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                # "data": [
+                #     "000000000000000000000000000000000000000000000000000000000000000000", # authority + proof
+                #     "0000000000000000000000000000000000000000000000000000000000000000", # context
+                #     "0000000000000000000000000000000000000000000000000000000000000000",
+                #     "0000000000000000000000000000000000000000000000000000000000000000",
+                # ],
+                # "is_writable": True,
+            },
+            {
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+            }
+        ],
+    },
+    {
+        # fail - wrong owner + wrong data
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L103-L105
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+            "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+            "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+            "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+            "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+            "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                # "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                # "data": [
+                #     "000000000000000000000000000000000000000000000000000000000000000000", # authority + proof
+                #     "0000000000000000000000000000000000000000000000000000000000000000", # context
+                #     "0000000000000000000000000000000000000000000000000000000000000000",
+                #     "0000000000000000000000000000000000000000000000000000000000000000",
+                # ],
+                "is_writable": True,
+            },
+            {
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+            }
+        ],
+    },
+    {
+        # fail - read only account
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L121
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+            "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+            "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+            "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+            "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+            "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                "data": [
+                    "000000000000000000000000000000000000000000000000000000000000000000", # authority + proof
+                    "0000000000000000000000000000000000000000000000000000000000000000", # context
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                ],
+                # "is_writable": True,
+            },
+            {
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+            }
+        ],
+    },
+    {
+        # fail - wrong owner
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L103-L105
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+            "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+            "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+            "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+            "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+            "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                # "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                "data": [
+                    "000000000000000000000000000000000000000000000000000000000000000000", # authority + proof
+                    "0000000000000000000000000000000000000000000000000000000000000000", # context
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                ],
+                "is_writable": True,
+            },
+            {
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+            }
+        ],
+    },
+    {
+        # fail - wrong data: empty
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L117-L119
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+            "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+            "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+            "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+            "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+            "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                # "data": [
+                #     "000000000000000000000000000000000000000000000000000000000000000000", # authority + proof
+                #     "0000000000000000000000000000000000000000000000000000000000000000", # context
+                #     "0000000000000000000000000000000000000000000000000000000000000000",
+                #     "0000000000000000000000000000000000000000000000000000000000000000",
+                # ],
+                "is_writable": True,
+            },
+            {
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+            }
+        ],
+    },
+    {
+        # fail - wrong data: too small
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L117-L119
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+            "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+            "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+            "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+            "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+            "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                "data": [
+                    "000000000000000000000000000000000000000000000000000000000000000000", # authority + proof
+                    "0000000000000000000000000000000000000000000000000000000000000000", # context
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                    # "0000000000000000000000000000000000000000000000000000000000000000",
+                ],
+                "is_writable": True,
+            },
+            {
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+            }
+        ],
+    },
+    {
+        # fail - wrong data: too large
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L117-L119
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+            "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+            "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+            "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+            "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+            "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                "data": [
+                    "000000000000000000000000000000000000000000000000000000000000000000", # authority + proof
+                    "0000000000000000000000000000000000000000000000000000000000000000", # context
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                    "0000000000000000000000000000000000000000000000000000000000000000", # extra
+                ],
+                "is_writable": True,
+            },
+            {
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+            }
+        ],
+    },
+    {
+        # fail - wrong data: initialized
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L110-L112
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+            "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+            "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+            "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+            "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+            "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                "data": [
+                    "000000000000000000000000000000000000000000000000000000000000000001", # authority + proof
+                    "0000000000000000000000000000000000000000000000000000000000000000", # context
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                ],
+                "is_writable": True,
+            },
+            {
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+            }
+        ],
+    },
+    {
+        # fail - wrong data: initialized (invalid proof type)
+        # https://github.com/anza-xyz/agave/blob/v2.0.1/programs/zk-elgamal-proof/src/lib.rs#L110-L112
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+            "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+            "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+            "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+            "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+            "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                "data": [
+                    "0000000000000000000000000000000000000000000000000000000000000000ff", # authority + proof
+                    "0000000000000000000000000000000000000000000000000000000000000000", # context
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                ],
+                "is_writable": True,
+            },
+            {
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+            }
+        ],
+    },
+    {
+        # success - wrong data: dirty (1)
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+            "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+            "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+            "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+            "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+            "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                "data": [
+                    "010000000000000000000000000000000000000000000000000000000000000000", # authority + proof
+                    "0000000000000000000000000000000000000000000000000000000000000000", # context
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                ],
+                "is_writable": True,
+            },
+            {
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+            }
+        ],
+    },
+    {
+        # success - wrong data: dirty (2)
+        "ix": ix.VerifyZeroCiphertext,
+        "cu": 6_000,
+        "data": [
+            "e849bc396675d659c14fd2e0619abd9124bf1be40f3ef0e9b81cfe87e3e16b35", # context
+            "7670194b708b5728e62b5bdac8fe672b13d378b746e7630c12f13cac3c179e26",
+            "c883cc653e0737f7c866596d739ed3cfa3dcae9f4ce87306998e44ec4a073360",
+            "6467faff06ec0729956a25a76fd0af5219305cc6a963707928af35c29db13d2f", # proof
+            "1ca133e5e58bcd46eb4927d55f487d98f6b6d3ce0a73c84be7084233f71ab864",
+            "572e427f0f5a41d2ea66b90d07e3ab5ad9a2e3ba8b391b2eceec38e5a0e0650f",
+        ],
+        "accounts": [
+            {
+                "address": base64.b16decode("86ddc6585609faef7c746983e0b198e432e9d1771d615ce2406e320c779f4a3d", True),
+                "owner": fd58.dec32(bytes("ZkE1Gama1Proof11111111111111111111111111111", "utf-8")),
+                "data": [
+                    "000000000000000000000000000000000000000000000000000000000000000000", # authority + proof
+                    "0100000000000000000000000000000000000000000000000000000000000000", # context
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                    "0000000000000000000000000000000000000000000000000000000000000000",
+                ],
+                "is_writable": True,
+            },
+            {
+                "address": base64.b16decode("be5b54cdb01762497c7fd98bfcaaec1d2a2cad1c2bb5134857b68f0214935ebb", True),
+            }
+        ],
+    },
+]
+for test in test_vectors_verify:
+    test["data"] = base64.b16decode(''.join(test.get("data", [])), True)
+    for account in test.get("accounts", []):
+        account["data"] = base64.b16decode(''.join(account.get("data", [])), True)
 
 def _into_key_data(key_prefix, test_vectors):
     return [(key_prefix + str(j), test) for j, test in enumerate(test_vectors)]
@@ -532,7 +1505,12 @@ print("Generating zk-sdk tests...")
 test_vectors = _into_key_data("a", test_vectors_agave) \
     + _into_key_data("cu", test_vectors_cu) \
     + _into_key_data("c", test_vectors_ctx) \
-    + _into_key_data("p", test_vectors_proof)
+    + _into_key_data("p", test_vectors_proof) \
+    + _into_key_data("acc", test_vectors_account) \
+    + _into_key_data("w", test_vectors_write) \
+    + _into_key_data("wacc", test_vectors_account_write) \
+    + _into_key_data("close", test_vectors_close) \
+    + _into_key_data("verif", test_vectors_verify)
 
 program_id = fd58.dec32(bytes(program_id, "utf-8"))
 program_owner = fd58.dec32(
@@ -544,10 +1522,36 @@ for key, test in test_vectors:
     instr_ctx.data = bytes(test.get("ix").value) + test.get("data")
     instr_ctx.cu_avail = test.get("cu")
 
-    account = context_pb.AcctState()
-    account.address = program_id
-    account.owner = program_owner
-    instr_ctx.accounts.extend([account])
+    accounts = []
+    test_accounts = test.get("accounts", [])
+    for account in test_accounts:
+        # account
+        acc = context_pb.AcctState()
+        acc.address = account.get("address")
+        acc.owner = account.get("owner", bytes([0]*32))
+        acc.lamports = account.get("lamports", 0)
+        acc.data = account.get("data", bytes([]))
+        accounts.append(acc)
+
+    instr_accounts = []
+    test_instr_accounts = test.get("instr_accounts", range(len(accounts)))
+    for j in test_instr_accounts:
+        # instr account
+        instr_acc = invoke_pb.InstrAcct()
+        instr_acc.index = j
+        account = test_accounts[j]
+        instr_acc.is_writable = account.get("is_writable", False)
+        instr_acc.is_signer = account.get("is_signer", False)
+        instr_accounts.append(instr_acc)
+
+    # program account
+    program_account = context_pb.AcctState()
+    program_account.address = program_id
+    program_account.owner = program_owner
+    accounts.append(program_account)
+
+    instr_ctx.accounts.extend(accounts)
+    instr_ctx.instr_accounts.extend(instr_accounts)
     instr_ctx.epoch_context.features.features.extend([0x8e1411a93085cb0e])
 
     serialized_instr = instr_ctx.SerializeToString(deterministic=True)
