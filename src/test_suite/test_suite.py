@@ -23,10 +23,10 @@ import resource
 import tqdm
 from test_suite.fuzz_context import *
 
-# globals.harness_ctx = InstrHarness
+globals.harness_ctx = InstrHarness
 # globals.harness_ctx = SyscallHarness
 # globals.harness_ctx = ValidateVM
-globals.harness_ctx = TxnHarness
+# globals.harness_ctx = TxnHarness
 
 app = typer.Typer(
     help="Validate instruction effects from clients using instruction context Protobuf messages."
@@ -35,11 +35,11 @@ app = typer.Typer(
 
 @app.command()
 def exec_instr(
-    file: Path = typer.Option(
+    file_or_dir: Path = typer.Option(
         None,
         "--input",
         "-i",
-        help=f"Input {globals.harness_ctx.context_type.__name__} file",
+        help=f"Input {globals.harness_ctx.context_type.__name__} file or directory of files",
     ),
     shared_library: Path = typer.Option(
         Path("impl/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so"),
@@ -54,9 +54,6 @@ def exec_instr(
         help="Randomizes bytes in output buffer before shared library execution",
     ),
 ):
-    context = read_context(file)
-    assert context is not None, f"Unable to read {file.name}"
-
     # Initialize output buffers and shared library
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
     try:
@@ -65,31 +62,37 @@ def exec_instr(
         set_ld_preload_asan()
     lib.sol_compat_init()
 
-    # Execute and cleanup
-    effects = process_target(lib, context)
+    files_to_exec = file_or_dir.iterdir() if file_or_dir.is_dir() else [file_or_dir]
+    for file in files_to_exec:
+        print(f"Handling {file}...")
+        context = read_context(file)
+        assert context is not None, f"Unable to read {file.name}"
 
-    if not effects:
-        print("No instruction effects returned")
-        return None
+        # Execute and cleanup
+        effects = process_target(lib, context)
 
-    serialized_effects = effects.SerializeToString(deterministic=True)
+        if not effects:
+            print("No instruction effects returned")
+            return None
 
-    # Prune execution results
-    serialized_effects = globals.harness_ctx.prune_effects_fn(
-        context,
-        {shared_library: serialized_effects},
-    )[shared_library]
+        serialized_effects = effects.SerializeToString(deterministic=True)
 
-    parsed_instruction_effects = globals.harness_ctx.effects_type()
-    parsed_instruction_effects.ParseFromString(serialized_effects)
+        # Prune execution results
+        serialized_effects = globals.harness_ctx.prune_effects_fn(
+            context,
+            {shared_library: serialized_effects},
+        )[shared_library]
+
+        parsed_instruction_effects = globals.harness_ctx.effects_type()
+        parsed_instruction_effects.ParseFromString(serialized_effects)
+
+        # Print human-readable output
+        if parsed_instruction_effects:
+            globals.harness_ctx.effects_human_encode_fn(parsed_instruction_effects)
+
+        print(parsed_instruction_effects)
 
     lib.sol_compat_fini()
-
-    # Print human-readable output
-    if parsed_instruction_effects:
-        globals.harness_ctx.effects_human_encode_fn(parsed_instruction_effects)
-
-    print(parsed_instruction_effects)
 
 
 @app.command()
