@@ -1533,7 +1533,7 @@ for key, test in test_vectors:
     account.address = program_id
     account.owner = program_owner
     instr_ctx.accounts.extend([account])
-    instr_ctx.instr_accounts.extend([invoke_pb.InstrAcct()])
+    instr_ctx.epoch_context.features.features.extend([0x91a7af96555ea309])
 
     serialized_instr = instr_ctx.SerializeToString(deterministic=True)
     filename = str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
