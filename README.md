@@ -16,7 +16,14 @@ source install.sh
 
 ## Protobuf
 
-Each target must contain a `sol_compat_instr_execute_v1` function that takes in a `InstrContext` message and outputs a `InstrEffects` message (see `src/test_suite/invoke.proto`). See `utils.py:process_instruction` to see how the program interacts with shared libraries.
+Each target must contain a `sol_compat_instr_execute_v1` function that takes in a `InstrContext` message and outputs a `InstrEffects` message (see [`proto/invoke.proto`](https://github.com/firedancer-io/protosol/blob/main/proto/invoke.proto)). See `utils.py:process_instruction` to see how the program interacts with shared libraries.
+
+### Updating definitions
+All message definitions are defined in [Protosol](https://github.com/firedancer-io/protosol/). You may need to periodically update these definitions with the following command:
+
+```sh
+./fetch_and_generate.sh
+```
 
 ## Usage
 
@@ -71,12 +78,14 @@ You can provide both `InstrContext` and `InstrFixture` within `--input-dir` - pa
 You can pick out a single test case and run it to view the instruction effects via output with the following command:
 
 ```sh
-solana-test-suite exec-instr --input <input_file> --target <shared_lib>
+solana-test-suite exec-instr --input <input_file / input_dir> --target <shared_lib>
 ```
+
+For flexibility, `--input` can be either a file or directory and will execute on one or more files based on what's provided.
 
 | Argument        | Description                                                                                         |
 |-----------------|-----------------------------------------------------------------------------------------------------|
-| `--input`      | Input file containing instruction context message |
+| `--input`      | Input file OR directory of input files containing instruction context messages |
 | `--target`      | Shared object (.so) target file path to debug  |
 
 
@@ -86,6 +95,13 @@ For failing test cases, it may be useful to analyze what could have differed bet
 
 ```sh
 solana-test-suite debug-instr --input <input_file> --target <shared_lib> --debugger <gdb,rust-gdb,etc>
+```
+
+#### Alternative (and preferred) debugging solution
+
+Use the following command instead if you want the ability to directly restart the program without having to restart GDB:
+```sh
+<gdb / rust-gdb> --args python3.11 -m test_suite.test_suite exec-instr --input <input_file> --target <shared_lib>
 ```
 
 | Argument        | Description                                                                                         |
