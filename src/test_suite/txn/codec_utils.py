@@ -13,9 +13,6 @@ def decode_input(txn_context: txn_pb.TxnContext):
     # Message hash
     txn_context.tx.message_hash = fd58.dec32(txn_context.tx.message_hash)
 
-    # Genesis hash
-    txn_context.genesis_hash = fd58.dec32(txn_context.genesis_hash)
-
     # Signatures
     for i in range(len(txn_context.tx.signatures)):
         if txn_context.tx.signatures[i]:
@@ -68,6 +65,10 @@ def decode_input(txn_context: txn_pb.TxnContext):
             txn_context.tx.message.loaded_addresses.readonly[i]
         )
 
+    # Blockhash queue
+    for i in range(len(txn_context.blockhash_queue)):
+        txn_context.blockhash_queue[i] = fd58.dec32(txn_context.blockhash_queue[i])
+
 
 def encode_input(txn_context: txn_pb.TxnContext):
     """
@@ -79,9 +80,6 @@ def encode_input(txn_context: txn_pb.TxnContext):
     """
     # Message hash
     txn_context.tx.message_hash = fd58.enc32(txn_context.tx.message_hash)
-
-    # Genesis hash
-    txn_context.genesis_hash = fd58.enc32(txn_context.genesis_hash)
 
     # Signatures
     for i in range(len(txn_context.tx.signatures)):
@@ -134,6 +132,10 @@ def encode_input(txn_context: txn_pb.TxnContext):
         txn_context.tx.message.loaded_addresses.readonly[i] = fd58.enc32(
             txn_context.tx.message.loaded_addresses.readonly[i]
         )
+
+    # Blockhash queue
+    for i in range(len(txn_context.blockhash_queue)):
+        txn_context.blockhash_queue[i] = fd58.enc32(txn_context.blockhash_queue[i])
 
 
 def encode_output(txn_result: txn_pb.TxnResult):
