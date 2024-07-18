@@ -73,7 +73,7 @@ def exec_instr(
 
         if not effects:
             print("No instruction effects returned")
-            return None
+            continue
 
         serialized_effects = effects.SerializeToString(deterministic=True)
 
