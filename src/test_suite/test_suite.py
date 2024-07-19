@@ -23,10 +23,10 @@ import resource
 import tqdm
 from test_suite.fuzz_context import *
 
-globals.harness_ctx = InstrHarness
+# globals.harness_ctx = InstrHarness
 # globals.harness_ctx = SyscallHarness
 # globals.harness_ctx = ValidateVM
-# globals.harness_ctx = TxnHarness
+globals.harness_ctx = TxnHarness
 
 app = typer.Typer(
     help="Validate instruction effects from clients using instruction context Protobuf messages."
@@ -266,7 +266,7 @@ def run_tests(
         help="Solana (or ground truth) shared object (.so) target file path",
     ),
     shared_libraries: List[Path] = typer.Option(
-        [Path("impl/lib/libsolfuzz_firedancer.so")],
+        [],
         "--target",
         "-t",
         help="Shared object (.so) target file paths",
