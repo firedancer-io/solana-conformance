@@ -360,7 +360,11 @@ def run_tests(
     # Initialize shared libraries
     for target in shared_libraries:
         # Load in and initialize shared libraries
-        lib = ctypes.CDLL(target)
+        try:
+            lib = ctypes.CDLL(target)
+        except:
+            set_ld_preload_asan()
+
         lib.sol_compat_init()
         globals.target_libraries[target] = lib
 
