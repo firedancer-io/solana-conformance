@@ -22,11 +22,21 @@ from test_suite.util import set_ld_preload_asan
 import resource
 import tqdm
 from test_suite.fuzz_context import *
+import os
 
-globals.harness_ctx = InstrHarness
-# globals.harness_ctx = SyscallHarness
-# globals.harness_ctx = ValidateVM
-# globals.harness_ctx = TxnHarness
+"""
+Harness options:
+- InstrHarness
+- TxnHarness
+- SyscallHarness
+- ValidateVM
+- ElfHarness
+"""
+harness_type = os.getenv("HARNESS_TYPE")
+if harness_type:
+    globals.harness_ctx = eval(harness_type)
+else:
+    globals.harness_ctx = InstrHarness
 
 app = typer.Typer(
     help="Validate instruction effects from clients using instruction context Protobuf messages."
@@ -54,6 +64,7 @@ def exec_instr(
         help="Randomizes bytes in output buffer before shared library execution",
     ),
 ):
+    print(globals.harness_ctx)
     # Initialize output buffers and shared library
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
     try:

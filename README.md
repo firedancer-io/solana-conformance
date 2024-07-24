@@ -27,6 +27,15 @@ All message definitions are defined in [Protosol](https://github.com/firedancer-
 
 ## Usage
 
+### Selecting the correct harness
+The harness type should be specified by an environment variable `HARNESS_TYPE` and supports the following values (default is `InstrHarness` if not provided):
+- `InstrHarness`
+- `TxnHarness`
+- `SyscallHarness`
+- `ValidateVM`
+- `ElfHarness`
+
+
 ### Data Preparation
 
 Before running tests, `InstrContext` messages may be converted into Protobuf's text format, with all `bytes` fields base58-encoded (for human readability). Run the following command to do this:
