@@ -1,7 +1,12 @@
 import test_suite.txn_pb2 as txn_pb
 
 
-def txn_diff_effects(a_san: txn_pb.TxnResult, b_san: txn_pb.TxnResult):
+def txn_diff_effects(a: txn_pb.TxnResult, b: txn_pb.TxnResult):
+    a_san = txn_pb.TxnResult()
+    a_san.CopyFrom(a)
+    b_san = txn_pb.TxnResult()
+    b_san.CopyFrom(b)
+
     # Don't compare rent epochs
     for i in range(len(a_san.resulting_state.acct_states)):
         a_san.resulting_state.acct_states[i].rent_epoch = 0
