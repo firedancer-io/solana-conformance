@@ -14,6 +14,13 @@ Clone this repository and run:
 source install.sh
 ```
 
+### (HIGHLY Recommended) Install auto-completion
+
+```sh
+solana-test-suite --install-completion
+```
+You will need to reload your shell + the `test_suite_env` venv to see the changes.
+
 ## Protobuf
 
 Each target must contain a `sol_compat_instr_execute_v1` function that takes in a `InstrContext` message and outputs a `InstrEffects` message (see [`proto/invoke.proto`](https://github.com/firedancer-io/protosol/blob/main/proto/invoke.proto)). See `utils.py:process_instruction` to see how the program interacts with shared libraries.
@@ -26,6 +33,14 @@ All message definitions are defined in [Protosol](https://github.com/firedancer-
 ```
 
 ## Usage
+Run `solana-test-suite --help` to see the available commands. 
+Or, refer to the [commands.md](commands.md) for a list of available commands.
+
+### Note on [commands.md](commands.md)
+`commands.md` is automatically generated from the `typer utils docs` module.
+Help messages are dynamically generated based on the [currently set harness type](#selecting-the-correct-harness). Thus, descriptions specific to harness type (typically the Context, Effects, and Fixtures names) in `commands.md` refer to the harness type set during time of generation.
+
+When the desired [harness type is set](#selecting-the-correct-harness), the `--help` output in the CLI will reflect the correct names. Try it!
 
 ### Selecting the correct harness
 The harness type should be specified by an environment variable `HARNESS_TYPE` and supports the following values (default is `InstrHarness` if not provided):
@@ -38,73 +53,15 @@ The harness type should be specified by an environment variable `HARNESS_TYPE` a
 
 ### Data Preparation
 
-Before running tests, `InstrContext` messages may be converted into Protobuf's text format, with all `bytes` fields base58-encoded (for human readability). Run the following command to do this:
+Before running tests, Context messages may be converted into Protobuf's text format, with all `bytes` fields base58-encoded (for human readability). This can be done with [decode-protobuf](commands.md#solana-test-suite-decode-protobuf) command.
 
-```sh
-solana-test-suite decode-protobuf --input-dir <input_dir> --output-dir <output_dir> --num-processes <num_processes>
-```
-
-| Argument       | Description                                                                                   |
-|----------------|-----------------------------------------------------------------------------------------------|
-| `--input-dir`  | Input directory containing instruction context messages in binary format                      |
-| `--output-dir` | Output directory for encoded, human-readable instruction context messages                     |
-| `--num-processes`  | Number of processes to use |
-
-
-Optionally, instruction context messages may also be left in the original Protobuf binary-encoded format.
-
-
-### Test Suite
-
-To run the test suite, use the following command:
-
-```sh
-solana-test-suite run-tests --input-dir <input_dir> --solana-target <solana_target.so> --target <firedancer.so> [--target <target_2> ...] --output-dir <log_output_dir> --num-processes <num_processes> --chunk-size <chunk_size> [--randomize-output-buffer] [--verbose] [--consensus-mode] [--failures-only] [--save-failures]
-```
-
-You can provide both `InstrContext` and `InstrFixture` within `--input-dir` - parsing is taken care of depending on the file extension `.bin` for `InstrContext` and `.fix` for `InstrFixture`.
-
-| Argument        | Description                                                                                         |
-|-----------------|-----------------------------------------------------------------------------------------------------|
-| `--input-dir`   | Input directory containing instruction context or fixture messages |
-| `--solana-target` | Path to Solana Agave shared object (.so) target file            |
-| `--target`      | Additional shared object (.so) target file paths  |
-| `--output-dir`  | Log output directory for test results |
-| `--num-processes`  | Number of processes to use |
-| `--randomize-output-buffer`| Randomizes bytes in output buffer before shared library execution                                                        |
-| `--chunk-size`  | Number of test results per log file |
-| `--verbose`   | Verbose output: log failed test cases |
-| `--consensus-mode` | Only fail on consensus failures. One such effect is to normalize error codes when comparing results |
-| `--failures-only` | Only log failed test cases |
-| `--save-failures` | Saves failed test cases to results directory |
-
-
-**Note:** Each `.so` target file name should be unique.
-
-
-### Single instruction
-
-You can pick out a single test case and run it to view the instruction effects via output with the following command:
-
-```sh
-solana-test-suite exec-instr --input <input_file / input_dir> --target <shared_lib>
-```
-
-For flexibility, `--input` can be either a file or directory and will execute on one or more files based on what's provided.
-
-| Argument        | Description                                                                                         |
-|-----------------|-----------------------------------------------------------------------------------------------------|
-| `--input`      | Input file OR directory of input files containing instruction context messages |
-| `--target`      | Shared object (.so) target file path to debug  |
+Optionally, context messages may also be left in the original Protobuf binary-encoded format.
 
 
 ### Debugging
 
-For failing test cases, it may be useful to analyze what could have differed between Solana and Firedancer. You can execute a Protobuf message (human-readable or binary) through the desired client as such:
+For failing test cases, it may be useful to analyze what could have differed between Solana and Firedancer. You can execute a Protobuf message (human-readable or binary) through the desired client with the [`debug-instr`](commands.md#solana-test-suite-debug-instr) command.
 
-```sh
-solana-test-suite debug-instr --input <input_file> --target <shared_lib> --debugger <gdb,rust-gdb,etc>
-```
 
 #### Alternative (and preferred) debugging solution
 
@@ -113,67 +70,9 @@ Use the following command instead if you want the ability to directly restart th
 <gdb / rust-gdb> --args python3.11 -m test_suite.test_suite exec-instr --input <input_file> --target <shared_lib>
 ```
 
-| Argument        | Description                                                                                         |
-|-----------------|-----------------------------------------------------------------------------------------------------|
-| `--input`      | Input file containing instruction context message |
-| `--target`      | Shared object (.so) target file path to debug  |
-| `--debugger`  | Debugger to use (gdb, rust-gdb) |
+Refer to [`exec-instr`](commands.md#solana-test-suite-exec-instr) command for more information.
 
 Recommended usage is opening two terminals side by side, and running the above command on both with one having `--target` for Solana (`impl/lib/libsolfuzz_agave_v2.0.so`) and another for Firedancer (`impl/lib/libsolfuzz_firedancer.so`), and then stepping through the debugger for each corresponding test case.
-
-
-### Minimizing
-
-Prunes extra fields in the input (e.g. feature set) and produces a minimal test case such that the output does not change.
-
-```sh
-solana-test-suite minimize-tests --input-dir <input_dir> --solana-target <solana_target.so> --output-dir <pruned_ctx_output_dir> --num-processes <num_processes>
-```
-
-| Argument        | Description                                                                                         |
-|-----------------|-----------------------------------------------------------------------------------------------------|
-| `--input-dir`   | Input directory containing instruction context messages |
-| `--solana-target` | Path to Solana Agave shared object (.so) target file            |
-| `--output-dir`  | Pruned instruction context dumping directory |
-| `--num-processes`  | Number of processes to use |
-
-
-### Creating Fixtures from Instruction Context
-
-Create full test fixtures containing both instruction context and effects. Effects are computed by running instruction context through `--solana-target`. Fixtures with `None` values for instruction context/effects are not included.
-
-```sh
-solana-test-suite create-fixtures --input-dir <input_dir> --solana-target <solana_target.so> --target <firedancer.so> [--target <target_2> ...] --output-dir <fixtures_output_dir> --num-processes <num_processes> [--readable] [--keep-passing] [--group-by-program]
-```
-
-You have an additional option to produce fixtures for only passing test cases (makes it easier to produce fixtures from larger batches of new-passing mismatches).
-
-
-| Argument        | Description                                                                                         |
-|-----------------|-----------------------------------------------------------------------------------------------------|
-| `--input-dir`   | Input directory containing instruction context messages |
-| `--solana-target` | Path to Solana Agave shared object (.so) target file            |
-| `--target`  | Shared object (.so) target file paths (pairs with `--keep-passing`)
-| `--output-dir`  | Instruction fixtures dumping directory |
-| `--num-processes`  | Number of processes to use |
-| `--readable` | Output fixtures in human-readable format |
-| `--keep-passing` | Only keep passing test cases |
-| `--group-by-program` | Group fixture output by program type |
-
-
-### Create Instruction Context from Fixtures
-
-Opposite as above. Does not require a target.
-
-```sh
-solana-test-suite instr-from-fixtures --input-dir <input_dir> --solana-target <solana_target.so> --output-dir <fixtures_output_dir> --num-processes <num_processes> [--readable]
-```
-
-| Argument        | Description                                                                                         |
-|-----------------|-----------------------------------------------------------------------------------------------------|
-| `--input-dir`   | Input directory containing instruction fixture messages |
-| `--output-dir`  | Output directory for instr contexts |
-| `--num-processes`  | Number of processes to use |
 
 
 ### Uninstalling

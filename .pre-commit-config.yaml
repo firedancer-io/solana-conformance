@@ -9,3 +9,11 @@ repos:
         # pre-commit's default_language_version, see
         # https://pre-commit.com/#top_level-default_language_version
         language_version: python3.11
+  - repo: local
+    hooks:
+      - id: gen-cmd-docs
+        name: Generate command documentation
+        language: python
+        entry: typer src/test_suite/test_suite.py utils docs --name solana-test-suite --output commands.md
+        pass_filenames: false
+
