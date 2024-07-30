@@ -66,7 +66,6 @@ def exec_instr(
         help="Randomizes bytes in output buffer before shared library execution",
     ),
 ):
-    print(globals.harness_ctx)
     # Initialize output buffers and shared library
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
     try:
