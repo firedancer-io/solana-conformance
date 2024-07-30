@@ -6,3 +6,4 @@ source test_suite_env/bin/activate
 sudo dnf install -y python3.11-devel || true
 make -j -C impl
 pip install -e ".[dev]"
+pre-commit install
