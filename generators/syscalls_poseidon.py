@@ -983,7 +983,6 @@ if __name__ == "__main__":
         syscall_ctx.instr_ctx.program_id = bytes(
             [0] * 32
         )  # solfuzz-agave expectes a program_id
-        syscall_ctx.vm_ctx.rodata = b"x"  # fd expects some bytes
 
         syscall_ctx.instr_ctx.epoch_context.features.features.extend(
             [
