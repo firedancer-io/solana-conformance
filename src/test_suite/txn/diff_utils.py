@@ -14,8 +14,8 @@ def txn_diff_effects(a: txn_pb.TxnResult, b: txn_pb.TxnResult):
     for i in range(len(b_san.resulting_state.acct_states)):
         b_san.resulting_state.acct_states[i].rent_epoch = 0
 
-    # Don't compare transaction statuses and compute units if both txns fail
-    if a_san.status and b_san.status:
+    # Don't compare transaction statuses and compute units if both txns were executed and fail
+    if a_san.executed() and b_san.executed() and a_san.status and b_san.status:
         a_san.status = 1
         b_san.status = 1
         a_san.executed_units = 0
