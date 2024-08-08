@@ -1,4 +1,3 @@
-import base64
 import fd58
 import test_suite.invoke_pb2 as invoke_pb
 
@@ -19,17 +18,10 @@ def decode_input(instruction_context: invoke_pb.InstrContext):
             instruction_context.accounts[i].address = fd58.dec32(
                 instruction_context.accounts[i].address
             )
-        if instruction_context.accounts[i].data:
-            instruction_context.accounts[i].data = base64.b64decode(
-                instruction_context.accounts[i].data
-            )
         if instruction_context.accounts[i].owner:
             instruction_context.accounts[i].owner = fd58.dec32(
                 instruction_context.accounts[i].owner
             )
-
-    if instruction_context.data:
-        instruction_context.data = base64.b64decode(instruction_context.data)
 
 
 def encode_input(instruction_context: invoke_pb.InstrContext):
@@ -48,17 +40,10 @@ def encode_input(instruction_context: invoke_pb.InstrContext):
             instruction_context.accounts[i].address = fd58.enc32(
                 instruction_context.accounts[i].address
             )
-        if instruction_context.accounts[i].data:
-            instruction_context.accounts[i].data = base64.b64encode(
-                instruction_context.accounts[i].data
-            )
         if instruction_context.accounts[i].owner:
             instruction_context.accounts[i].owner = fd58.enc32(
                 instruction_context.accounts[i].owner
             )
-
-    if instruction_context.data:
-        instruction_context.data = base64.b64encode(instruction_context.data)
 
 
 def encode_output(instruction_effects: invoke_pb.InstrEffects):
@@ -73,10 +58,6 @@ def encode_output(instruction_effects: invoke_pb.InstrEffects):
         if instruction_effects.modified_accounts[i].address:
             instruction_effects.modified_accounts[i].address = fd58.enc32(
                 instruction_effects.modified_accounts[i].address
-            )
-        if instruction_effects.modified_accounts[i].data:
-            instruction_effects.modified_accounts[i].data = base64.b64encode(
-                instruction_effects.modified_accounts[i].data
             )
         if instruction_effects.modified_accounts[i].owner:
             instruction_effects.modified_accounts[i].owner = fd58.enc32(
