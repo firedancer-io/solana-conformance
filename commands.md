@@ -129,7 +129,7 @@ $ solana-test-suite run-tests [OPTIONS]
 
 **Options**:
 
-* `-i, --input-dir PATH`: Input directory containing InstrContext or InstrFixture messages  [default: corpus8]
+* `-i, --input PATH`: Single input file or input directory containing InstrContext or InstrFixture messages  [default: corpus8]
 * `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
 * `-t, --target PATH`: Shared object (.so) target file paths  [default: impl/lib/libsolfuzz_firedancer.so]
 * `-o, --output-dir PATH`: Output directory for test results  [default: test_results]

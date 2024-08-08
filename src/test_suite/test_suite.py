@@ -280,11 +280,11 @@ def create_fixtures(
             """
 )
 def run_tests(
-    input_dir: Path = typer.Option(
+    file_or_dir: Path = typer.Option(
         Path("corpus8"),
-        "--input-dir",
+        "--input",
         "-i",
-        help=f"Input directory containing {globals.harness_ctx.context_type.__name__}"
+        help=f"Single input file or input directory containing {globals.harness_ctx.context_type.__name__}"
         f" or { globals.harness_ctx.fixture_type.__name__ } messages",
     ),
     solana_shared_library: Path = typer.Option(
@@ -401,7 +401,7 @@ def run_tests(
         failed_protobufs_dir = globals.output_dir / "failed_protobufs"
         failed_protobufs_dir.mkdir(parents=True, exist_ok=True)
 
-    test_cases = list(input_dir.iterdir())
+    test_cases = list(file_or_dir.iterdir()) if file_or_dir.is_dir() else [file_or_dir]
     num_test_cases = len(test_cases)
 
     # Process the test results in parallel
