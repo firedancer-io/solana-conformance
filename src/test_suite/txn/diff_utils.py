@@ -16,8 +16,6 @@ def txn_diff_effects(a: txn_pb.TxnResult, b: txn_pb.TxnResult):
 
     # Don't compare transaction statuses and compute units if both txns were executed and fail
     if a_san.executed and b_san.executed and a_san.status and b_san.status:
-        a_san.status = 1
-        b_san.status = 1
         a_san.executed_units = 0
         b_san.executed_units = 0
 
