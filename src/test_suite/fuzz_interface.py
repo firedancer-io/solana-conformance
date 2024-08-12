@@ -19,6 +19,7 @@ The following defines the interface:
     - input: The fuzz target Context
     - output: The fuzz target Effects
 - diff_effect_fn: A function that compares two effects messages for equality
+- consensus_diff_effect_fn: Similar to above, but defines a diff function for consensus mode
 - prune_effects_fn: A function that prunes effects to remove extra fields (e.g. remove accounts that weren't actually modified)
 - human encode/decode functions for the context and effects messages to
   convert the messages to/from human-readable format (in-place).
@@ -53,6 +54,9 @@ class HarnessCtx:
     result_field_name: str | None = "result"
     ignore_fields_for_consensus: list[str] = field(default_factory=list)
     diff_effect_fn: Callable[[EffectsType, EffectsType], bool] = generic_effects_diff
+    consensus_diff_effect_fn: Callable[[EffectsType, EffectsType], bool] = (
+        generic_effects_diff
+    )
     prune_effects_fn: Callable[
         [str | None, dict[str, str | None]], dict[str, str | None] | None
     ] = generic_effects_prune

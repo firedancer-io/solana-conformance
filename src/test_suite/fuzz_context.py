@@ -8,6 +8,7 @@ import test_suite.txn.prune_utils as txn_prune
 import test_suite.txn.diff_utils as txn_diff
 import test_suite.instr.codec_utils as instr_codec
 import test_suite.instr.prune_utils as instr_prune
+import test_suite.instr.diff_utils as instr_diff
 import test_suite.syscall.codec_utils as syscall_codec
 
 
@@ -24,6 +25,7 @@ InstrHarness = HarnessCtx(
     context_human_decode_fn=instr_codec.decode_input,
     effects_human_encode_fn=instr_codec.encode_output,
     ignore_fields_for_consensus=["custom_err", "cu_avail"],
+    consensus_diff_effect_fn=instr_diff.consensus_instr_diff_effects,
 )
 
 SyscallHarness = HarnessCtx(
@@ -45,4 +47,5 @@ TxnHarness = HarnessCtx(
     context_human_decode_fn=txn_codec.decode_input,
     effects_human_encode_fn=txn_codec.encode_output,
     diff_effect_fn=txn_diff.txn_diff_effects,
+    consensus_diff_effect_fn=txn_diff.consensus_txn_diff_effects,
 )
