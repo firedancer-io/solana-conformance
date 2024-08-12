@@ -349,36 +349,11 @@ def run_tests(
     globals.output_dir = output_dir
     globals.solana_shared_library = solana_shared_library
 
+    # Set diff mode to consensus if specified
     if consensus_mode:
-        original_diff_effects_fn = globals.harness_ctx.diff_effect_fn
-
-        def diff_effect_wrapper(a, b):
-            if globals.harness_ctx.result_field_name:
-                a_res = getattr(a, globals.harness_ctx.result_field_name)
-                b_res = getattr(b, globals.harness_ctx.result_field_name)
-
-                if not (a_res == 0 or b_res == 0):
-                    # normalize error code. Modifies effects in place!
-                    setattr(a, globals.harness_ctx.result_field_name, 1)
-                    setattr(b, globals.harness_ctx.result_field_name, 1)
-            else:
-                print(
-                    "No result field name found in harness context, will not normalize error codes."
-                )
-
-            for field in globals.harness_ctx.ignore_fields_for_consensus:
-                try:
-                    a.ClearField(field)
-                except:
-                    pass
-                try:
-                    b.ClearField(field)
-                except:
-                    pass
-
-            return original_diff_effects_fn(a, b)
-
-        globals.harness_ctx.diff_effect_fn = diff_effect_wrapper
+        globals.harness_ctx.diff_effect_fn = (
+            globals.harness_ctx.consensus_diff_effect_fn
+        )
 
     # Create the output directory, if necessary
     if globals.output_dir.exists():
