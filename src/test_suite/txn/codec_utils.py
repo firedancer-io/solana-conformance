@@ -11,7 +11,9 @@ def decode_input(txn_context: txn_pb.TxnContext):
         - txn_context (txn_pb.TxnContext): Transaction context (will be modified).
     """
     # Message hash
-    txn_context.tx.message_hash = fd58.dec32(txn_context.tx.message_hash)
+    txn_context.tx.message_hash = fd58.dec32(
+        txn_context.tx.message_hash or bytes([0] * 32)
+    )
 
     # Signatures
     for i in range(len(txn_context.tx.signatures)):
@@ -43,7 +45,7 @@ def decode_input(txn_context: txn_pb.TxnContext):
 
     # Recent blockhash
     txn_context.tx.message.recent_blockhash = fd58.dec32(
-        txn_context.tx.message.recent_blockhash
+        txn_context.tx.message.recent_blockhash or bytes([0] * 32)
     )
 
     # Address table lookups
@@ -79,7 +81,9 @@ def encode_input(txn_context: txn_pb.TxnContext):
         - txn_context (txn_pb.TxnContext): Transaction context (will be modified).
     """
     # Message hash
-    txn_context.tx.message_hash = fd58.enc32(txn_context.tx.message_hash)
+    txn_context.tx.message_hash = fd58.enc32(
+        txn_context.tx.message_hash or bytes([0] * 32)
+    )
 
     # Signatures
     for i in range(len(txn_context.tx.signatures)):
@@ -111,7 +115,7 @@ def encode_input(txn_context: txn_pb.TxnContext):
 
     # Recent blockhash
     txn_context.tx.message.recent_blockhash = fd58.enc32(
-        txn_context.tx.message.recent_blockhash
+        txn_context.tx.message.recent_blockhash or bytes([0] * 32)
     )
 
     # Address table lookups
