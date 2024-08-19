@@ -1,4 +1,8 @@
-git submodule init && git submodule update
+cd impl
+git clone http://github.com/firedancer-io/firedancer.git
+git clone -b agave-v1.17 http://github.com/firedancer-io/solfuzz-agave.git agave-v1.17
+git clone -b agave-v2.0 http://github.com/firedancer-io/solfuzz-agave.git agave-v2.0
+cd ..
 sudo dnf install -y gcc-toolset-12 || true
 source /opt/rh/gcc-toolset-12/enable
 python3.11 -m venv test_suite_env
