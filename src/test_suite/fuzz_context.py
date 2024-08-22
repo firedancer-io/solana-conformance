@@ -49,3 +49,5 @@ TxnHarness = HarnessCtx(
     diff_effect_fn=txn_diff.txn_diff_effects,
     consensus_diff_effect_fn=txn_diff.consensus_txn_diff_effects,
 )
+
+HARNESS_LIST = [name for name, obj in globals().items() if isinstance(obj, HarnessCtx)]
