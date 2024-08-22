@@ -37,9 +37,10 @@ if harness_type:
     globals.harness_ctx = eval(harness_type)
 else:
     globals.harness_ctx = InstrHarness
+    harness_type = "InstrHarness"
 
 app = typer.Typer(
-    help="Validate instruction effects from clients using instruction context Protobuf messages."
+    help=f"Validate effects from clients using {globals.harness_ctx.context_type.__name__} Protobuf messages."
 )
 
 
@@ -490,6 +491,18 @@ def decode_protobuf(
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
     print(f"{len(write_results)} total files seen")
     print(f"{sum(write_results)} files successfully written")
+
+
+@app.command(help=f"List harness types available for use.")
+def list_harness_types():
+    # pretty print harness types
+    print(f"Currently set harness type: {harness_type}\n")
+
+    print("Available harness types:")
+    for name in HARNESS_LIST:
+        print(f"- {name}")
+    print("\nTo use, export the harness type to HARNESS_TYPE env var. Example:")
+    print(f"export HARNESS_TYPE={HARNESS_LIST[0]}")
 
 
 if __name__ == "__main__":

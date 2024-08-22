@@ -1,6 +1,6 @@
 # `solana-test-suite`
 
-Validate instruction effects from clients using instruction context Protobuf messages.
+Validate effects from clients using InstrContext Protobuf messages.
 
 **Usage**:
 
@@ -21,6 +21,7 @@ $ solana-test-suite [OPTIONS] COMMAND [ARGS]...
 * `decode-protobuf`: Convert InstrContext messages to...
 * `exec-instr`: Execute InstrContext message(s) and print...
 * `instr-from-fixtures`: Extract InstrContext messages from fixtures.
+* `list-harness-types`: List harness types available for use.
 * `run-tests`: Run tests on a set of targets with a...
 
 ## `solana-test-suite create-fixtures`
@@ -112,6 +113,20 @@ $ solana-test-suite instr-from-fixtures [OPTIONS]
 * `-i, --input-dir PATH`: Input directory containing InstrFixture messages  [default: fixtures]
 * `-o, --output-dir PATH`: Output directory for InstrContext messages  [default: instr]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
+* `--help`: Show this message and exit.
+
+## `solana-test-suite list-harness-types`
+
+List harness types available for use.
+
+**Usage**:
+
+```console
+$ solana-test-suite list-harness-types [OPTIONS]
+```
+
+**Options**:
+
 * `--help`: Show this message and exit.
 
 ## `solana-test-suite run-tests`
