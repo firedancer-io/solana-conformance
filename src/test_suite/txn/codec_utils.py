@@ -55,18 +55,6 @@ def decode_input(txn_context: txn_pb.TxnContext):
                 txn_context.tx.message.address_table_lookups[i].account_key
             )
 
-    # Loaded addresses (writable)
-    for i in range(len(txn_context.tx.message.loaded_addresses.writable)):
-        txn_context.tx.message.loaded_addresses.writable[i] = fd58.dec32(
-            txn_context.tx.message.loaded_addresses.writable[i]
-        )
-
-    # Loaded addresses (readonly)
-    for i in range(len(txn_context.tx.message.loaded_addresses.readonly)):
-        txn_context.tx.message.loaded_addresses.readonly[i] = fd58.dec32(
-            txn_context.tx.message.loaded_addresses.readonly[i]
-        )
-
     # Blockhash queue
     for i in range(len(txn_context.blockhash_queue)):
         txn_context.blockhash_queue[i] = fd58.dec32(txn_context.blockhash_queue[i])
@@ -124,18 +112,6 @@ def encode_input(txn_context: txn_pb.TxnContext):
             txn_context.tx.message.address_table_lookups[i].account_key = fd58.enc32(
                 txn_context.tx.message.address_table_lookups[i].account_key
             )
-
-    # Loaded addresses (writable)
-    for i in range(len(txn_context.tx.message.loaded_addresses.writable)):
-        txn_context.tx.message.loaded_addresses.writable[i] = fd58.enc32(
-            txn_context.tx.message.loaded_addresses.writable[i]
-        )
-
-    # Loaded addresses (readonly)
-    for i in range(len(txn_context.tx.message.loaded_addresses.readonly)):
-        txn_context.tx.message.loaded_addresses.readonly[i] = fd58.enc32(
-            txn_context.tx.message.loaded_addresses.readonly[i]
-        )
 
     # Blockhash queue
     for i in range(len(txn_context.blockhash_queue)):
