@@ -85,7 +85,7 @@ def exec_instr(
         effects = process_target(lib, context)
 
         if not effects:
-            print("No instruction effects returned")
+            print(f"No {globals.harness_ctx.effects_type.__name__} returned")
             continue
 
         serialized_effects = effects.SerializeToString(deterministic=True)
@@ -184,11 +184,11 @@ def instr_from_fixtures(
              """
 )
 def create_fixtures(
-    input_dir: Path = typer.Option(
+    input_path: Path = typer.Option(
         Path("corpus8"),
         "--input-dir",
         "-i",
-        help=f"Input directory containing {globals.harness_ctx.context_type.__name__} messages",
+        help=f"Either a file or directory containing {globals.harness_ctx.context_type.__name__} messages",
     ),
     solana_shared_library: Path = typer.Option(
         Path("impl/lib/libsolfuzz_agave_v2.0.so"),
@@ -244,7 +244,7 @@ def create_fixtures(
         lib.sol_compat_init()
         globals.target_libraries[target] = lib
 
-    test_cases = list(input_dir.iterdir())
+    test_cases = [input_path] if input_path.is_file() else list(input_path.iterdir())
     num_test_cases = len(test_cases)
 
     # Generate the test cases in parallel from files on disk
@@ -455,14 +455,14 @@ def run_tests(
     help=f"Convert {globals.harness_ctx.context_type.__name__} messages to human-readable format."
 )
 def decode_protobuf(
-    input_dir: Path = typer.Option(
-        Path("raw_instruction_context"),
-        "--input-dir",
+    input_path: Path = typer.Option(
+        Path("raw_context"),
+        "--input",
         "-i",
-        help=f"Input directory containing {globals.harness_ctx.context_type.__name__} message(s)",
+        help=f"Either a {globals.harness_ctx.context_type.__name__} message or directory of messages",
     ),
     output_dir: Path = typer.Option(
-        Path("readable_instruction_context"),
+        Path("readable_context"),
         "--output-dir",
         "-o",
         help=f"Output directory for base58-encoded, human-readable {globals.harness_ctx.context_type.__name__} messages",
@@ -478,12 +478,18 @@ def decode_protobuf(
         shutil.rmtree(globals.output_dir)
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
-    num_test_cases = len(list(input_dir.iterdir()))
+    if not input_path.is_dir():
+        ok = decode_single_test_case(input_path)
+        if not ok:
+            print(f"Error decoding {input_path}")
+        return
+
+    num_test_cases = len(list(input_path.iterdir()))
 
     write_results = []
     with Pool(processes=num_processes) as pool:
         for result in tqdm.tqdm(
-            pool.imap(decode_single_test_case, input_dir.iterdir()),
+            pool.imap(decode_single_test_case, input_path.iterdir()),
             total=num_test_cases,
         ):
             write_results.append(result)

@@ -39,7 +39,7 @@ $ solana-test-suite create-fixtures [OPTIONS]
 
 **Options**:
 
-* `-i, --input-dir PATH`: Input directory containing InstrContext messages  [default: corpus8]
+* `-i, --input-dir PATH`: Either a file or directory containing InstrContext messages  [default: corpus8]
 * `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
 * `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have sol_compat_instr_execute_v1 defined
 * `-o, --output-dir PATH`: Output directory for fixtures  [default: test_fixtures]
@@ -76,8 +76,8 @@ $ solana-test-suite decode-protobuf [OPTIONS]
 
 **Options**:
 
-* `-i, --input-dir PATH`: Input directory containing InstrContext message(s)  [default: raw_instruction_context]
-* `-o, --output-dir PATH`: Output directory for base58-encoded, human-readable InstrContext messages  [default: readable_instruction_context]
+* `-i, --input PATH`: Either a InstrContext message or directory of messages  [default: raw_context]
+* `-o, --output-dir PATH`: Output directory for base58-encoded, human-readable InstrContext messages  [default: readable_context]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `--help`: Show this message and exit.
 
