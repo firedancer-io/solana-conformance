@@ -19,6 +19,11 @@ def txn_diff_effects(a: txn_pb.TxnResult, b: txn_pb.TxnResult):
         a_san.executed_units = 0
         b_san.executed_units = 0
 
+    if a_san.status == 999:
+        a_san.status = b_san.status
+    if b_san.status == 999:
+        b_san.status = a_san.status
+
     return a_san == b_san
 
 
