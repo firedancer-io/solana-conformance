@@ -431,7 +431,7 @@ def run_tests(
             failed += 1
             failed_tests.append(file_stem)
             if save_failures:
-                failed_protobufs = list(input_dir.glob(f"{file_stem}*"))
+                failed_protobufs = list(file_or_dir.glob(f"{file_stem}*"))
                 for failed_protobuf in failed_protobufs:
                     shutil.copy(failed_protobuf, failed_protobufs_dir)
 
