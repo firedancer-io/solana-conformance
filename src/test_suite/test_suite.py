@@ -4,6 +4,7 @@ import typer
 import ctypes
 from multiprocessing import Pool
 from pathlib import Path
+import subprocess
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
 from test_suite.fixture_utils import (
     create_fixture,
@@ -449,6 +450,8 @@ def run_tests(
     if verbose:
         print(f"Failed tests: {failed_tests}")
         print(f"Skipped tests: {skipped_tests}")
+    if failed != 0 and save_failures:
+        print("Failures tests are in: ", globals.output_dir / "failed_protobufs")
 
 
 @app.command(
@@ -509,6 +512,102 @@ def list_harness_types():
         print(f"- {name}")
     print("\nTo use, export the harness type to HARNESS_TYPE env var. Example:")
     print(f"export HARNESS_TYPE={HARNESS_LIST[0]}")
+
+
+@app.command(
+    help=f"""
+            Run tests on a set of targets with a list of FuzzCorp mismatch links.
+
+            Note: each `.so` target filename must be unique.
+            """
+)
+def debug_mismatches(
+    solana_shared_library: Path = typer.Option(
+        Path(os.getenv("SOLFUZZ_TARGET", "")),
+        "--solana-target",
+        "-s",
+        help="Solana (or ground truth) shared object (.so) target file path",
+    ),
+    shared_libraries: List[Path] = typer.Option(
+        [Path(os.getenv("FIREDANCER_TARGET", ""))],
+        "--target",
+        "-t",
+        help="Shared object (.so) target file paths (pairs with --keep-passing)."
+        f" Targets must have {globals.harness_ctx.fuzz_fn_name} defined",
+    ),
+    output_dir: Path = typer.Option(
+        Path("debug_mismatch"),
+        "--output-dir",
+        "-o",
+        help=f"Output directory for {globals.harness_ctx.context_type.__name__} messages",
+    ),
+    repro_urls: str = typer.Option(
+        "", "--repro-urls", "-u", help="Comma-delimited list of FuzzCorp mismatch links"
+    ),
+):
+    fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
+    repro_urls_list = repro_urls.split(",") if repro_urls else []
+
+    custom_data_urls = []
+    for url in repro_urls_list:
+        result = subprocess.run(
+            ["curl", "--cookie", f"s={fuzzcorp_cookie}", f"{url}.bash"],
+            capture_output=True,
+            text=True,
+        )
+        start_index = result.stdout.find("REPRO_CUSTOM_URL=")
+        end_index = result.stdout.find("\n", start_index)
+        custom_url = result.stdout[
+            start_index + len("REPRO_CUSTOM_URL=") + 1 : end_index - 1
+        ].strip()
+        custom_data_urls.append(custom_url)
+
+    globals.output_dir = output_dir
+
+    if globals.output_dir.exists():
+        shutil.rmtree(globals.output_dir)
+    globals.output_dir.mkdir(parents=True, exist_ok=True)
+
+    globals.inputs_dir = globals.output_dir / "inputs"
+
+    if globals.inputs_dir.exists():
+        shutil.rmtree(globals.inputs_dir)
+    globals.inputs_dir.mkdir(parents=True, exist_ok=True)
+
+    for url in custom_data_urls:
+        zip_name = url.split("/")[-1]
+        result = subprocess.run(
+            ["wget", "-q", url, "-O", f"{globals.output_dir}/{zip_name}"],
+            capture_output=True,
+            text=True,
+        )
+
+        result = subprocess.run(
+            ["unzip", f"{globals.output_dir}/{zip_name}", "-d", globals.output_dir],
+            capture_output=True,
+            text=True,
+        )
+
+        result = subprocess.run(
+            f"mv {globals.output_dir}/repro_custom/*ctx {globals.inputs_dir}",
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
+
+    run_tests(
+        file_or_dir=globals.inputs_dir,
+        solana_shared_library=solana_shared_library,
+        shared_libraries=shared_libraries,
+        output_dir=globals.output_dir / "test_results",
+        num_processes=4,
+        randomize_output_buffer=False,
+        log_chunk_size=10000,
+        verbose=True,
+        consensus_mode=False,
+        failures_only=False,
+        save_failures=True,
+    )
 
 
 if __name__ == "__main__":
