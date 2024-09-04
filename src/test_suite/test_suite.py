@@ -192,13 +192,13 @@ def create_fixtures(
         help=f"Either a file or directory containing {globals.harness_ctx.context_type.__name__} messages",
     ),
     solana_shared_library: Path = typer.Option(
-        Path("impl/lib/libsolfuzz_agave_v2.0.so"),
+        Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
         "--solana-target",
         "-s",
         help="Solana (or ground truth) shared object (.so) target file path",
     ),
     shared_libraries: List[Path] = typer.Option(
-        [],
+        [Path(os.getenv("FIREDANCER_TARGET", "impl/lib/libsolfuzz_firedancer.so"))],
         "--target",
         "-t",
         help="Shared object (.so) target file paths (pairs with --keep-passing)."
@@ -290,13 +290,13 @@ def run_tests(
         f" or { globals.harness_ctx.fixture_type.__name__ } messages",
     ),
     solana_shared_library: Path = typer.Option(
-        Path("impl/lib/libsolfuzz_agave_v2.0.so"),
+        Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
         "--solana-target",
         "-s",
         help="Solana (or ground truth) shared object (.so) target file path",
     ),
     shared_libraries: List[Path] = typer.Option(
-        [Path("impl/lib/libsolfuzz_firedancer.so")],
+        [Path(os.getenv("FIREDANCER_TARGET", "impl/lib/libsolfuzz_firedancer.so"))],
         "--target",
         "-t",
         help="Shared object (.so) target file paths",
@@ -523,13 +523,13 @@ def list_harness_types():
 )
 def debug_mismatches(
     solana_shared_library: Path = typer.Option(
-        Path(os.getenv("SOLFUZZ_TARGET", "")),
+        Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
         "--solana-target",
         "-s",
         help="Solana (or ground truth) shared object (.so) target file path",
     ),
     shared_libraries: List[Path] = typer.Option(
-        [Path(os.getenv("FIREDANCER_TARGET", ""))],
+        [Path(os.getenv("FIREDANCER_TARGET", "impl/lib/libsolfuzz_firedancer.so"))],
         "--target",
         "-t",
         help="Shared object (.so) target file paths (pairs with --keep-passing)."
