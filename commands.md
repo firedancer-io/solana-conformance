@@ -18,6 +18,7 @@ $ solana-test-suite [OPTIONS] COMMAND [ARGS]...
 
 * `create-fixtures`: Create test fixtures from a directory of...
 * `debug-instr`
+* `debug-mismatches`: Run tests on a set of targets with a list...
 * `decode-protobuf`: Convert InstrContext messages to...
 * `exec-instr`: Execute InstrContext message(s) and print...
 * `instr-from-fixtures`: Extract InstrContext messages from fixtures.
@@ -62,6 +63,26 @@ $ solana-test-suite debug-instr [OPTIONS]
 * `-i, --input PATH`: Input file
 * `-t, --target PATH`: Shared object (.so) target file path to debug  [default: impl/lib/libsolfuzz_firedancer.so]
 * `-d, --debugger TEXT`: Debugger to use (gdb, rust-gdb)  [default: gdb]
+* `--help`: Show this message and exit.
+
+## `solana-test-suite debug-mismatches`
+
+Run tests on a set of targets with a list of FuzzCorp mismatch links.
+
+Note: each `.so` target filename must be unique.
+
+**Usage**:
+
+```console
+$ solana-test-suite debug-mismatches [OPTIONS]
+```
+
+**Options**:
+
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: /home/kbhargava/repos/solfuzz-agave/target/release/libsolfuzz_agave.so]
+* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have sol_compat_instr_execute_v1 defined  [default: /home/kbhargava/repos/firedancer/build/native/gcc/lib/libfd_exec_sol_compat.so]
+* `-o, --output-dir PATH`: Output directory for InstrContext messages  [default: debug_mismatch]
+* `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
 * `--help`: Show this message and exit.
 
 ## `solana-test-suite decode-protobuf`
