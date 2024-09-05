@@ -24,6 +24,8 @@ import resource
 import tqdm
 from test_suite.fuzz_context import *
 import os
+from urllib.parse import urljoin
+from bs4 import BeautifulSoup
 
 """
 Harness options:
@@ -544,9 +546,52 @@ def debug_mismatches(
     repro_urls: str = typer.Option(
         "", "--repro-urls", "-u", help="Comma-delimited list of FuzzCorp mismatch links"
     ),
+    section_names: str = typer.Option(
+        "",
+        "--section-names",
+        "-s",
+        help="Comma-delimited list of FuzzCorp section names",
+    ),
+    fuzzcorp_url: str = typer.Option(
+        "",
+        "--fuzzcorp-url",
+        "-f",
+        help="Comma-delimited list of FuzzCorp section names",
+    ),
 ):
     fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
     repro_urls_list = repro_urls.split(",") if repro_urls else []
+    section_names_list = section_names.split(",") if section_names else []
+
+    url = "https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/"
+    curl_command = f"curl {fuzzcorp_url} --cookie s={fuzzcorp_cookie}"
+    result = subprocess.run(curl_command, shell=True, capture_output=True, text=True)
+    page_content = result.stdout
+    soup = BeautifulSoup(page_content, "html.parser")
+    for section_name in section_names_list:
+        section_anchor = soup.find("a", {"name": f"lin_{section_name}"})
+
+        if section_anchor:
+            next_element = section_anchor.find_next_sibling()
+            while next_element:
+                if next_element.name == "table":
+                    hrefs = [a["href"] for a in next_element.find_all("a", href=True)]
+                    for href in hrefs:
+                        repro_urls_list.append(urljoin(url, href))
+                    break
+                elif next_element.name == "p" and "No bugs found" in next_element.text:
+                    print(f"No bugs found for section {section_name}.")
+                    break
+                elif next_element.name == "a" and next_element.has_attr("name"):
+                    print(f"No table found in section {section_name}.")
+                    break
+
+                next_element = next_element.find_next_sibling()
+
+            if not next_element:
+                print(f"No relevant content found after section {section_name}.")
+        else:
+            print(f"Section {section_name} not found.")
 
     custom_data_urls = []
     for url in repro_urls_list:
