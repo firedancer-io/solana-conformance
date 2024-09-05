@@ -553,7 +553,7 @@ def debug_mismatches(
         help="Comma-delimited list of FuzzCorp section names",
     ),
     fuzzcorp_url: str = typer.Option(
-        "",
+        os.getenv("FUZZCORP_URL", ""),
         "--fuzzcorp-url",
         "-f",
         help="Comma-delimited list of FuzzCorp section names",
