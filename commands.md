@@ -83,6 +83,8 @@ $ solana-test-suite debug-mismatches [OPTIONS]
 * `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have sol_compat_instr_execute_v1 defined  [default: /home/kbhargava/repos/firedancer/build/native/gcc/lib/libfd_exec_sol_compat.so]
 * `-o, --output-dir PATH`: Output directory for InstrContext messages  [default: debug_mismatch]
 * `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
+* `-s, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
+* `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names
 * `--help`: Show this message and exit.
 
 ## `solana-test-suite decode-protobuf`
