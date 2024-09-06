@@ -1,6 +1,7 @@
 import shutil
 from typing import List
 import typer
+from collections import defaultdict
 import ctypes
 from multiprocessing import Pool
 from pathlib import Path
@@ -638,6 +639,130 @@ def debug_mismatches(
             capture_output=True,
             text=True,
         )
+
+    run_tests(
+        file_or_dir=globals.inputs_dir,
+        solana_shared_library=solana_shared_library,
+        shared_libraries=shared_libraries,
+        output_dir=globals.output_dir / "test_results",
+        num_processes=4,
+        randomize_output_buffer=False,
+        log_chunk_size=10000,
+        verbose=True,
+        consensus_mode=False,
+        failures_only=False,
+        save_failures=True,
+    )
+
+
+@app.command(
+    help=f"""
+            Run tests on a set of targets with a list of FuzzCorp mismatch links.
+
+            Note: each `.so` target filename must be unique.
+            """
+)
+def debug_non_repros(
+    solana_shared_library: Path = typer.Option(
+        Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
+        "--solana-target",
+        "-s",
+        help="Solana (or ground truth) shared object (.so) target file path",
+    ),
+    shared_libraries: List[Path] = typer.Option(
+        [Path(os.getenv("FIREDANCER_TARGET", "impl/lib/libsolfuzz_firedancer.so"))],
+        "--target",
+        "-t",
+        help="Shared object (.so) target file paths (pairs with --keep-passing)."
+        f" Targets must have {globals.harness_ctx.fuzz_fn_name} defined",
+    ),
+    output_dir: Path = typer.Option(
+        Path("debug_mismatch"),
+        "--output-dir",
+        "-o",
+        help=f"Output directory for {globals.harness_ctx.context_type.__name__} messages",
+    ),
+    repro_urls: str = typer.Option(
+        "", "--repro-urls", "-u", help="Comma-delimited list of FuzzCorp mismatch links"
+    ),
+    section_names: str = typer.Option(
+        "",
+        "--section-names",
+        "-s",
+        help="Comma-delimited list of FuzzCorp section names",
+    ),
+    fuzzcorp_url: str = typer.Option(
+        os.getenv("FUZZCORP_URL", ""),
+        "--fuzzcorp-url",
+        "-f",
+        help="Comma-delimited list of FuzzCorp section names",
+    ),
+):
+    fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
+    repro_urls_list = repro_urls.split(",") if repro_urls else []
+    section_names_list = section_names.split(",") if section_names else []
+
+    curl_command = f"curl {fuzzcorp_url} --cookie s={fuzzcorp_cookie}"
+    result = subprocess.run(curl_command, shell=True, capture_output=True, text=True)
+    page_content = result.stdout
+    soup = BeautifulSoup(page_content, "html.parser")
+    section_anchor = soup.find("a", {"name": "nonrepro"})
+    table = section_anchor.find_next("table")
+
+    lineage_to_links = defaultdict(list)
+
+    for row in table.find_all("tr")[1:]:
+        cells = row.find_all("td")
+        href = cells[0].find("a")["href"]
+        lineage = cells[2].text.strip()
+        # Add the href to the list corresponding to the lineage key
+        lineage_to_links[lineage].append(href)
+
+    for section in section_names_list:
+        for link in lineage_to_links[section]:
+            repro_urls_list.append(urljoin(fuzzcorp_url, link))
+
+    non_repro_urls = []
+    for url in repro_urls_list:
+        curl_command = f"curl {url} --cookie s={fuzzcorp_cookie}"
+        result = subprocess.run(
+            curl_command, shell=True, capture_output=True, text=True
+        )
+        page_content = result.stdout
+        soup = BeautifulSoup(page_content, "html.parser")
+        non_repro = soup.find("a", text="⬇️ Download Test Case")["href"]
+        non_repro_urls.append(non_repro)
+
+    globals.output_dir = output_dir
+
+    if globals.output_dir.exists():
+        shutil.rmtree(globals.output_dir)
+    globals.output_dir.mkdir(parents=True, exist_ok=True)
+
+    globals.inputs_dir = globals.output_dir / "inputs"
+
+    if globals.inputs_dir.exists():
+        shutil.rmtree(globals.inputs_dir)
+    globals.inputs_dir.mkdir(parents=True, exist_ok=True)
+
+    for url in non_repro_urls:
+        file_name = url.split("/")[-1]
+        result = subprocess.run(
+            ["wget", "-q", url, "-O", f"{globals.output_dir}/{file_name}"],
+            capture_output=True,
+            text=True,
+        )
+
+        result = subprocess.run(
+            f"mv {globals.output_dir}/{file_name} {globals.inputs_dir}",
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
+
+        import pdb
+
+        pdb.set_trace
 
     run_tests(
         file_or_dir=globals.inputs_dir,
