@@ -84,7 +84,7 @@ $ solana-test-suite debug-mismatches [OPTIONS]
 * `-o, --output-dir PATH`: Output directory for InstrContext messages  [default: debug_mismatch]
 * `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
 * `-s, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
-* `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names
+* `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
 * `--help`: Show this message and exit.
 
 ## `solana-test-suite decode-protobuf`

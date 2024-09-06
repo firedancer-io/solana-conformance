@@ -563,7 +563,6 @@ def debug_mismatches(
     repro_urls_list = repro_urls.split(",") if repro_urls else []
     section_names_list = section_names.split(",") if section_names else []
 
-    url = "https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/"
     curl_command = f"curl {fuzzcorp_url} --cookie s={fuzzcorp_cookie}"
     result = subprocess.run(curl_command, shell=True, capture_output=True, text=True)
     page_content = result.stdout
@@ -577,7 +576,7 @@ def debug_mismatches(
                 if next_element.name == "table":
                     hrefs = [a["href"] for a in next_element.find_all("a", href=True)]
                     for href in hrefs:
-                        repro_urls_list.append(urljoin(url, href))
+                        repro_urls_list.append(urljoin(fuzzcorp_url, href))
                     break
                 elif next_element.name == "p" and "No bugs found" in next_element.text:
                     print(f"No bugs found for section {section_name}.")
