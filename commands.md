@@ -42,8 +42,8 @@ $ solana-test-suite create-fixtures [OPTIONS]
 **Options**:
 
 * `-i, --input-dir PATH`: Either a file or directory containing InstrContext messages  [default: corpus8]
-* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: /home/kbhargava/repos/solfuzz-agave/target/release/libsolfuzz_agave.so]
-* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have sol_compat_instr_execute_v1 defined  [default: /home/kbhargava/repos/firedancer/build/native/gcc/lib/libfd_exec_sol_compat.so]
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
+* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have sol_compat_instr_execute_v1 defined
 * `-o, --output-dir PATH`: Output directory for fixtures  [default: test_fixtures]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-r, --readable`: Output fixtures in human-readable format
@@ -80,12 +80,12 @@ $ solana-test-suite debug-mismatches [OPTIONS]
 
 **Options**:
 
-* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: /home/kbhargava/repos/solfuzz-agave/target/release/libsolfuzz_agave.so]
-* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have sol_compat_instr_execute_v1 defined  [default: /home/kbhargava/repos/firedancer/build/native/gcc/lib/libfd_exec_sol_compat.so]
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
+* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have sol_compat_instr_execute_v1 defined  [default: impl/lib/libsolfuzz_firedancer.so]
 * `-o, --output-dir PATH`: Output directory for InstrContext messages  [default: debug_mismatch]
 * `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
 * `-s, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
-* `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
+* `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names
 * `--help`: Show this message and exit.
 
 ## `solana-test-suite debug-non-repros`
@@ -102,12 +102,12 @@ $ solana-test-suite debug-non-repros [OPTIONS]
 
 **Options**:
 
-* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: /home/kbhargava/repos/solfuzz-agave/target/release/libsolfuzz_agave.so]
-* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have sol_compat_instr_execute_v1 defined  [default: /home/kbhargava/repos/firedancer/build/native/gcc/lib/libfd_exec_sol_compat.so]
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
+* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have sol_compat_instr_execute_v1 defined  [default: impl/lib/libsolfuzz_firedancer.so]
 * `-o, --output-dir PATH`: Output directory for InstrContext messages  [default: debug_mismatch]
 * `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
 * `-s, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
-* `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
+* `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names
 * `--help`: Show this message and exit.
 
 ## `solana-test-suite decode-protobuf`
@@ -191,8 +191,8 @@ $ solana-test-suite run-tests [OPTIONS]
 **Options**:
 
 * `-i, --input PATH`: Single input file or input directory containing InstrContext or InstrFixture messages  [default: corpus8]
-* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: /home/kbhargava/repos/solfuzz-agave/target/release/libsolfuzz_agave.so]
-* `-t, --target PATH`: Shared object (.so) target file paths  [default: /home/kbhargava/repos/firedancer/build/native/gcc/lib/libfd_exec_sol_compat.so]
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
+* `-t, --target PATH`: Shared object (.so) target file paths  [default: impl/lib/libsolfuzz_firedancer.so]
 * `-o, --output-dir PATH`: Output directory for test results  [default: test_results]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
