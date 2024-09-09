@@ -17,6 +17,7 @@ from test_suite.multiprocessing_utils import (
     initialize_process_output_buffers,
     process_target,
     run_test,
+    serialize_context,
 )
 import test_suite.globals as globals
 from test_suite.debugger import debug_host
@@ -82,10 +83,9 @@ def exec_instr(
     files_to_exec = file_or_dir.iterdir() if file_or_dir.is_dir() else [file_or_dir]
     for file in files_to_exec:
         print(f"Handling {file}...")
-        context = read_context(file)
-        assert context is not None, f"Unable to read {file.name}"
 
         # Execute and cleanup
+        context = serialize_context(file)
         effects = process_target(lib, context)
 
         if not effects:

@@ -323,6 +323,18 @@ def get_feature_pool(library: ctypes.CDLL) -> FeaturePool:
     return FeaturePool(supported, hardcoded)
 
 
+def serialize_context(file: Path) -> str | None:
+    if file.suffix == ".fix":
+        fixture = globals.harness_ctx.fixture_type()
+        fixture.ParseFromString(file.open("rb").read())
+        serialized_instr_context = fixture.input.SerializeToString(deterministic=True)
+    else:
+        serialized_instr_context = read_context(file)
+
+    assert serialized_instr_context is not None, f"Unable to read {file.name}"
+    return serialized_instr_context
+
+
 def run_test(test_file: Path) -> tuple[str, int, dict | None]:
     """
     Runs a single test from start to finish.
@@ -337,14 +349,7 @@ def run_test(test_file: Path) -> tuple[str, int, dict | None]:
             - Dictionary of target library names and file-dumpable serialized instruction effects
     """
     # Process fixtures through this entrypoint as well
-    if test_file.suffix == ".fix":
-        fixture = globals.harness_ctx.fixture_type()
-        fixture.ParseFromString(test_file.open("rb").read())
-        serialized_instr_context = fixture.input.SerializeToString(deterministic=True)
-    else:
-        serialized_instr_context = read_context(test_file)
-    results = process_single_test_case(serialized_instr_context)
-    pruned_results = globals.harness_ctx.prune_effects_fn(
-        serialized_instr_context, results
-    )
+    context = serialize_context(test_file)
+    results = process_single_test_case(context)
+    pruned_results = globals.harness_ctx.prune_effects_fn(context, results)
     return test_file.stem, *build_test_results(pruned_results)
