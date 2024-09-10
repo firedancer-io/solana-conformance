@@ -28,6 +28,7 @@ from test_suite.fuzz_context import *
 import os
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
+import time
 
 """
 Harness options:
@@ -86,7 +87,11 @@ def exec_instr(
 
         # Execute and cleanup
         context = serialize_context(file)
+        start = time.time()
         effects = process_target(lib, context)
+        end = time.time()
+
+        print(f"Total time taken for {file}: {(end - start) * 1000} ms\n------------")
 
         if not effects:
             print(f"No {globals.harness_ctx.effects_type.__name__} returned")
@@ -201,7 +206,7 @@ def create_fixtures(
         help="Solana (or ground truth) shared object (.so) target file path",
     ),
     shared_libraries: List[Path] = typer.Option(
-        [Path(os.getenv("FIREDANCER_TARGET", "impl/lib/libsolfuzz_firedancer.so"))],
+        [],
         "--target",
         "-t",
         help="Shared object (.so) target file paths (pairs with --keep-passing)."
