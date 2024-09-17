@@ -132,7 +132,6 @@ ENV/
 env.bak/
 venv.bak/
 test_suite_env/
-test_suite
 
 # Spyder project settings
 .spyderproject

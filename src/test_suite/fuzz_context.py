@@ -11,6 +11,10 @@ import test_suite.instr.prune_utils as instr_prune
 import test_suite.instr.diff_utils as instr_diff
 import test_suite.syscall.codec_utils as syscall_codec
 
+import test_suite.exec_v2_pb2 as exec_v2_pb
+import test_suite.instr_v2.codec_utils as instr_v2_codec
+import test_suite.instr_v2.prune_utils as instr_v2_prune
+import test_suite.instr_v2.diff_utils as instr_v2_diff
 
 ElfHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_elf_loader_v1",
@@ -24,8 +28,17 @@ InstrHarness = HarnessCtx(
     context_human_encode_fn=instr_codec.encode_input,
     context_human_decode_fn=instr_codec.decode_input,
     effects_human_encode_fn=instr_codec.encode_output,
-    ignore_fields_for_consensus=["custom_err", "cu_avail"],
     consensus_diff_effect_fn=instr_diff.consensus_instr_diff_effects,
+)
+
+InstrHarnessv2 = HarnessCtx(
+    fuzz_fn_name="sol_compat_instr_execute_v2",
+    fixture_desc=exec_v2_pb.ExecFixture.DESCRIPTOR,
+    prune_effects_fn=instr_prune.prune_execution_result,
+    context_human_encode_fn=instr_v2_codec.encode_input,
+    context_human_decode_fn=instr_v2_codec.decode_input,
+    effects_human_encode_fn=instr_v2_codec.encode_output,
+    consensus_diff_effect_fn=instr_v2_diff.consensus_instr_diff_effects,
 )
 
 SyscallHarness = HarnessCtx(

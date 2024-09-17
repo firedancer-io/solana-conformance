@@ -13,7 +13,6 @@ Each fuzzing harness should implement this interface in fuzz_context.py
 
 The following defines the interface:
 - fuzz_fn_name: The name of the harness function to call in the fuzz target
-- ignore_fields_for_consensus: A list of fields to ignore when comparing effects during --consensus mode
 - fixture_desc: The protobuf descriptor for the fixture message.
     - A fixture message is a message that contains an input and output message.
     - input: The fuzz target Context
@@ -52,7 +51,6 @@ class HarnessCtx:
     fuzz_fn_name: str
     fixture_desc: InitVar[descriptor.Descriptor]
     result_field_name: str | None = "result"
-    ignore_fields_for_consensus: list[str] = field(default_factory=list)
     diff_effect_fn: Callable[[EffectsType, EffectsType], bool] = generic_effects_diff
     consensus_diff_effect_fn: Callable[[EffectsType, EffectsType], bool] = (
         generic_effects_diff
