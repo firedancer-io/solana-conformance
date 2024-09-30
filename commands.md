@@ -24,6 +24,7 @@ $ solana-test-suite [OPTIONS] COMMAND [ARGS]...
 * `exec-instr`: Execute InstrContext message(s) and print...
 * `instr-from-fixtures`: Extract InstrContext messages from fixtures.
 * `list-harness-types`: List harness types available for use.
+* `regenerate-fixtures`: Regenerate InstrFixture messages by...
 * `run-tests`: Run tests on a set of targets with a...
 
 ## `solana-test-suite create-fixtures`
@@ -173,6 +174,25 @@ $ solana-test-suite list-harness-types [OPTIONS]
 
 **Options**:
 
+* `--help`: Show this message and exit.
+
+## `solana-test-suite regenerate-fixtures`
+
+Regenerate InstrFixture messages by
+checking FeatureSet compatibility with the target shared library. 
+
+**Usage**:
+
+```console
+$ solana-test-suite regenerate-fixtures [OPTIONS]
+```
+
+**Options**:
+
+* `-i, --input-dir PATH`: Either a file or directory containing InstrFixture messages  [default: corpus8]
+* `-t, --target PATH`: Shared object (.so) target file path to execute  [default: impl/lib/libsolfuzz_firedancer.so]
+* `-o, --output-dir PATH`: Output directory for regenerated fixtures  [default: regenerated_fixtures]
+* `-d, --dry-run`: Only print the fixtures that would be regenerated
 * `--help`: Show this message and exit.
 
 ## `solana-test-suite run-tests`

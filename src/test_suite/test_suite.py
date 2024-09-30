@@ -29,6 +29,9 @@ import os
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 import time
+import test_suite.features_utils as features_utils
+import test_suite.context_pb2 as context_pb
+import test_suite.pb_utils as pb_utils
 
 """
 Harness options:
@@ -782,6 +785,54 @@ def debug_non_repros(
         failures_only=False,
         save_failures=True,
     )
+
+
+@app.command(
+    help=f"""
+        Regenerate {globals.harness_ctx.fixture_type.__name__} messages by
+        checking FeatureSet compatibility with the target shared library. 
+    """
+)
+def regenerate_fixtures(
+    input_path: Path = typer.Option(
+        Path("corpus8"),
+        "--input-dir",
+        "-i",
+        help=f"Either a file or directory containing {globals.harness_ctx.fixture_type.__name__} messages",
+    ),
+    shared_library: Path = typer.Option(
+        Path(os.getenv("FIREDANCER_TARGET", "impl/lib/libsolfuzz_firedancer.so")),
+        "--target",
+        "-t",
+        help="Shared object (.so) target file path to execute",
+    ),
+    output_dir: Path = typer.Option(
+        Path("regenerated_fixtures"),
+        "--output-dir",
+        "-o",
+        help="Output directory for regenerated fixtures",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        "-d",
+        help="Only print the fixtures that would be regenerated",
+    ),
+):
+    globals.output_dir = output_dir
+    globals.reference_shared_library = shared_library
+
+    if globals.output_dir.exists():
+        shutil.rmtree(globals.output_dir)
+    globals.output_dir.mkdir(parents=True, exist_ok=True)
+
+    lib: ctypes.CDLL = ctypes.CDLL(shared_library)
+    lib.sol_compat_init()
+    globals.target_libraries[shared_library] = lib
+
+    target_features = features_utils.get_sol_compat_features_t(lib)
+
+    pass
 
 
 if __name__ == "__main__":
