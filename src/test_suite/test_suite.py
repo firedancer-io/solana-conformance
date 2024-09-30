@@ -831,6 +831,35 @@ def regenerate_fixtures(
     globals.target_libraries[shared_library] = lib
 
     target_features = features_utils.get_sol_compat_features_t(lib)
+    features_path = pb_utils.find_field_with_type(
+        globals.harness_ctx.context_type.DESCRIPTOR, context_pb.FeatureSet.DESCRIPTOR
+    )
+
+    # TODO: support multiple FeatureSet fields
+    assert len(features_path) == 1, "Only one FeatureSet field is supported"
+    features_path = features_path[0]
+
+    test_cases = list(input_path.iterdir()) if input_path.is_dir() else [input_path]
+
+    needs_regeneration = []
+
+    for file in test_cases:
+        fixture = globals.harness_ctx.fixture_type()
+        with open(file, "rb") as f:
+            fixture.ParseFromString(f.read())
+
+        features = pb_utils.access_nested_field_safe(fixture.input, features_path)
+        feature_set = set(features.features)
+
+        if not feature_set:
+            print(f"FeatureSet not found in {file}, marking for regeneration")
+            needs_regeneration.append(file)
+            continue
+        if not features_utils.is_featureset_compatible(target_features, feature_set):
+            print(
+                f"{file} FeatureSet incompatible with target, marking for regeneration"
+            )
+            needs_regeneration.append(file)
 
     pass
 

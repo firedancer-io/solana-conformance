@@ -290,39 +290,6 @@ def initialize_process_output_buffers(randomize_output_buffer=False):
         )
 
 
-@dataclass
-class FeaturePool:
-    supported: list[int] = field(default_factory=list)
-    hardcoded: list[int] = field(default_factory=list)
-
-
-class sol_compat_features_t(Structure):
-    _fields_ = [
-        ("struct_size", c_uint64),
-        ("hardcoded_features", POINTER(c_uint64)),
-        ("hardcoded_feature_cnt", c_uint64),
-        ("supported_features", POINTER(c_uint64)),
-        ("supported_feature_cnt", c_uint64),
-    ]
-
-
-def get_feature_pool(library: ctypes.CDLL) -> FeaturePool:
-    library.sol_compat_get_features_v1.argtypes = None
-    library.sol_compat_get_features_v1.restype = POINTER(sol_compat_features_t)
-
-    result = library.sol_compat_get_features_v1().contents
-    if result.struct_size < 40:
-        raise ValueError("sol_compat_get_features_v1 not supported")
-
-    supported = [
-        result.supported_features[i] for i in range(result.supported_feature_cnt)
-    ]
-    hardcoded = [
-        result.hardcoded_features[i] for i in range(result.hardcoded_feature_cnt)
-    ]
-    return FeaturePool(supported, hardcoded)
-
-
 def serialize_context(file: Path) -> str | None:
     if file.suffix == ".fix":
         fixture = globals.harness_ctx.fixture_type()
