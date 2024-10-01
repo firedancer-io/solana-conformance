@@ -50,7 +50,7 @@ def create_fixture_from_context(context: ContextType) -> FixtureType | None:
 
     effects_serialized = pruned_results[globals.reference_shared_library]
 
-    if serialized_context is None or serialized_instr_effects is None:
+    if context_serialized is None or effects_serialized is None:
         return None
     # Create instruction fixture
     effects = globals.harness_ctx.effects_type()

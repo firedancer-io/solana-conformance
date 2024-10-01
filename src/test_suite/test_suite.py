@@ -837,6 +837,7 @@ def regenerate_fixtures(
     lib: ctypes.CDLL = ctypes.CDLL(shared_library)
     lib.sol_compat_init()
     globals.target_libraries[shared_library] = lib
+    initialize_process_output_buffers()
 
     target_features = features_utils.get_sol_compat_features_t(lib)
     features_path = pb_utils.find_field_with_type(
