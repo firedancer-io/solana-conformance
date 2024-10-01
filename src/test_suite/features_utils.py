@@ -22,7 +22,7 @@ class sol_compat_features_t(Structure):
     ]
 
 
-def get_sol_compat_features_t(lib: CDLL) -> sol_compat_features_t:
+def get_sol_compat_features_t(lib: CDLL) -> TargetFeaturePool:
     lib.sol_compat_get_features_v1.argtypes = []
     lib.sol_compat_get_features_v1.restype = POINTER(sol_compat_features_t)
 
