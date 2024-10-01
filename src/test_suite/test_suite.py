@@ -9,11 +9,13 @@ import subprocess
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
 from test_suite.fixture_utils import (
     create_fixture,
+    create_fixture_from_context,
     extract_context_from_fixture,
+    write_fixture_to_disk,
 )
 from test_suite.multiprocessing_utils import (
     decode_single_test_case,
-    read_context,
+    read_context_serialized,
     initialize_process_output_buffers,
     process_target,
     run_test,
@@ -137,7 +139,7 @@ def debug_instr(
     print(f"Processing {file.name}...")
 
     # Decode the file and pass it into GDB
-    instruction_context = read_context(file)
+    instruction_context = read_context_serialized(file)
     assert instruction_context is not None, f"Unable to read {file.name}"
     debug_host(shared_library, instruction_context, gdb=debugger)
 
@@ -818,6 +820,12 @@ def regenerate_fixtures(
         "-d",
         help="Only print the fixtures that would be regenerated",
     ),
+    all_fixtures: bool = typer.Option(
+        False,
+        "--all-fixtures",
+        "-a",
+        help="Regenerate all fixtures, regardless of FeatureSet compatibility. Will apply minimum compatible features.",
+    ),
 ):
     globals.output_dir = output_dir
     globals.reference_shared_library = shared_library
@@ -840,8 +848,7 @@ def regenerate_fixtures(
     features_path = features_path[0]
 
     test_cases = list(input_path.iterdir()) if input_path.is_dir() else [input_path]
-
-    needs_regeneration = []
+    num_regenerated = 0
 
     for file in test_cases:
         fixture = globals.harness_ctx.fixture_type()
@@ -851,17 +858,29 @@ def regenerate_fixtures(
         features = pb_utils.access_nested_field_safe(fixture.input, features_path)
         feature_set = set(features.features)
 
-        if not feature_set:
-            print(f"FeatureSet not found in {file}, marking for regeneration")
-            needs_regeneration.append(file)
-            continue
-        if not features_utils.is_featureset_compatible(target_features, feature_set):
-            print(
-                f"{file} FeatureSet incompatible with target, marking for regeneration"
-            )
-            needs_regeneration.append(file)
+        regenerate = True
+        if not all_fixtures:
+            # Skip regeneration if the features are already compatible with the target
+            if features_utils.is_featureset_compatible(target_features, feature_set):
+                regenerate = False
 
-    pass
+        if regenerate:
+            num_regenerated += 1
+            if dry_run:
+                print(f"Would regenerate {file}")
+            else:
+                print(f"Regenerating {file}")
+                # Apply minimum compatible features
+                features.features[:] = features_utils.min_compatible_featureset(
+                    target_features, feature_set
+                )
+                regenerated_fixture = create_fixture_from_context(fixture.input)
+                write_fixture_to_disk(
+                    file.stem, regenerated_fixture.SerializeToString()
+                )
+
+    lib.sol_compat_fini()
+    print(f"Regenerated {num_regenerated} fixtures")
 
 
 if __name__ == "__main__":

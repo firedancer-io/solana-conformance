@@ -47,16 +47,6 @@ def get_sol_compat_features_t(lib: CDLL) -> sol_compat_features_t:
     )
 
 
-def print_features(f: TargetFeaturePool):
-    print("cleaned_up_features_count: ", len(f.cleaned_up_features))
-    for i in f.cleaned_up_features:
-        print(i)
-
-    print("supported_features_count: ", len(f.supported_features))
-    for i in f.supported_features:
-        print(i)
-
-
 """
 Compatibility criteria:
 - All cleaned up features must be in features

@@ -193,6 +193,7 @@ $ solana-test-suite regenerate-fixtures [OPTIONS]
 * `-t, --target PATH`: Shared object (.so) target file path to execute  [default: impl/lib/libsolfuzz_firedancer.so]
 * `-o, --output-dir PATH`: Output directory for regenerated fixtures  [default: regenerated_fixtures]
 * `-d, --dry-run`: Only print the fixtures that would be regenerated
+* `-a, --all-fixtures`: Regenerate all fixtures, regardless of FeatureSet compatibility. Will apply minimum compatible features.
 * `--help`: Show this message and exit.
 
 ## `solana-test-suite run-tests`
