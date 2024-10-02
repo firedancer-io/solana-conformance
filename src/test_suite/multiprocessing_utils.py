@@ -2,10 +2,10 @@ from dataclasses import dataclass, field
 from test_suite.constants import OUTPUT_BUFFER_SIZE
 import test_suite.invoke_pb2 as invoke_pb
 import ctypes
-from ctypes import c_uint64, c_int, POINTER, Structure
+from ctypes import c_uint64, c_int, POINTER
 from pathlib import Path
 import test_suite.globals as globals
-from google.protobuf import text_format
+from google.protobuf import text_format, message
 import os
 
 
@@ -56,7 +56,7 @@ def process_target(
     return output_object
 
 
-def read_context(test_file: Path) -> str | None:
+def read_context_serialized(test_file: Path) -> str | None:
     """
     Reads in test files and generates an InstrContext Protobuf object for a test case.
 
@@ -66,39 +66,53 @@ def read_context(test_file: Path) -> str | None:
     Returns:
         - str | None: Serialized instruction context, or None if reading failed.
     """
+
+    # Serialize instruction context to string (pickleable)
+    ctx = read_context(test_file)
+    return ctx.SerializeToString(deterministic=True) if ctx else None
+
+
+def read_context(test_file: Path) -> message.Message | None:
+    """
+    Reads in test files and generates an Context Protobuf object for a test case.
+
+    Args:
+        - test_file (Path): Path to the context message.
+
+    Returns:
+        - message.Message | None: Instruction context, or None if reading failed.
+    """
     # Try to read in first as binary-encoded Protobuf messages
     try:
         # Read in binary Protobuf messages
         with open(test_file, "rb") as f:
-            instruction_context = globals.harness_ctx.context_type()
-            instruction_context.ParseFromString(f.read())
+            context = globals.harness_ctx.context_type()
+            context.ParseFromString(f.read())
     except:
         try:
             # Maybe it's in human-readable Protobuf format?
             with open(test_file) as f:
-                instruction_context = text_format.Parse(
+                context = text_format.Parse(
                     f.read(), globals.harness_ctx.context_type()
                 )
 
             # Decode into digestable fields
             # decode_input(instruction_context)
-            globals.harness_ctx.context_human_decode_fn(instruction_context)
+            globals.harness_ctx.context_human_decode_fn(context)
         except:
             # Unable to read message, skip and continue
-            instruction_context = None
+            context = None
 
-    if instruction_context is None:
+    if context is None:
         # Unreadable file, skip it
         return None
 
     # Discard unknown fields
-    instruction_context.DiscardUnknownFields()
-
-    # Serialize instruction context to string (pickleable)
-    return instruction_context.SerializeToString(deterministic=True)
+    context.DiscardUnknownFields()
+    return context
 
 
-def read_fixture(fixture_file: Path) -> str | None:
+def read_fixture_serialized(fixture_file: Path) -> str | None:
     """
     Same as read_instr, but for InstrFixture protobuf messages.
 
@@ -110,25 +124,43 @@ def read_fixture(fixture_file: Path) -> str | None:
     Returns:
         - str | None: Serialized instruction fixture, or None if reading failed.
     """
+    fixture = read_fixture(fixture_file)
+    if fixture is None:
+        return None
+    # Serialize instruction fixture to string (pickleable)
+    return fixture.SerializeToString(deterministic=True)
+
+
+def read_fixture(fixture_file: Path) -> message.Message | None:
+    """
+    Reads in test files and generates an Fixture Protobuf object for a test case.
+
+    DOES NOT SUPPORT HUMAN READABLE MESSAGES!!!
+
+    Args:
+        - fixture_file (Path): Path to the fixture message.
+
+    Returns:
+        - message.Message | None: Fixture, or None if reading failed.
+
+    """
     # Try to read in first as binary-encoded Protobuf messages
     try:
         # Read in binary Protobuf messages
         with open(fixture_file, "rb") as f:
-            instruction_fixture = globals.harness_ctx.fixture_type()
-            instruction_fixture.ParseFromString(f.read())
+            fixture = globals.harness_ctx.fixture_type()
+            fixture.ParseFromString(f.read())
     except:
         # Unable to read message, skip and continue
-        instruction_fixture = None
+        fixture = None
 
-    if instruction_fixture is None:
+    if fixture is None:
         # Unreadable file, skip it
         return None
 
     # Discard unknown fields
-    instruction_fixture.DiscardUnknownFields()
-
-    # Serialize instruction fixture to string (pickleable)
-    return instruction_fixture.SerializeToString(deterministic=True)
+    fixture.DiscardUnknownFields()
+    return fixture
 
 
 def decode_single_test_case(test_file: Path) -> int:
@@ -141,7 +173,7 @@ def decode_single_test_case(test_file: Path) -> int:
     Returns:
         - int: 1 if successfully decoded and written, 0 if skipped.
     """
-    serialized_instruction_context = read_context(test_file)
+    serialized_instruction_context = read_context_serialized(test_file)
 
     # Skip if input is invalid
     if serialized_instruction_context is None:
@@ -239,7 +271,7 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
 
     outputs = {target: "None\n" for target in results}
 
-    ref_result = results[globals.solana_shared_library]
+    ref_result = results[globals.reference_shared_library]
 
     if ref_result is None:
         print("Skipping test case due to Agave rejection")
@@ -252,7 +284,7 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
     # Log execution results
     all_passed = True
     for target, result in results.items():
-        if target == globals.solana_shared_library:
+        if target == globals.reference_shared_library:
             continue
         # Create a Protobuf struct to compare and output, if applicable
         effects = None
@@ -268,7 +300,7 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
         else:
             all_passed = False
 
-    outputs[globals.solana_shared_library] = text_format.MessageToString(ref_effects)
+    outputs[globals.reference_shared_library] = text_format.MessageToString(ref_effects)
 
     # 1 = passed, -1 = failed
     return 1 if all_passed else -1, outputs
@@ -290,46 +322,13 @@ def initialize_process_output_buffers(randomize_output_buffer=False):
         )
 
 
-@dataclass
-class FeaturePool:
-    supported: list[int] = field(default_factory=list)
-    hardcoded: list[int] = field(default_factory=list)
-
-
-class sol_compat_features_t(Structure):
-    _fields_ = [
-        ("struct_size", c_uint64),
-        ("hardcoded_features", POINTER(c_uint64)),
-        ("hardcoded_feature_cnt", c_uint64),
-        ("supported_features", POINTER(c_uint64)),
-        ("supported_feature_cnt", c_uint64),
-    ]
-
-
-def get_feature_pool(library: ctypes.CDLL) -> FeaturePool:
-    library.sol_compat_get_features_v1.argtypes = None
-    library.sol_compat_get_features_v1.restype = POINTER(sol_compat_features_t)
-
-    result = library.sol_compat_get_features_v1().contents
-    if result.struct_size < 40:
-        raise ValueError("sol_compat_get_features_v1 not supported")
-
-    supported = [
-        result.supported_features[i] for i in range(result.supported_feature_cnt)
-    ]
-    hardcoded = [
-        result.hardcoded_features[i] for i in range(result.hardcoded_feature_cnt)
-    ]
-    return FeaturePool(supported, hardcoded)
-
-
 def serialize_context(file: Path) -> str | None:
     if file.suffix == ".fix":
         fixture = globals.harness_ctx.fixture_type()
         fixture.ParseFromString(file.open("rb").read())
         serialized_instr_context = fixture.input.SerializeToString(deterministic=True)
     else:
-        serialized_instr_context = read_context(file)
+        serialized_instr_context = read_context_serialized(file)
 
     assert serialized_instr_context is not None, f"Unable to read {file.name}"
     return serialized_instr_context

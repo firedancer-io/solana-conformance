@@ -9,6 +9,7 @@ import test_suite.globals as globals
 import test_suite.invoke_pb2 as invoke_pb
 from google.protobuf import text_format
 from pathlib import Path
+from test_suite.fuzz_interface import ContextType, FixtureType
 
 
 def create_fixture(test_file: Path) -> int:
@@ -21,10 +22,22 @@ def create_fixture(test_file: Path) -> int:
     Returns:
         - int: 1 on success, 0 on failure
     """
-    serialized_context = read_context(test_file)
-    results = process_single_test_case(serialized_context)
+    fixture = create_fixture_from_context(read_context(test_file))
+    if fixture is None:
+        return 0
 
-    pruned_results = globals.harness_ctx.prune_effects_fn(serialized_context, results)
+    return write_fixture_to_disk(
+        test_file.stem, fixture.SerializeToString(deterministic=True)
+    )
+
+
+def create_fixture_from_context(context: ContextType) -> FixtureType | None:
+    context.DiscardUnknownFields()
+    context_serialized = context.SerializeToString(deterministic=True)
+
+    # Execute the test case
+    results = process_single_test_case(context_serialized)
+    pruned_results = globals.harness_ctx.prune_effects_fn(context_serialized, results)
 
     # This is only relevant when you gather results for multiple targets
     if globals.only_keep_passing:
@@ -33,26 +46,21 @@ def create_fixture(test_file: Path) -> int:
             return 0
 
     if pruned_results is None:
-        return 0
+        return None
 
-    serialized_instr_effects = pruned_results[globals.solana_shared_library]
+    effects_serialized = pruned_results[globals.reference_shared_library]
 
-    if serialized_context is None or serialized_instr_effects is None:
-        return 0
-
+    if context_serialized is None or effects_serialized is None:
+        return None
     # Create instruction fixture
-    context = globals.harness_ctx.context_type()
-    context.ParseFromString(serialized_context)
     effects = globals.harness_ctx.effects_type()
-    effects.ParseFromString(serialized_instr_effects)
+    effects.ParseFromString(effects_serialized)
 
     fixture = globals.harness_ctx.fixture_type()
     fixture.input.MergeFrom(context)
     fixture.output.MergeFrom(effects)
 
-    return write_fixture_to_disk(
-        test_file.stem, fixture.SerializeToString(deterministic=True)
-    )
+    return fixture
 
 
 def write_fixture_to_disk(file_stem: str, serialized_fixture: str) -> int:

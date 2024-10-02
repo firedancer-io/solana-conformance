@@ -9,11 +9,13 @@ import subprocess
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
 from test_suite.fixture_utils import (
     create_fixture,
+    create_fixture_from_context,
     extract_context_from_fixture,
+    write_fixture_to_disk,
 )
 from test_suite.multiprocessing_utils import (
     decode_single_test_case,
-    read_context,
+    read_context_serialized,
     initialize_process_output_buffers,
     process_target,
     run_test,
@@ -29,6 +31,9 @@ import os
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 import time
+import test_suite.features_utils as features_utils
+import test_suite.context_pb2 as context_pb
+import test_suite.pb_utils as pb_utils
 
 """
 Harness options:
@@ -134,7 +139,7 @@ def debug_instr(
     print(f"Processing {file.name}...")
 
     # Decode the file and pass it into GDB
-    instruction_context = read_context(file)
+    instruction_context = read_context_serialized(file)
     assert instruction_context is not None, f"Unable to read {file.name}"
     debug_host(shared_library, instruction_context, gdb=debugger)
 
@@ -199,7 +204,7 @@ def create_fixtures(
         "-i",
         help=f"Either a file or directory containing {globals.harness_ctx.context_type.__name__} messages",
     ),
-    solana_shared_library: Path = typer.Option(
+    reference_shared_library: Path = typer.Option(
         Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
         "--solana-target",
         "-s",
@@ -232,11 +237,11 @@ def create_fixtures(
     ),
 ):
     # Add Solana library to shared libraries
-    shared_libraries = [solana_shared_library] + shared_libraries
+    shared_libraries = [reference_shared_library] + shared_libraries
 
     # Specify globals
     globals.output_dir = output_dir
-    globals.solana_shared_library = solana_shared_library
+    globals.reference_shared_library = reference_shared_library
     globals.readable = readable
     globals.only_keep_passing = only_keep_passing
     globals.organize_fixture_dir = organize_fixture_dir
@@ -297,7 +302,7 @@ def run_tests(
         help=f"Single input file or input directory containing {globals.harness_ctx.context_type.__name__}"
         f" or { globals.harness_ctx.fixture_type.__name__ } messages",
     ),
-    solana_shared_library: Path = typer.Option(
+    reference_shared_library: Path = typer.Option(
         Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
         "--solana-target",
         "-s",
@@ -353,11 +358,11 @@ def run_tests(
     ),
 ):
     # Add Solana library to shared libraries
-    shared_libraries = [solana_shared_library] + shared_libraries
+    shared_libraries = [reference_shared_library] + shared_libraries
 
     # Specify globals
     globals.output_dir = output_dir
-    globals.solana_shared_library = solana_shared_library
+    globals.reference_shared_library = reference_shared_library
 
     # Set diff mode to consensus if specified
     if consensus_mode:
@@ -530,7 +535,7 @@ def list_harness_types():
             """
 )
 def debug_mismatches(
-    solana_shared_library: Path = typer.Option(
+    reference_shared_library: Path = typer.Option(
         Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
         "--solana-target",
         "-s",
@@ -647,7 +652,7 @@ def debug_mismatches(
 
     run_tests(
         file_or_dir=globals.inputs_dir,
-        solana_shared_library=solana_shared_library,
+        reference_shared_library=reference_shared_library,
         shared_libraries=shared_libraries,
         output_dir=globals.output_dir / "test_results",
         num_processes=4,
@@ -668,7 +673,7 @@ def debug_mismatches(
             """
 )
 def debug_non_repros(
-    solana_shared_library: Path = typer.Option(
+    reference_shared_library: Path = typer.Option(
         Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
         "--solana-target",
         "-s",
@@ -771,7 +776,7 @@ def debug_non_repros(
 
     run_tests(
         file_or_dir=globals.inputs_dir,
-        solana_shared_library=solana_shared_library,
+        reference_shared_library=reference_shared_library,
         shared_libraries=shared_libraries,
         output_dir=globals.output_dir / "test_results",
         num_processes=4,
@@ -782,6 +787,101 @@ def debug_non_repros(
         failures_only=False,
         save_failures=True,
     )
+
+
+@app.command(
+    help=f"""
+        Regenerate {globals.harness_ctx.fixture_type.__name__} messages by
+        checking FeatureSet compatibility with the target shared library. 
+    """
+)
+def regenerate_fixtures(
+    input_path: Path = typer.Option(
+        Path("corpus8"),
+        "--input-dir",
+        "-i",
+        help=f"Either a file or directory containing {globals.harness_ctx.fixture_type.__name__} messages",
+    ),
+    shared_library: Path = typer.Option(
+        Path(os.getenv("FIREDANCER_TARGET", "impl/lib/libsolfuzz_firedancer.so")),
+        "--target",
+        "-t",
+        help="Shared object (.so) target file path to execute",
+    ),
+    output_dir: Path = typer.Option(
+        Path("regenerated_fixtures"),
+        "--output-dir",
+        "-o",
+        help="Output directory for regenerated fixtures",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        "-d",
+        help="Only print the fixtures that would be regenerated",
+    ),
+    all_fixtures: bool = typer.Option(
+        False,
+        "--all-fixtures",
+        "-a",
+        help="Regenerate all fixtures, regardless of FeatureSet compatibility. Will apply minimum compatible features.",
+    ),
+):
+    globals.output_dir = output_dir
+    globals.reference_shared_library = shared_library
+
+    if globals.output_dir.exists():
+        shutil.rmtree(globals.output_dir)
+    globals.output_dir.mkdir(parents=True, exist_ok=True)
+
+    lib: ctypes.CDLL = ctypes.CDLL(shared_library)
+    lib.sol_compat_init()
+    globals.target_libraries[shared_library] = lib
+    initialize_process_output_buffers()
+
+    target_features = features_utils.get_sol_compat_features_t(lib)
+    features_path = pb_utils.find_field_with_type(
+        globals.harness_ctx.context_type.DESCRIPTOR, context_pb.FeatureSet.DESCRIPTOR
+    )
+
+    # TODO: support multiple FeatureSet fields
+    assert len(features_path) == 1, "Only one FeatureSet field is supported"
+    features_path = features_path[0]
+
+    test_cases = list(input_path.iterdir()) if input_path.is_dir() else [input_path]
+    num_regenerated = 0
+
+    for file in test_cases:
+        fixture = globals.harness_ctx.fixture_type()
+        with open(file, "rb") as f:
+            fixture.ParseFromString(f.read())
+
+        features = pb_utils.access_nested_field_safe(fixture.input, features_path)
+        feature_set = set(features.features)
+
+        regenerate = True
+        if not all_fixtures:
+            # Skip regeneration if the features are already compatible with the target
+            if features_utils.is_featureset_compatible(target_features, feature_set):
+                regenerate = False
+
+        if regenerate:
+            num_regenerated += 1
+            if dry_run:
+                print(f"Would regenerate {file}")
+            else:
+                print(f"Regenerating {file}")
+                # Apply minimum compatible features
+                features.features[:] = features_utils.min_compatible_featureset(
+                    target_features, feature_set
+                )
+                regenerated_fixture = create_fixture_from_context(fixture.input)
+                write_fixture_to_disk(
+                    file.stem, regenerated_fixture.SerializeToString()
+                )
+
+    lib.sol_compat_fini()
+    print(f"Regenerated {num_regenerated} fixtures")
 
 
 if __name__ == "__main__":
