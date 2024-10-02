@@ -271,7 +271,7 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
 
     outputs = {target: "None\n" for target in results}
 
-    ref_result = results[globals.solana_shared_library]
+    ref_result = results[globals.reference_shared_library]
 
     if ref_result is None:
         print("Skipping test case due to Agave rejection")
@@ -284,7 +284,7 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
     # Log execution results
     all_passed = True
     for target, result in results.items():
-        if target == globals.solana_shared_library:
+        if target == globals.reference_shared_library:
             continue
         # Create a Protobuf struct to compare and output, if applicable
         effects = None
@@ -300,7 +300,7 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
         else:
             all_passed = False
 
-    outputs[globals.solana_shared_library] = text_format.MessageToString(ref_effects)
+    outputs[globals.reference_shared_library] = text_format.MessageToString(ref_effects)
 
     # 1 = passed, -1 = failed
     return 1 if all_passed else -1, outputs

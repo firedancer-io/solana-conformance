@@ -204,7 +204,7 @@ def create_fixtures(
         "-i",
         help=f"Either a file or directory containing {globals.harness_ctx.context_type.__name__} messages",
     ),
-    solana_shared_library: Path = typer.Option(
+    reference_shared_library: Path = typer.Option(
         Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
         "--solana-target",
         "-s",
@@ -237,11 +237,11 @@ def create_fixtures(
     ),
 ):
     # Add Solana library to shared libraries
-    shared_libraries = [solana_shared_library] + shared_libraries
+    shared_libraries = [reference_shared_library] + shared_libraries
 
     # Specify globals
     globals.output_dir = output_dir
-    globals.solana_shared_library = solana_shared_library
+    globals.reference_shared_library = reference_shared_library
     globals.readable = readable
     globals.only_keep_passing = only_keep_passing
     globals.organize_fixture_dir = organize_fixture_dir
@@ -302,7 +302,7 @@ def run_tests(
         help=f"Single input file or input directory containing {globals.harness_ctx.context_type.__name__}"
         f" or { globals.harness_ctx.fixture_type.__name__ } messages",
     ),
-    solana_shared_library: Path = typer.Option(
+    reference_shared_library: Path = typer.Option(
         Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
         "--solana-target",
         "-s",
@@ -358,11 +358,11 @@ def run_tests(
     ),
 ):
     # Add Solana library to shared libraries
-    shared_libraries = [solana_shared_library] + shared_libraries
+    shared_libraries = [reference_shared_library] + shared_libraries
 
     # Specify globals
     globals.output_dir = output_dir
-    globals.solana_shared_library = solana_shared_library
+    globals.reference_shared_library = reference_shared_library
 
     # Set diff mode to consensus if specified
     if consensus_mode:
@@ -535,7 +535,7 @@ def list_harness_types():
             """
 )
 def debug_mismatches(
-    solana_shared_library: Path = typer.Option(
+    reference_shared_library: Path = typer.Option(
         Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
         "--solana-target",
         "-s",
@@ -652,7 +652,7 @@ def debug_mismatches(
 
     run_tests(
         file_or_dir=globals.inputs_dir,
-        solana_shared_library=solana_shared_library,
+        reference_shared_library=reference_shared_library,
         shared_libraries=shared_libraries,
         output_dir=globals.output_dir / "test_results",
         num_processes=4,
@@ -673,7 +673,7 @@ def debug_mismatches(
             """
 )
 def debug_non_repros(
-    solana_shared_library: Path = typer.Option(
+    reference_shared_library: Path = typer.Option(
         Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
         "--solana-target",
         "-s",
@@ -776,7 +776,7 @@ def debug_non_repros(
 
     run_tests(
         file_or_dir=globals.inputs_dir,
-        solana_shared_library=solana_shared_library,
+        reference_shared_library=reference_shared_library,
         shared_libraries=shared_libraries,
         output_dir=globals.output_dir / "test_results",
         num_processes=4,
