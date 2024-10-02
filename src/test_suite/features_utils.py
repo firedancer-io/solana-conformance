@@ -47,46 +47,56 @@ def get_sol_compat_features_t(lib: CDLL) -> TargetFeaturePool:
     )
 
 
-"""
-Compatibility criteria:
-- All cleaned up features must be in features
-- All features must be in the union of cleaned up features and supported features
-"""
+def is_featureset_compatible(
+    target: TargetFeaturePool, context_features: set[int]
+) -> bool:
+    """
+    Checks the following compatibility criteria:
+    - All cleaned up features in target must be in fixture/context's features list
+    - All features in fixture/context's list must be in the union of target's cleaned up features and supported features
 
-
-def is_featureset_compatible(target: TargetFeaturePool, features: set[int]) -> bool:
-    return target.cleaned_up_features.issubset(features) and features.issubset(
-        target.union_features
-    )
-
-
-"""
-- Adds all cleaned up features to the features set and
-- Drops any features that are not in the union of cleaned up and supported features
-"""
+    Args:
+        target: TargetFeaturePool
+        context_features: set[int] - features in the fixture/context's FeatureSet
+    """
+    return target.cleaned_up_features.issubset(
+        context_features
+    ) and context_features.issubset(target.union_features)
 
 
 def min_compatible_featureset(
-    target: TargetFeaturePool, features: set[int]
+    target: TargetFeaturePool, context_features: set[int]
 ) -> set[int]:
-    return target.cleaned_up_features.union(features).intersection(
+    """
+    Returns the minimum compatible featureset between the target and the fixture/context.
+    - Adds all cleaned up features in target to the fixture/context's features set and
+    - Drops any features in fixture/context that are not in the union of target's cleaned up and supported features
+
+    Args:
+        target: TargetFeaturePool
+        context_features: set[int] - features in the fixture/context's FeatureSet
+
+    Returns:
+        set[int]: Minimum compatible featureset
+    """
+    return target.cleaned_up_features.union(context_features).intersection(
         target.union_features
     )
 
 
 def print_featureset_compatibility_report(
-    target: TargetFeaturePool, features: set[int]
+    target: TargetFeaturePool, context_features: set[int]
 ):
     print("Featureset compatibility report:")
-    if target.cleaned_up_features.issubset(features):
+    if target.cleaned_up_features.issubset(context_features):
         print("All cleaned up features are present")
     else:
         print("Missing cleaned up features:")
-        print(target.cleaned_up_features.difference(features))
+        print(target.cleaned_up_features.difference(context_features))
 
-    if features.issubset(target.union_features):
+    if context_features.issubset(target.union_features):
         print("All features are supported by the target")
 
     else:
         print("Unsupported features:")
-        print(features.difference(target.union_features))
+        print(context_features.difference(target.union_features))
