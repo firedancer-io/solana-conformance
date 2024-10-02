@@ -40,6 +40,12 @@ CPIHarness = HarnessCtx(
     effects_human_encode_fn=syscall_codec.encode_output,
 )
 
+InterpHarness = HarnessCtx(
+    fuzz_fn_name="sol_compat_vm_interp_v1",
+    fixture_desc=vm_pb.SyscallFixture.DESCRIPTOR,
+    effects_human_encode_fn=syscall_codec.encode_output,
+)
+
 ValidateVM = HarnessCtx(
     fuzz_fn_name="sol_compat_vm_validate_v1",
     fixture_desc=vm_pb.ValidateVmFixture.DESCRIPTOR,
