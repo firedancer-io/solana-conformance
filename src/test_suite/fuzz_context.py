@@ -52,7 +52,6 @@ TxnHarness = HarnessCtx(
     context_human_encode_fn=txn_codec.encode_input,
     context_human_decode_fn=txn_codec.decode_input,
     effects_human_encode_fn=txn_codec.encode_output,
-    diff_effect_fn=txn_diff.txn_diff_effects,
     consensus_diff_effect_fn=txn_diff.consensus_txn_diff_effects,
 )
 
