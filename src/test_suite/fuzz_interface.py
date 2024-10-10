@@ -27,6 +27,22 @@ The following defines the interface:
 """
 
 
+def encode_hex_compact(buf):
+    res = ""
+    skipped = 0
+    for i in range(0, len(buf), 16):
+        row = buf[i : i + 16]
+        if row == bytes([0] * len(row)):
+            skipped += len(row)
+        else:
+            if skipped > 0:
+                res += f"...{skipped} zeros..."
+            res += "".join([f"{b:0>2x}" for b in buf[i : i + 16]])
+    if skipped > 0:
+        res += f"...{skipped} zeros..."
+    return bytes(res, "ascii")
+
+
 def generic_effects_prune(
     ctx: str | None, effects: dict[str, str | None]
 ) -> dict[str, str | None] | None:
