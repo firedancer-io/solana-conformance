@@ -279,7 +279,6 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
 
     ref_effects = globals.harness_ctx.effects_type()
     ref_effects.ParseFromString(ref_result)
-    globals.harness_ctx.effects_human_encode_fn(ref_effects)
 
     # Log execution results
     all_passed = True
@@ -292,14 +291,16 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
             # Turn bytes into human readable fields
             effects = globals.harness_ctx.effects_type()
             effects.ParseFromString(result)
-            globals.harness_ctx.effects_human_encode_fn(effects)
 
             # Note: diff_effect_fn may modify effects in-place
             all_passed &= globals.harness_ctx.diff_effect_fn(ref_effects, effects)
+
+            globals.harness_ctx.effects_human_encode_fn(effects)
             outputs[target] = text_format.MessageToString(effects)
         else:
             all_passed = False
 
+    globals.harness_ctx.effects_human_encode_fn(ref_effects)
     outputs[globals.reference_shared_library] = text_format.MessageToString(ref_effects)
 
     # 1 = passed, -1 = failed
