@@ -857,7 +857,7 @@ def regenerate_fixtures(
             fixture.ParseFromString(f.read())
 
         features = pb_utils.access_nested_field_safe(fixture.input, features_path)
-        feature_set = set(features.features)
+        feature_set = set(features.features) if features else set()
 
         regenerate = True
         if not all_fixtures:
