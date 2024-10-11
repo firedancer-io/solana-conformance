@@ -46,7 +46,7 @@ VmInterpHarness = HarnessCtx(
     effects_human_encode_fn=syscall_codec.encode_output,
 )
 
-ValidateVmHarness = HarnessCtx(
+VmValidateHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_vm_validate_v1",
     fixture_desc=vm_pb.ValidateVmFixture.DESCRIPTOR,
 )
