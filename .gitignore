@@ -1,6 +1,7 @@
 # Default paths used by test suite
 readable_context/
 test_results/
+test_fixtures/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -132,7 +133,6 @@ ENV/
 env.bak/
 venv.bak/
 test_suite_env/
-test_suite
 
 # Spyder project settings
 .spyderproject
