@@ -12,7 +12,7 @@ import test_suite.instr.diff_utils as instr_diff
 import test_suite.syscall.codec_utils as syscall_codec
 
 
-ElfHarness = HarnessCtx(
+ElfLoaderHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_elf_loader_v1",
     fixture_desc=elf_pb.ELFLoaderFixture.DESCRIPTOR,
 )
@@ -34,19 +34,19 @@ SyscallHarness = HarnessCtx(
     effects_human_encode_fn=syscall_codec.encode_output,
 )
 
-CPIHarness = HarnessCtx(
+CpiHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_vm_cpi_syscall_v1",
     fixture_desc=vm_pb.SyscallFixture.DESCRIPTOR,
     effects_human_encode_fn=syscall_codec.encode_output,
 )
 
-InterpHarness = HarnessCtx(
+VmInterpHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_vm_interp_v1",
     fixture_desc=vm_pb.SyscallFixture.DESCRIPTOR,
     effects_human_encode_fn=syscall_codec.encode_output,
 )
 
-ValidateVM = HarnessCtx(
+VmValidateHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_vm_validate_v1",
     fixture_desc=vm_pb.ValidateVmFixture.DESCRIPTOR,
 )

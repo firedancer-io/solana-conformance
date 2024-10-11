@@ -47,8 +47,12 @@ The harness type should be specified by an environment variable `HARNESS_TYPE` a
 - `InstrHarness`
 - `TxnHarness`
 - `SyscallHarness`
-- `ValidateVM`
-- `ElfHarness`
+- `CpiHarness`
+- `VmInterpHarness`
+- `VmValidateHarness`
+- `ElfLoaderHarness`
+
+`solana-test-suite list-harness-types` will provide the most updated list.
 
 
 ### Data Preparation
