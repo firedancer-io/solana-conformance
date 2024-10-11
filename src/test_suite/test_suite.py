@@ -872,9 +872,10 @@ def regenerate_fixtures(
             else:
                 print(f"Regenerating {file}")
                 # Apply minimum compatible features
-                features.features[:] = features_utils.min_compatible_featureset(
-                    target_features, feature_set
-                )
+                if features is not None:
+                    features.features[:] = features_utils.min_compatible_featureset(
+                        target_features, feature_set
+                    )
                 regenerated_fixture = create_fixture_from_context(fixture.input)
                 write_fixture_to_disk(
                     file.stem, regenerated_fixture.SerializeToString()
