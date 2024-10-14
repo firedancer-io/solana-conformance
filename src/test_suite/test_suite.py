@@ -3,6 +3,7 @@ from typing import List
 import typer
 from collections import defaultdict
 import ctypes
+from glob import glob
 from multiprocessing import Pool
 from pathlib import Path
 import subprocess
@@ -803,7 +804,7 @@ def regenerate_fixtures(
         help=f"Either a file or directory containing {globals.harness_ctx.fixture_type.__name__} messages",
     ),
     shared_library: Path = typer.Option(
-        Path(os.getenv("FIREDANCER_TARGET", "impl/lib/libsolfuzz_firedancer.so")),
+        Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
         "--target",
         "-t",
         help="Shared object (.so) target file path to execute",
@@ -883,6 +884,106 @@ def regenerate_fixtures(
 
     lib.sol_compat_fini()
     print(f"Regenerated {num_regenerated} fixtures")
+
+
+@app.command(
+    help=f"""
+        Regenerate all fixtures in provided test-vectors folder
+    """
+)
+def regenerate_all_fixtures(
+    test_vectors: Path = typer.Option(
+        Path("corpus8"),
+        "--input-dir",
+        "-i",
+        help=f"Input test-vectors directory",
+    ),
+    output_dir: Path = typer.Option(
+        Path("/tmp/regenerated_fixtures"),
+        "--output-dir",
+        "-o",
+        help="Output directory for regenerated fixtures",
+    ),
+    shared_library: Path = typer.Option(
+        Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
+        "--target",
+        "-t",
+        help="Shared object (.so) target file path to execute",
+    ),
+    stubbed_shared_library: Path = typer.Option(
+        Path(os.getenv("SOLFUZZ_STUBBED_TARGET", "impl/lib/libsolfuzz_firedancer.so")),
+        "--stubbed-target",
+        "-s",
+        help="Stubbed shared object (.so) target file path to execute",
+    ),
+):
+    globals.output_dir = output_dir
+
+    if output_dir.exists():
+        shutil.rmtree(globals.output_dir)
+    globals.output_dir.mkdir(parents=True, exist_ok=True)
+
+    def copy_files_excluding_fixture_files(src, dst):
+        regenerate_folders = set()
+        fixtures_folders = glob(str(src) + "/*/fixtures*")
+        for root, dirs, files in os.walk(src):
+            src_dir = os.path.join(src, os.path.relpath(root, src))
+            dest_dir = os.path.join(dst, os.path.relpath(root, src))
+
+            if not os.path.exists(dest_dir):
+                os.makedirs(dest_dir)
+
+            if not any(
+                root.startswith(fixture_folder) for fixture_folder in fixtures_folders
+            ):
+                for file in files:
+                    src_file = os.path.join(root, file)
+                    dst_file = os.path.join(dest_dir, file)
+                    shutil.copy2(src_file, dst_file)
+            else:
+                if files:
+                    regenerate_folders.add(src_dir)
+        return regenerate_folders
+
+    def get_harness_type_for_folder(src, regenerate_folder):
+        relative_path = os.path.relpath(regenerate_folder, src)
+        fuzz_folder = relative_path.split(os.sep)[0]
+        capitalized_name = "".join(word.capitalize() for word in fuzz_folder.split("_"))
+        harness_name = capitalized_name + "Harness"
+        return harness_name
+
+    regenerate_folders = copy_files_excluding_fixture_files(test_vectors, output_dir)
+    for source_folder in regenerate_folders:
+        globals.target_libraries = {}
+        output_folder = os.path.join(
+            output_dir, os.path.relpath(source_folder, test_vectors)
+        )
+        folder_harness_type = get_harness_type_for_folder(test_vectors, source_folder)
+        os.environ["HARNESS_TYPE"] = folder_harness_type
+        globals.harness_ctx = eval(folder_harness_type)
+        print(
+            f"Regenerating fixtures for {source_folder} with harness type {folder_harness_type}"
+        )
+        if folder_harness_type in ["CpiHarness"]:
+            regenerate_fixtures(
+                input_path=Path(source_folder),
+                shared_library=stubbed_shared_library,
+                output_dir=Path(output_folder),
+                dry_run=False,
+                all_fixtures=True,
+            )
+        elif folder_harness_type in ["ElfLoaderHarness"]:
+            shutil.copytree(source_folder, output_folder, dirs_exist_ok=True)
+        else:
+            regenerate_fixtures(
+                input_path=Path(source_folder),
+                shared_library=shared_library,
+                output_dir=Path(output_folder),
+                dry_run=False,
+                all_fixtures=True,
+            )
+
+    print(f"Regenerated fixtures from {test_vectors} to {output_dir}")
 
 
 if __name__ == "__main__":
