@@ -1,16 +1,19 @@
 from dataclasses import dataclass, field
 from test_suite.constants import OUTPUT_BUFFER_SIZE
+from test_suite.fuzz_context import HARNESS_ENTRYPOINT_MAP, HarnessCtx
 import test_suite.invoke_pb2 as invoke_pb
+import test_suite.metadata_pb2 as metadata_pb2
 import ctypes
 from ctypes import c_uint64, c_int, POINTER
 from pathlib import Path
 import test_suite.globals as globals
 from google.protobuf import text_format, message
+from google.protobuf.internal.decoder import _DecodeVarint
 import os
 
 
 def process_target(
-    library: ctypes.CDLL, serialized_instruction_context: str
+    harness_ctx: HarnessCtx, library: ctypes.CDLL, serialized_instruction_context: str
 ) -> invoke_pb.InstrEffects | None:
     """
     Process an instruction through a provided shared library and return the result.
@@ -29,7 +32,7 @@ def process_target(
     out_sz = ctypes.c_uint64(OUTPUT_BUFFER_SIZE)
 
     # Get the function to call
-    sol_compat_fn = getattr(library, globals.harness_ctx.fuzz_fn_name)
+    sol_compat_fn = getattr(library, harness_ctx.fuzz_fn_name)
 
     # Define argument and return types
     sol_compat_fn.argtypes = [
@@ -50,7 +53,7 @@ def process_target(
 
     # Process the output
     output_data = bytearray(globals.output_buffer_pointer[: out_sz.value])
-    output_object = globals.harness_ctx.effects_type()
+    output_object = harness_ctx.effects_type()
     output_object.ParseFromString(output_data)
 
     return output_object
@@ -70,6 +73,39 @@ def read_context_serialized(test_file: Path) -> str | None:
     # Serialize instruction context to string (pickleable)
     ctx = read_context(test_file)
     return ctx.SerializeToString(deterministic=True) if ctx else None
+
+
+def extract_metadata(fixture_file: Path) -> str | None:
+    """
+    Extracts metadata from a fixture file.
+
+    Args:
+        - fixture_file (Path): Path to the fixture message.
+
+    Returns:
+        - str | None: Metadata from the fixture file.
+    """
+
+    with open(fixture_file, "rb") as f:
+        proto_bytes = f.read()
+        try:
+            metadata = metadata_pb2.FixtureMetadata()
+            pos = 0
+            while pos < len(proto_bytes):
+                tag, pos = _DecodeVarint(proto_bytes, pos)
+                if (tag >> 3) == 1:
+                    length, pos = _DecodeVarint(proto_bytes, pos)
+                    metadata.ParseFromString(proto_bytes[pos : pos + length])
+                    return metadata
+                pos += _DecodeVarint(proto_bytes, pos)[0]
+            raise message.DecodeError("No 'metadata' found")
+        except message.DecodeError as e:
+            print(f"Failed to parse 'metadata': {e}")
+            return None
+
+        metadata = globals.harness_ctx.metadata_type()
+        metadata.ParseFromString(f.read())
+    return getattr(metadata, "fn_entrypoint", None)
 
 
 def read_context(test_file: Path) -> message.Message | None:
@@ -192,6 +228,7 @@ def decode_single_test_case(test_file: Path) -> int:
 
 
 def process_single_test_case(
+    harness_ctx: HarnessCtx,
     serialized_instruction_context: str | None,
 ) -> dict[str, str | None] | None:
     """
@@ -212,7 +249,9 @@ def process_single_test_case(
     results = {}
     for target in globals.target_libraries:
         instruction_effects = process_target(
-            globals.target_libraries[target], serialized_instruction_context
+            harness_ctx,
+            globals.target_libraries[target],
+            serialized_instruction_context,
         )
         result = (
             instruction_effects.SerializeToString(deterministic=True)
@@ -323,9 +362,9 @@ def initialize_process_output_buffers(randomize_output_buffer=False):
         )
 
 
-def serialize_context(file: Path) -> str | None:
+def serialize_context(harness_ctx: HarnessCtx, file: Path) -> str | None:
     if file.suffix == ".fix":
-        fixture = globals.harness_ctx.fixture_type()
+        fixture = harness_ctx.fixture_type()
         fixture.ParseFromString(file.open("rb").read())
         serialized_instr_context = fixture.input.SerializeToString(deterministic=True)
     else:
@@ -349,7 +388,9 @@ def run_test(test_file: Path) -> tuple[str, int, dict | None]:
             - Dictionary of target library names and file-dumpable serialized instruction effects
     """
     # Process fixtures through this entrypoint as well
-    context = serialize_context(test_file)
-    results = process_single_test_case(context)
-    pruned_results = globals.harness_ctx.prune_effects_fn(context, results)
+    fn_entrypoint = extract_metadata(test_file).fn_entrypoint
+    harness_ctx = HARNESS_ENTRYPOINT_MAP[fn_entrypoint]
+    context = serialize_context(harness_ctx, test_file)
+    results = process_single_test_case(harness_ctx, context)
+    pruned_results = harness_ctx.prune_effects_fn(context, results)
     return test_file.stem, *build_test_results(pruned_results)

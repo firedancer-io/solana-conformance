@@ -16,8 +16,10 @@ from test_suite.fixture_utils import (
 )
 from test_suite.multiprocessing_utils import (
     decode_single_test_case,
+    extract_metadata,
     read_context_serialized,
     initialize_process_output_buffers,
+    process_single_test_case,
     process_target,
     run_test,
     serialize_context,
@@ -79,40 +81,45 @@ def exec_instr(
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
     try:
         lib = ctypes.CDLL(shared_library)
+        lib.sol_compat_init()
+        globals.target_libraries[shared_library] = lib
+        globals.reference_shared_library = shared_library
     except:
         set_ld_preload_asan()
-    lib.sol_compat_init()
 
     files_to_exec = file_or_dir.iterdir() if file_or_dir.is_dir() else [file_or_dir]
     for file in files_to_exec:
         print(f"Handling {file}...")
 
+        fn_entrypoint = extract_metadata(file).fn_entrypoint
+        harness_ctx = HARNESS_ENTRYPOINT_MAP[fn_entrypoint]
+
         # Execute and cleanup
-        context = serialize_context(file)
+        context = serialize_context(harness_ctx, file)
         start = time.time()
-        effects = process_target(lib, context)
+        effects = process_target(harness_ctx, lib, context)
         end = time.time()
 
         print(f"Total time taken for {file}: {(end - start) * 1000} ms\n------------")
 
         if not effects:
-            print(f"No {globals.harness_ctx.effects_type.__name__} returned")
+            print(f"No {harness_ctx.effects_type.__name__} returned")
             continue
 
         serialized_effects = effects.SerializeToString(deterministic=True)
 
         # Prune execution results
-        serialized_effects = globals.harness_ctx.prune_effects_fn(
+        serialized_effects = harness_ctx.prune_effects_fn(
             context,
             {shared_library: serialized_effects},
         )[shared_library]
 
-        parsed_instruction_effects = globals.harness_ctx.effects_type()
+        parsed_instruction_effects = harness_ctx.effects_type()
         parsed_instruction_effects.ParseFromString(serialized_effects)
 
         # Print human-readable output
         if parsed_instruction_effects:
-            globals.harness_ctx.effects_human_encode_fn(parsed_instruction_effects)
+            harness_ctx.effects_human_encode_fn(parsed_instruction_effects)
 
         print(parsed_instruction_effects)
 
@@ -758,10 +765,6 @@ def debug_non_repros(
             capture_output=True,
             text=True,
         )
-
-        import pdb
-
-        pdb.set_trace
 
     run_tests(
         file_or_dir=globals.inputs_dir,
