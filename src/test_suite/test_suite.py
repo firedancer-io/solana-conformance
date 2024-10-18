@@ -16,8 +16,10 @@ from test_suite.fixture_utils import (
 )
 from test_suite.multiprocessing_utils import (
     decode_single_test_case,
+    extract_metadata,
     read_context_serialized,
     initialize_process_output_buffers,
+    process_single_test_case,
     process_target,
     run_test,
     serialize_context,
@@ -44,27 +46,23 @@ Harness options:
 - ValidateVM
 - ElfHarness
 """
-harness_type = os.getenv("HARNESS_TYPE")
-if harness_type:
-    globals.harness_ctx = eval(harness_type)
-else:
-    globals.harness_ctx = InstrHarness
-    harness_type = "InstrHarness"
+# harness_type = os.getenv("HARNESS_TYPE")
+# if harness_type:
+#     globals.harness_ctx = eval(harness_type)
+# else:
+#     globals.harness_ctx = InstrHarness
+#     harness_type = "InstrHarness"
 
-app = typer.Typer(
-    help=f"Validate effects from clients using {globals.harness_ctx.context_type.__name__} Protobuf messages."
-)
+app = typer.Typer(help=f"Validate effects from clients using Protobuf messages.")
 
 
-@app.command(
-    help=f"Execute {globals.harness_ctx.context_type.__name__} message(s) and print the effects."
-)
+@app.command(help=f"Execute message(s) and print the effects.")
 def exec_instr(
     file_or_dir: Path = typer.Option(
         None,
         "--input",
         "-i",
-        help=f"Input {globals.harness_ctx.context_type.__name__} file or directory of files",
+        help=f"Input file or directory of files",
     ),
     shared_library: Path = typer.Option(
         Path("impl/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so"),
@@ -83,40 +81,45 @@ def exec_instr(
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
     try:
         lib = ctypes.CDLL(shared_library)
+        lib.sol_compat_init()
+        globals.target_libraries[shared_library] = lib
+        globals.reference_shared_library = shared_library
     except:
         set_ld_preload_asan()
-    lib.sol_compat_init()
 
     files_to_exec = file_or_dir.iterdir() if file_or_dir.is_dir() else [file_or_dir]
     for file in files_to_exec:
         print(f"Handling {file}...")
 
+        fn_entrypoint = extract_metadata(file).fn_entrypoint
+        harness_ctx = HARNESS_ENTRYPOINT_MAP[fn_entrypoint]
+
         # Execute and cleanup
-        context = serialize_context(file)
+        context = serialize_context(harness_ctx, file)
         start = time.time()
-        effects = process_target(lib, context)
+        effects = process_target(harness_ctx, lib, context)
         end = time.time()
 
         print(f"Total time taken for {file}: {(end - start) * 1000} ms\n------------")
 
         if not effects:
-            print(f"No {globals.harness_ctx.effects_type.__name__} returned")
+            print(f"No {harness_ctx.effects_type.__name__} returned")
             continue
 
         serialized_effects = effects.SerializeToString(deterministic=True)
 
         # Prune execution results
-        serialized_effects = globals.harness_ctx.prune_effects_fn(
+        serialized_effects = harness_ctx.prune_effects_fn(
             context,
             {shared_library: serialized_effects},
         )[shared_library]
 
-        parsed_instruction_effects = globals.harness_ctx.effects_type()
+        parsed_instruction_effects = harness_ctx.effects_type()
         parsed_instruction_effects.ParseFromString(serialized_effects)
 
         # Print human-readable output
         if parsed_instruction_effects:
-            globals.harness_ctx.effects_human_encode_fn(parsed_instruction_effects)
+            harness_ctx.effects_human_encode_fn(parsed_instruction_effects)
 
         print(parsed_instruction_effects)
 
@@ -145,21 +148,19 @@ def debug_instr(
     debug_host(shared_library, instruction_context, gdb=debugger)
 
 
-@app.command(
-    help=f"Extract {globals.harness_ctx.context_type.__name__} messages from fixtures."
-)
+@app.command(help=f"Extract messages from fixtures.")
 def instr_from_fixtures(
     input_dir: Path = typer.Option(
         Path("fixtures"),
         "--input-dir",
         "-i",
-        help=f"Input directory containing {globals.harness_ctx.fixture_type.__name__} messages",
+        help=f"Input directory containing messages",
     ),
     output_dir: Path = typer.Option(
         Path("instr"),
         "--output-dir",
         "-o",
-        help=f"Output directory for {globals.harness_ctx.context_type.__name__} messages",
+        help=f"Output directory for messages",
     ),
     num_processes: int = typer.Option(
         4, "--num-processes", "-p", help="Number of processes to use"
@@ -176,7 +177,7 @@ def instr_from_fixtures(
     test_cases = list(input_dir.iterdir())
     num_test_cases = len(test_cases)
 
-    print(f"Converting to {globals.harness_ctx.context_type.__name__}...")
+    print(f"Converting to...")
     results = []
     with Pool(processes=num_processes) as pool:
         for result in tqdm.tqdm(
@@ -192,7 +193,7 @@ def instr_from_fixtures(
 
 @app.command(
     help=f"""
-             Create test fixtures from a directory of {globals.harness_ctx.context_type.__name__} messages.
+             Create test fixtures from a directory of messages.
              Effects are generated by the target passed in with --solana-target or -s. 
              You can also pass in additional targets with --target or -t 
              and use --keep-passing or -k to only generate effects for test cases that match.
@@ -203,7 +204,7 @@ def create_fixtures(
         Path("corpus8"),
         "--input-dir",
         "-i",
-        help=f"Either a file or directory containing {globals.harness_ctx.context_type.__name__} messages",
+        help=f"Either a file or directory containing messages",
     ),
     reference_shared_library: Path = typer.Option(
         Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
@@ -216,7 +217,7 @@ def create_fixtures(
         "--target",
         "-t",
         help="Shared object (.so) target file paths (pairs with --keep-passing)."
-        f" Targets must have {globals.harness_ctx.fuzz_fn_name} defined",
+        f" Targets must have defined",
     ),
     output_dir: Path = typer.Option(
         Path("test_fixtures"),
@@ -289,8 +290,8 @@ def create_fixtures(
 
 @app.command(
     help=f"""
-            Run tests on a set of targets with a directory of {globals.harness_ctx.context_type.__name__} 
-            or {globals.harness_ctx.fixture_type.__name__} messages.
+            Run tests on a set of targets with a directory of 
+            or messages.
 
             Note: each `.so` target filename must be unique.
             """
@@ -300,8 +301,7 @@ def run_tests(
         Path("corpus8"),
         "--input",
         "-i",
-        help=f"Single input file or input directory containing {globals.harness_ctx.context_type.__name__}"
-        f" or { globals.harness_ctx.fixture_type.__name__ } messages",
+        help=f"Single input file or input directory containing" f" or messages",
     ),
     reference_shared_library: Path = typer.Option(
         Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
@@ -468,21 +468,19 @@ def run_tests(
         print("Failures tests are in: ", globals.output_dir / "failed_protobufs")
 
 
-@app.command(
-    help=f"Convert {globals.harness_ctx.context_type.__name__} messages to human-readable format."
-)
+@app.command(help=f"Convert messages to human-readable format.")
 def decode_protobuf(
     input_path: Path = typer.Option(
         Path("raw_context"),
         "--input",
         "-i",
-        help=f"Either a {globals.harness_ctx.context_type.__name__} message or directory of messages",
+        help=f"Either a message or directory of messages",
     ),
     output_dir: Path = typer.Option(
         Path("readable_context"),
         "--output-dir",
         "-o",
-        help=f"Output directory for base58-encoded, human-readable {globals.harness_ctx.context_type.__name__} messages",
+        help=f"Output directory for base58-encoded, human-readable messages",
     ),
     num_processes: int = typer.Option(
         4, "--num-processes", "-p", help="Number of processes to use"
@@ -519,13 +517,9 @@ def decode_protobuf(
 @app.command(help=f"List harness types available for use.")
 def list_harness_types():
     # pretty print harness types
-    print(f"Currently set harness type: {harness_type}\n")
-
     print("Available harness types:")
     for name in HARNESS_LIST:
         print(f"- {name}")
-    print("\nTo use, export the harness type to HARNESS_TYPE env var. Example:")
-    print(f"export HARNESS_TYPE={HARNESS_LIST[0]}")
 
 
 @app.command(
@@ -547,13 +541,13 @@ def debug_mismatches(
         "--target",
         "-t",
         help="Shared object (.so) target file paths (pairs with --keep-passing)."
-        f" Targets must have {globals.harness_ctx.fuzz_fn_name} defined",
+        f" Targets must have defined",
     ),
     output_dir: Path = typer.Option(
         Path("debug_mismatch"),
         "--output-dir",
         "-o",
-        help=f"Output directory for {globals.harness_ctx.context_type.__name__} messages",
+        help=f"Output directory for messages",
     ),
     repro_urls: str = typer.Option(
         "", "--repro-urls", "-u", help="Comma-delimited list of FuzzCorp mismatch links"
@@ -685,13 +679,13 @@ def debug_non_repros(
         "--target",
         "-t",
         help="Shared object (.so) target file paths (pairs with --keep-passing)."
-        f" Targets must have {globals.harness_ctx.fuzz_fn_name} defined",
+        f" Targets must have defined",
     ),
     output_dir: Path = typer.Option(
         Path("debug_mismatch"),
         "--output-dir",
         "-o",
-        help=f"Output directory for {globals.harness_ctx.context_type.__name__} messages",
+        help=f"Output directory for messages",
     ),
     repro_urls: str = typer.Option(
         "", "--repro-urls", "-u", help="Comma-delimited list of FuzzCorp mismatch links"
@@ -771,10 +765,6 @@ def debug_non_repros(
             text=True,
         )
 
-        import pdb
-
-        pdb.set_trace
-
     run_tests(
         file_or_dir=globals.inputs_dir,
         reference_shared_library=reference_shared_library,
@@ -792,7 +782,7 @@ def debug_non_repros(
 
 @app.command(
     help=f"""
-        Regenerate {globals.harness_ctx.fixture_type.__name__} messages by
+        Regenerate messages by
         checking FeatureSet compatibility with the target shared library. 
     """
 )
@@ -801,7 +791,7 @@ def regenerate_fixtures(
         Path("corpus8"),
         "--input-dir",
         "-i",
-        help=f"Either a file or directory containing {globals.harness_ctx.fixture_type.__name__} messages",
+        help=f"Either a file or directory containing messages",
     ),
     shared_library: Path = typer.Option(
         Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
@@ -959,7 +949,6 @@ def regenerate_all_fixtures(
             output_dir, os.path.relpath(source_folder, test_vectors)
         )
         folder_harness_type = get_harness_type_for_folder(test_vectors, source_folder)
-        os.environ["HARNESS_TYPE"] = folder_harness_type
         globals.harness_ctx = eval(folder_harness_type)
         print(
             f"Regenerating fixtures for {source_folder} with harness type {folder_harness_type}"

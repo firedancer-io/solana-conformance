@@ -36,7 +36,7 @@ def create_fixture_from_context(context: ContextType) -> FixtureType | None:
     context_serialized = context.SerializeToString(deterministic=True)
 
     # Execute the test case
-    results = process_single_test_case(context_serialized)
+    results = process_single_test_case(None, context_serialized)
     pruned_results = globals.harness_ctx.prune_effects_fn(context_serialized, results)
 
     # This is only relevant when you gather results for multiple targets
