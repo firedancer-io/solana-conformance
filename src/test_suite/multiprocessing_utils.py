@@ -291,7 +291,9 @@ def merge_results_over_iterations(results: tuple) -> tuple[str, dict]:
     return file, merged_results
 
 
-def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None]:
+def build_test_results(
+    harness_ctx: HarnessCtx, results: dict[str, str | None]
+) -> tuple[int, dict | None]:
     """
     Build a single result of single test execution and returns whether the test passed or failed.
 
@@ -316,7 +318,7 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
         print("Skipping test case due to Agave rejection")
         return 0, None
 
-    ref_effects = globals.harness_ctx.effects_type()
+    ref_effects = harness_ctx.effects_type()
     ref_effects.ParseFromString(ref_result)
 
     # Log execution results
@@ -328,18 +330,18 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
         effects = None
         if result is not None:
             # Turn bytes into human readable fields
-            effects = globals.harness_ctx.effects_type()
+            effects = harness_ctx.effects_type()
             effects.ParseFromString(result)
 
             # Note: diff_effect_fn may modify effects in-place
-            all_passed &= globals.harness_ctx.diff_effect_fn(ref_effects, effects)
+            all_passed &= harness_ctx.diff_effect_fn(ref_effects, effects)
 
-            globals.harness_ctx.effects_human_encode_fn(effects)
+            harness_ctx.effects_human_encode_fn(effects)
             outputs[target] = text_format.MessageToString(effects)
         else:
             all_passed = False
 
-    globals.harness_ctx.effects_human_encode_fn(ref_effects)
+    harness_ctx.effects_human_encode_fn(ref_effects)
     outputs[globals.reference_shared_library] = text_format.MessageToString(ref_effects)
 
     # 1 = passed, -1 = failed
@@ -393,4 +395,4 @@ def run_test(test_file: Path) -> tuple[str, int, dict | None]:
     context = serialize_context(harness_ctx, test_file)
     results = process_single_test_case(harness_ctx, context)
     pruned_results = harness_ctx.prune_effects_fn(context, results)
-    return test_file.stem, *build_test_results(pruned_results)
+    return test_file.stem, *build_test_results(harness_ctx, pruned_results)
