@@ -9,15 +9,16 @@ from google.protobuf import descriptor_pb2
 
 _sym_db = _symbol_database.Default()
 from . import context_pb2 as context__pb2
+from . import metadata_pb2 as metadata__pb2
 
 DESCRIPTOR = _descriptor.FileDescriptor(
     name="invoke.proto",
     package="org.solana.sealevel.v1",
     syntax="proto3",
     serialized_pb=_b(
-        '\n\x0cinvoke.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto"B\n\tInstrAcct\x12\r\n\x05index\x18\x01 \x01(\r\x12\x13\n\x0bis_writable\x18\x02 \x01(\x08\x12\x11\n\tis_signer\x18\x03 \x01(\x08"ª\x02\n\x0cInstrContext\x12\x12\n\nprogram_id\x18\x01 \x01(\x0c\x123\n\x08accounts\x18\x03 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x129\n\x0einstr_accounts\x18\x04 \x03(\x0b2!.org.solana.sealevel.v1.InstrAcct\x12\x0c\n\x04data\x18\x05 \x01(\x0c\x12\x10\n\x08cu_avail\x18\x06 \x01(\x04\x129\n\x0cslot_context\x18\x08 \x01(\x0b2#.org.solana.sealevel.v1.SlotContext\x12;\n\repoch_context\x18\t \x01(\x0b2$.org.solana.sealevel.v1.EpochContext"\x97\x01\n\x0cInstrEffects\x12\x0e\n\x06result\x18\x01 \x01(\x05\x12\x12\n\ncustom_err\x18\x02 \x01(\r\x12<\n\x11modified_accounts\x18\x03 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x12\x10\n\x08cu_avail\x18\x04 \x01(\x04\x12\x13\n\x0breturn_data\x18\x05 \x01(\x0c"y\n\x0cInstrFixture\x123\n\x05input\x18\x01 \x01(\x0b2$.org.solana.sealevel.v1.InstrContext\x124\n\x06output\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.InstrEffectsb\x06proto3'
+        '\n\x0cinvoke.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\x0emetadata.proto"B\n\tInstrAcct\x12\r\n\x05index\x18\x01 \x01(\r\x12\x13\n\x0bis_writable\x18\x02 \x01(\x08\x12\x11\n\tis_signer\x18\x03 \x01(\x08"ª\x02\n\x0cInstrContext\x12\x12\n\nprogram_id\x18\x01 \x01(\x0c\x123\n\x08accounts\x18\x03 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x129\n\x0einstr_accounts\x18\x04 \x03(\x0b2!.org.solana.sealevel.v1.InstrAcct\x12\x0c\n\x04data\x18\x05 \x01(\x0c\x12\x10\n\x08cu_avail\x18\x06 \x01(\x04\x129\n\x0cslot_context\x18\x08 \x01(\x0b2#.org.solana.sealevel.v1.SlotContext\x12;\n\repoch_context\x18\t \x01(\x0b2$.org.solana.sealevel.v1.EpochContext"\x97\x01\n\x0cInstrEffects\x12\x0e\n\x06result\x18\x01 \x01(\x05\x12\x12\n\ncustom_err\x18\x02 \x01(\r\x12<\n\x11modified_accounts\x18\x03 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x12\x10\n\x08cu_avail\x18\x04 \x01(\x04\x12\x13\n\x0breturn_data\x18\x05 \x01(\x0c"´\x01\n\x0cInstrFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x123\n\x05input\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.InstrContext\x124\n\x06output\x18\x03 \x01(\x0b2$.org.solana.sealevel.v1.InstrEffectsb\x06proto3'
     ),
-    dependencies=[context__pb2.DESCRIPTOR],
+    dependencies=[context__pb2.DESCRIPTOR, metadata__pb2.DESCRIPTOR],
 )
 _INSTRACCT = _descriptor.Descriptor(
     name="InstrAcct",
@@ -89,8 +90,8 @@ _INSTRACCT = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=55,
-    serialized_end=121,
+    serialized_start=71,
+    serialized_end=137,
 )
 _INSTRCONTEXT = _descriptor.Descriptor(
     name="InstrContext",
@@ -234,8 +235,8 @@ _INSTRCONTEXT = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=124,
-    serialized_end=422,
+    serialized_start=140,
+    serialized_end=438,
 )
 _INSTREFFECTS = _descriptor.Descriptor(
     name="InstrEffects",
@@ -343,8 +344,8 @@ _INSTREFFECTS = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=425,
-    serialized_end=576,
+    serialized_start=441,
+    serialized_end=592,
 )
 _INSTRFIXTURE = _descriptor.Descriptor(
     name="InstrFixture",
@@ -354,8 +355,8 @@ _INSTRFIXTURE = _descriptor.Descriptor(
     containing_type=None,
     fields=[
         _descriptor.FieldDescriptor(
-            name="input",
-            full_name="org.solana.sealevel.v1.InstrFixture.input",
+            name="metadata",
+            full_name="org.solana.sealevel.v1.InstrFixture.metadata",
             index=0,
             number=1,
             type=11,
@@ -372,10 +373,28 @@ _INSTRFIXTURE = _descriptor.Descriptor(
             file=DESCRIPTOR,
         ),
         _descriptor.FieldDescriptor(
-            name="output",
-            full_name="org.solana.sealevel.v1.InstrFixture.output",
+            name="input",
+            full_name="org.solana.sealevel.v1.InstrFixture.input",
             index=1,
             number=2,
+            type=11,
+            cpp_type=10,
+            label=1,
+            has_default_value=False,
+            default_value=None,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+        _descriptor.FieldDescriptor(
+            name="output",
+            full_name="org.solana.sealevel.v1.InstrFixture.output",
+            index=2,
+            number=3,
             type=11,
             cpp_type=10,
             label=1,
@@ -398,14 +417,15 @@ _INSTRFIXTURE = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=578,
-    serialized_end=699,
+    serialized_start=595,
+    serialized_end=775,
 )
 _INSTRCONTEXT.fields_by_name["accounts"].message_type = context__pb2._ACCTSTATE
 _INSTRCONTEXT.fields_by_name["instr_accounts"].message_type = _INSTRACCT
 _INSTRCONTEXT.fields_by_name["slot_context"].message_type = context__pb2._SLOTCONTEXT
 _INSTRCONTEXT.fields_by_name["epoch_context"].message_type = context__pb2._EPOCHCONTEXT
 _INSTREFFECTS.fields_by_name["modified_accounts"].message_type = context__pb2._ACCTSTATE
+_INSTRFIXTURE.fields_by_name["metadata"].message_type = metadata__pb2._FIXTUREMETADATA
 _INSTRFIXTURE.fields_by_name["input"].message_type = _INSTRCONTEXT
 _INSTRFIXTURE.fields_by_name["output"].message_type = _INSTREFFECTS
 DESCRIPTOR.message_types_by_name["InstrAcct"] = _INSTRACCT
