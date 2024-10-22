@@ -1,16 +1,20 @@
 from dataclasses import dataclass, field
 from test_suite.constants import OUTPUT_BUFFER_SIZE
+from test_suite.fuzz_context import ENTRYPOINT_HARNESS_MAP, HarnessCtx
+from test_suite.fuzz_interface import ContextType
 import test_suite.invoke_pb2 as invoke_pb
+import test_suite.metadata_pb2 as metadata_pb2
 import ctypes
 from ctypes import c_uint64, c_int, POINTER
 from pathlib import Path
 import test_suite.globals as globals
 from google.protobuf import text_format, message
+from google.protobuf.internal.decoder import _DecodeVarint
 import os
 
 
 def process_target(
-    library: ctypes.CDLL, serialized_instruction_context: str
+    harness_ctx: HarnessCtx, library: ctypes.CDLL, serialized_instruction_context: str
 ) -> invoke_pb.InstrEffects | None:
     """
     Process an instruction through a provided shared library and return the result.
@@ -29,7 +33,7 @@ def process_target(
     out_sz = ctypes.c_uint64(OUTPUT_BUFFER_SIZE)
 
     # Get the function to call
-    sol_compat_fn = getattr(library, globals.harness_ctx.fuzz_fn_name)
+    sol_compat_fn = getattr(library, harness_ctx.fuzz_fn_name)
 
     # Define argument and return types
     sol_compat_fn.argtypes = [
@@ -50,15 +54,15 @@ def process_target(
 
     # Process the output
     output_data = bytearray(globals.output_buffer_pointer[: out_sz.value])
-    output_object = globals.harness_ctx.effects_type()
+    output_object = harness_ctx.effects_type()
     output_object.ParseFromString(output_data)
 
     return output_object
 
 
-def read_context_serialized(test_file: Path) -> str | None:
+def read_context_serialized(harness_ctx: HarnessCtx, test_file: Path) -> str | None:
     """
-    Reads in test files and generates an InstrContext Protobuf object for a test case.
+    Reads in test files and generates a serialized Context Protobuf message for a test case.
 
     Args:
         - test_file (Path): Path to the instruction context message.
@@ -68,11 +72,40 @@ def read_context_serialized(test_file: Path) -> str | None:
     """
 
     # Serialize instruction context to string (pickleable)
-    ctx = read_context(test_file)
+    ctx = read_context(harness_ctx, test_file)
     return ctx.SerializeToString(deterministic=True) if ctx else None
 
 
-def read_context(test_file: Path) -> message.Message | None:
+def extract_metadata(fixture_file: Path) -> str | None:
+    """
+    Extracts metadata from a fixture file.
+
+    Args:
+        - fixture_file (Path): Path to the fixture message.
+
+    Returns:
+        - str | None: Metadata from the fixture file.
+    """
+
+    with open(fixture_file, "rb") as f:
+        proto_bytes = f.read()
+        try:
+            metadata = metadata_pb2.FixtureMetadata()
+            pos = 0
+            while pos < len(proto_bytes):
+                tag, pos = _DecodeVarint(proto_bytes, pos)
+                if (tag >> 3) == 1:
+                    length, pos = _DecodeVarint(proto_bytes, pos)
+                    metadata.ParseFromString(proto_bytes[pos : pos + length])
+                    return metadata
+                pos += _DecodeVarint(proto_bytes, pos)[0]
+            raise message.DecodeError("No 'metadata' found")
+        except message.DecodeError as e:
+            print(f"Failed to parse 'metadata': {e}")
+            return None
+
+
+def read_context(harness_ctx: HarnessCtx, test_file: Path) -> message.Message | None:
     """
     Reads in test files and generates an Context Protobuf object for a test case.
 
@@ -86,19 +119,17 @@ def read_context(test_file: Path) -> message.Message | None:
     try:
         # Read in binary Protobuf messages
         with open(test_file, "rb") as f:
-            context = globals.harness_ctx.context_type()
+            context = harness_ctx.context_type()
             context.ParseFromString(f.read())
     except:
         try:
             # Maybe it's in human-readable Protobuf format?
             with open(test_file) as f:
-                context = text_format.Parse(
-                    f.read(), globals.harness_ctx.context_type()
-                )
+                context = text_format.Parse(f.read(), harness_ctx.context_type())
 
             # Decode into digestable fields
             # decode_input(instruction_context)
-            globals.harness_ctx.context_human_decode_fn(context)
+            harness_ctx.context_human_decode_fn(context)
         except:
             # Unable to read message, skip and continue
             context = None
@@ -147,8 +178,10 @@ def read_fixture(fixture_file: Path) -> message.Message | None:
     # Try to read in first as binary-encoded Protobuf messages
     try:
         # Read in binary Protobuf messages
+        fn_entrypoint = extract_metadata(fixture_file).fn_entrypoint
+        harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
         with open(fixture_file, "rb") as f:
-            fixture = globals.harness_ctx.fixture_type()
+            fixture = harness_ctx.fixture_type()
             fixture.ParseFromString(f.read())
     except:
         # Unable to read message, skip and continue
@@ -173,26 +206,40 @@ def decode_single_test_case(test_file: Path) -> int:
     Returns:
         - int: 1 if successfully decoded and written, 0 if skipped.
     """
-    serialized_instruction_context = read_context_serialized(test_file)
+    if test_file.suffix == ".fix":
+        fn_entrypoint = extract_metadata(test_file).fn_entrypoint
+        harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
+        serialized_protobuf = read_fixture_serialized(test_file)
+    else:
+        harness_ctx = globals.default_harness_ctx
+        serialized_protobuf = read_context_serialized(harness_ctx, test_file)
 
     # Skip if input is invalid
-    if serialized_instruction_context is None:
+    if serialized_protobuf is None:
         return 0
 
     # Encode the input fields to be human readable
-    instruction_context = globals.harness_ctx.context_type()
-    instruction_context.ParseFromString(serialized_instruction_context)
-    globals.harness_ctx.context_human_encode_fn(instruction_context)
+    if test_file.suffix == ".fix":
+        output = harness_ctx.fixture_type()
+    else:
+        output = harness_ctx.context_type()
+
+    output.ParseFromString(serialized_protobuf)
+
+    if test_file.suffix == ".fix":
+        harness_ctx.context_human_encode_fn(output.input)
+        harness_ctx.effects_human_encode_fn(output.output)
+    else:
+        harness_ctx.context_human_encode_fn(output)
 
     with open(globals.output_dir / (test_file.stem + ".txt"), "w") as f:
-        f.write(
-            text_format.MessageToString(instruction_context, print_unknown_fields=False)
-        )
+        f.write(text_format.MessageToString(output, print_unknown_fields=False))
     return 1
 
 
 def process_single_test_case(
-    serialized_instruction_context: str | None,
+    harness_ctx: HarnessCtx,
+    context: ContextType | None,
 ) -> dict[str, str | None] | None:
     """
     Process a single execution context (file, serialized instruction context) through
@@ -205,6 +252,7 @@ def process_single_test_case(
         - dict[str, str | None] | None: Dictionary of target library names and instruction effects.
     """
     # Mark as skipped if instruction context doesn't exist
+    serialized_instruction_context = context.SerializeToString(deterministic=True)
     if serialized_instruction_context is None:
         return None
 
@@ -212,7 +260,9 @@ def process_single_test_case(
     results = {}
     for target in globals.target_libraries:
         instruction_effects = process_target(
-            globals.target_libraries[target], serialized_instruction_context
+            harness_ctx,
+            globals.target_libraries[target],
+            serialized_instruction_context,
         )
         result = (
             instruction_effects.SerializeToString(deterministic=True)
@@ -252,7 +302,9 @@ def merge_results_over_iterations(results: tuple) -> tuple[str, dict]:
     return file, merged_results
 
 
-def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None]:
+def build_test_results(
+    harness_ctx: HarnessCtx, results: dict[str, str | None]
+) -> tuple[int, dict | None]:
     """
     Build a single result of single test execution and returns whether the test passed or failed.
 
@@ -277,7 +329,7 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
         print("Skipping test case due to Agave rejection")
         return 0, None
 
-    ref_effects = globals.harness_ctx.effects_type()
+    ref_effects = harness_ctx.effects_type()
     ref_effects.ParseFromString(ref_result)
 
     # Log execution results
@@ -289,18 +341,21 @@ def build_test_results(results: dict[str, str | None]) -> tuple[int, dict | None
         effects = None
         if result is not None:
             # Turn bytes into human readable fields
-            effects = globals.harness_ctx.effects_type()
+            effects = harness_ctx.effects_type()
             effects.ParseFromString(result)
 
-            # Note: diff_effect_fn may modify effects in-place
-            all_passed &= globals.harness_ctx.diff_effect_fn(ref_effects, effects)
+            if globals.consensus_mode:
+                harness_ctx.diff_effect_fn = harness_ctx.consensus_diff_effect_fn
 
-            globals.harness_ctx.effects_human_encode_fn(effects)
+            # Note: diff_effect_fn may modify effects in-place
+            all_passed &= harness_ctx.diff_effect_fn(ref_effects, effects)
+
+            harness_ctx.effects_human_encode_fn(effects)
             outputs[target] = text_format.MessageToString(effects)
         else:
             all_passed = False
 
-    globals.harness_ctx.effects_human_encode_fn(ref_effects)
+    harness_ctx.effects_human_encode_fn(ref_effects)
     outputs[globals.reference_shared_library] = text_format.MessageToString(ref_effects)
 
     # 1 = passed, -1 = failed
@@ -323,13 +378,13 @@ def initialize_process_output_buffers(randomize_output_buffer=False):
         )
 
 
-def serialize_context(file: Path) -> str | None:
+def serialize_context(harness_ctx: HarnessCtx, file: Path) -> str | None:
     if file.suffix == ".fix":
-        fixture = globals.harness_ctx.fixture_type()
+        fixture = harness_ctx.fixture_type()
         fixture.ParseFromString(file.open("rb").read())
         serialized_instr_context = fixture.input.SerializeToString(deterministic=True)
     else:
-        serialized_instr_context = read_context_serialized(file)
+        serialized_instr_context = read_context_serialized(harness_ctx, file)
 
     assert serialized_instr_context is not None, f"Unable to read {file.name}"
     return serialized_instr_context
@@ -349,7 +404,14 @@ def run_test(test_file: Path) -> tuple[str, int, dict | None]:
             - Dictionary of target library names and file-dumpable serialized instruction effects
     """
     # Process fixtures through this entrypoint as well
-    context = serialize_context(test_file)
-    results = process_single_test_case(context)
-    pruned_results = globals.harness_ctx.prune_effects_fn(context, results)
-    return test_file.stem, *build_test_results(pruned_results)
+    if test_file.suffix == ".fix":
+        fn_entrypoint = extract_metadata(test_file).fn_entrypoint
+        harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
+        context = read_fixture(test_file).input
+    else:
+        harness_ctx = globals.default_harness_ctx
+        context = read_context(harness_ctx, test_file)
+
+    results = process_single_test_case(harness_ctx, context)
+    pruned_results = harness_ctx.prune_effects_fn(context, results)
+    return test_file.stem, *build_test_results(harness_ctx, pruned_results)

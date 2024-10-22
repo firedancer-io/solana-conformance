@@ -1,3 +1,4 @@
+from test_suite.fuzz_interface import ContextType
 import test_suite.globals as globals
 import test_suite.invoke_pb2 as invoke_pb
 import test_suite.context_pb2 as context_pb
@@ -5,7 +6,7 @@ from test_suite.validation_utils import check_account_unchanged
 
 
 def prune_execution_result(
-    serialized_context: str | None,
+    context: ContextType | None,
     targets_to_serialized_effects: dict[str, str | None],
 ) -> dict[str, str | None] | None:
     """
@@ -18,12 +19,6 @@ def prune_execution_result(
     Returns:
         - dict[str, str | None] | None: Serialized pruned instruction effects for each target.
     """
-    if serialized_context is None:
-        return None
-
-    context = globals.harness_ctx.context_type()
-    context.ParseFromString(serialized_context)
-
     targets_to_serialized_pruned_instruction_effects = {}
     for (
         target,

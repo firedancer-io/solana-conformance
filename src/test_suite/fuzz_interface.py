@@ -44,7 +44,7 @@ def encode_hex_compact(buf):
 
 
 def generic_effects_prune(
-    ctx: str | None, effects: dict[str, str | None]
+    harness_ctx: "HarnessCtx", ctx: str | None, effects: dict[str, str | None]
 ) -> dict[str, str | None] | None:
     if ctx is None:
         return None
@@ -74,7 +74,7 @@ class HarnessCtx:
         generic_effects_diff
     )
     prune_effects_fn: Callable[
-        [str | None, dict[str, str | None]], dict[str, str | None] | None
+        [ContextType | None, dict[str, str | None]], dict[str, str | None] | None
     ] = generic_effects_prune
     context_human_encode_fn: Callable[[ContextType], None] = generic_human_encode
     context_human_decode_fn: Callable[[ContextType], None] = generic_human_decode
