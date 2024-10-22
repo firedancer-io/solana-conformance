@@ -22,7 +22,6 @@ from test_suite.multiprocessing_utils import (
     process_target,
     run_test,
     read_context,
-    serialize_context,
 )
 import test_suite.globals as globals
 from test_suite.util import set_ld_preload_asan
@@ -98,13 +97,14 @@ def execute(
         if file.suffix == ".fix":
             fn_entrypoint = extract_metadata(file).fn_entrypoint
             harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
+            context = read_fixture(file).input
         else:
             harness_ctx = HARNESS_MAP[default_harness_ctx]
+            context = read_context(harness_ctx, file)
 
         # Execute and cleanup
-        context = read_context(harness_ctx, file)
         start = time.time()
-        effects = process_target(harness_ctx, lib, serialize_context(harness_ctx, file))
+        effects = process_target(harness_ctx, lib, context)
         end = time.time()
 
         print(f"Total time taken for {file}: {(end - start) * 1000} ms\n------------")

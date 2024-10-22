@@ -14,7 +14,7 @@ import os
 
 
 def process_target(
-    harness_ctx: HarnessCtx, library: ctypes.CDLL, serialized_instruction_context: str
+    harness_ctx: HarnessCtx, library: ctypes.CDLL, context: ContextType
 ) -> invoke_pb.InstrEffects | None:
     """
     Process an instruction through a provided shared library and return the result.
@@ -26,6 +26,11 @@ def process_target(
     Returns:
         - invoke_pb.InstrEffects | None: Result of instruction execution.
     """
+
+    serialized_instruction_context = context.SerializeToString(deterministic=True)
+    if serialized_instruction_context is None:
+        return None
+
     # Prepare input data and output buffers
     in_data = serialized_instruction_context
     in_ptr = (ctypes.c_uint8 * len(in_data))(*in_data)
@@ -143,25 +148,6 @@ def read_context(harness_ctx: HarnessCtx, test_file: Path) -> message.Message | 
     return context
 
 
-def read_fixture_serialized(fixture_file: Path) -> str | None:
-    """
-    Same as read_instr, but for InstrFixture protobuf messages.
-
-    DOES NOT SUPPORT HUMAN READABLE MESSAGES!!!
-
-    Args:
-        - fixture_file (Path): Path to the instruction fixture message.
-
-    Returns:
-        - str | None: Serialized instruction fixture, or None if reading failed.
-    """
-    fixture = read_fixture(fixture_file)
-    if fixture is None:
-        return None
-    # Serialize instruction fixture to string (pickleable)
-    return fixture.SerializeToString(deterministic=True)
-
-
 def read_fixture(fixture_file: Path) -> message.Message | None:
     """
     Reads in test files and generates an Fixture Protobuf object for a test case.
@@ -209,10 +195,12 @@ def decode_single_test_case(test_file: Path) -> int:
     if test_file.suffix == ".fix":
         fn_entrypoint = extract_metadata(test_file).fn_entrypoint
         harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
-        serialized_protobuf = read_fixture_serialized(test_file)
+        fixture = read_fixture(test_file)
+        serialized_protobuf = fixture.SerializeToString(deterministic=True)
     else:
         harness_ctx = globals.default_harness_ctx
-        serialized_protobuf = read_context_serialized(harness_ctx, test_file)
+        context = read_context(harness_ctx, test_file)
+        serialized_protobuf = context.SerializeToString(deterministic=True)
 
     # Skip if input is invalid
     if serialized_protobuf is None:
@@ -252,9 +240,6 @@ def process_single_test_case(
         - dict[str, str | None] | None: Dictionary of target library names and instruction effects.
     """
     # Mark as skipped if instruction context doesn't exist
-    serialized_instruction_context = context.SerializeToString(deterministic=True)
-    if serialized_instruction_context is None:
-        return None
 
     # Execute test case on each target library
     results = {}
@@ -262,7 +247,7 @@ def process_single_test_case(
         instruction_effects = process_target(
             harness_ctx,
             globals.target_libraries[target],
-            serialized_instruction_context,
+            context,
         )
         result = (
             instruction_effects.SerializeToString(deterministic=True)
@@ -376,18 +361,6 @@ def initialize_process_output_buffers(randomize_output_buffer=False):
         globals.output_buffer_pointer = (ctypes.c_uint8 * OUTPUT_BUFFER_SIZE)(
             *output_buffer_random_bytes
         )
-
-
-def serialize_context(harness_ctx: HarnessCtx, file: Path) -> str | None:
-    if file.suffix == ".fix":
-        fixture = harness_ctx.fixture_type()
-        fixture.ParseFromString(file.open("rb").read())
-        serialized_instr_context = fixture.input.SerializeToString(deterministic=True)
-    else:
-        serialized_instr_context = read_context_serialized(harness_ctx, file)
-
-    assert serialized_instr_context is not None, f"Unable to read {file.name}"
-    return serialized_instr_context
 
 
 def run_test(test_file: Path) -> tuple[str, int, dict | None]:
