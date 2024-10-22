@@ -44,7 +44,7 @@ def encode_hex_compact(buf):
 
 
 def generic_effects_prune(
-    ctx: str | None, effects: dict[str, str | None]
+    harness_ctx: "HarnessCtx", ctx: str | None, effects: dict[str, str | None]
 ) -> dict[str, str | None] | None:
     if ctx is None:
         return None

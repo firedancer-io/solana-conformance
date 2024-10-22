@@ -62,3 +62,8 @@ TxnHarness = HarnessCtx(
 )
 
 HARNESS_LIST = [name for name, obj in globals().items() if isinstance(obj, HarnessCtx)]
+HARNESS_ENTRYPOINT_MAP = {
+    obj.fuzz_fn_name: obj
+    for name, obj in globals().items()
+    if isinstance(obj, HarnessCtx)
+}
