@@ -1,7 +1,7 @@
 import fd58
 import inspect
 from test_suite.constants import NATIVE_PROGRAM_MAPPING
-from test_suite.fuzz_context import HARNESS_ENTRYPOINT_MAP, HarnessCtx
+from test_suite.fuzz_context import ENTRYPOINT_HARNESS_MAP, HarnessCtx, HARNESS_MAP
 from test_suite.multiprocessing_utils import (
     build_test_results,
     extract_metadata,
@@ -31,11 +31,8 @@ def create_fixture(test_file: Path) -> int:
     harness_ctx = globals.default_harness_ctx
     if test_file.suffix == ".fix":
         fixture = read_fixture(test_file)
-        harness_ctx = HARNESS_ENTRYPOINT_MAP[fixture.metadata.fn_entrypoint]
-        fixture = create_fixture_from_fixture(
-            harness_ctx,
-            read_fixture(test_file),
-        )
+        harness_ctx = ENTRYPOINT_HARNESS_MAP[fixture.metadata.fn_entrypoint]
+        fixture = create_fixture_from_context(harness_ctx, fixture.input)
     else:
         fixture = create_fixture_from_context(
             harness_ctx,
@@ -50,24 +47,20 @@ def create_fixture(test_file: Path) -> int:
     )
 
 
-def create_fixture_from_fixture(
-    harness_ctx: HarnessCtx, fixture: FixtureType
-) -> FixtureType | None:
-    fixture = create_fixture_from_context(harness_ctx, fixture.input)
-    return fixture
-
-
 def create_fixture_from_context(
     harness_ctx: HarnessCtx, context: ContextType
 ) -> FixtureType | None:
+    if context is None:
+        return None
+
     context.DiscardUnknownFields()
-    context_serialized = context.SerializeToString(deterministic=True)
 
     # Execute the test case
-    results = process_single_test_case(harness_ctx, context_serialized)
-    pruned_results = harness_ctx.prune_effects_fn(
-        harness_ctx, context_serialized, results
-    )
+    results = process_single_test_case(harness_ctx, context)
+    if results is None:
+        return None
+
+    pruned_results = harness_ctx.prune_effects_fn(context, results)
 
     # This is only relevant when you gather results for multiple targets
     if globals.only_keep_passing:
@@ -80,7 +73,7 @@ def create_fixture_from_context(
 
     effects_serialized = pruned_results[globals.reference_shared_library]
 
-    if context_serialized is None or effects_serialized is None:
+    if effects_serialized is None:
         return None
     # Create instruction fixture
     effects = harness_ctx.effects_type()
@@ -160,7 +153,7 @@ def extract_context_from_fixture(fixture_file: Path):
     """
     try:
         fn_entrypoint = extract_metadata(fixture_file).fn_entrypoint
-        harness_ctx = HARNESS_ENTRYPOINT_MAP[fn_entrypoint]
+        harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
         fixture = harness_ctx.fixture_type()
         with open(fixture_file, "rb") as f:
             fixture.ParseFromString(f.read())

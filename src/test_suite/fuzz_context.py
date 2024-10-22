@@ -61,9 +61,11 @@ TxnHarness = HarnessCtx(
     consensus_diff_effect_fn=txn_diff.consensus_txn_diff_effects,
 )
 
-HARNESS_LIST = [name for name, obj in globals().items() if isinstance(obj, HarnessCtx)]
-HARNESS_ENTRYPOINT_MAP = {
+ENTRYPOINT_HARNESS_MAP = {
     obj.fuzz_fn_name: obj
     for name, obj in globals().items()
     if isinstance(obj, HarnessCtx)
+}
+HARNESS_MAP = {
+    name: obj for name, obj in globals().items() if isinstance(obj, HarnessCtx)
 }

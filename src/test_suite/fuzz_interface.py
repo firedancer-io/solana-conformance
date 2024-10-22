@@ -74,7 +74,7 @@ class HarnessCtx:
         generic_effects_diff
     )
     prune_effects_fn: Callable[
-        [str | None, dict[str, str | None]], dict[str, str | None] | None
+        [ContextType | None, dict[str, str | None]], dict[str, str | None] | None
     ] = generic_effects_prune
     context_human_encode_fn: Callable[[ContextType], None] = generic_human_encode
     context_human_decode_fn: Callable[[ContextType], None] = generic_human_decode

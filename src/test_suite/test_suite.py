@@ -3,7 +3,6 @@ from typing import List
 import typer
 from collections import defaultdict
 import ctypes
-from itertools import repeat
 from glob import glob
 from multiprocessing import Pool
 from pathlib import Path
@@ -22,6 +21,7 @@ from test_suite.multiprocessing_utils import (
     initialize_process_output_buffers,
     process_target,
     run_test,
+    read_context,
     serialize_context,
 )
 import test_suite.globals as globals
@@ -86,26 +86,25 @@ def execute(
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
     try:
         lib = ctypes.CDLL(shared_library)
-        lib.sol_compat_init()
+        lib.sol_compat_init(log_level)
         globals.target_libraries[shared_library] = lib
         globals.reference_shared_library = shared_library
     except:
         set_ld_preload_asan()
-    lib.sol_compat_init(log_level)
 
     files_to_exec = input.iterdir() if input.is_dir() else [input]
     for file in files_to_exec:
         print(f"Handling {file}...")
         if file.suffix == ".fix":
             fn_entrypoint = extract_metadata(file).fn_entrypoint
-            harness_ctx = HARNESS_ENTRYPOINT_MAP[fn_entrypoint]
+            harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
         else:
-            harness_ctx = eval(default_harness_ctx)
+            harness_ctx = HARNESS_MAP[default_harness_ctx]
 
         # Execute and cleanup
-        context = serialize_context(harness_ctx, file)
+        context = read_context(harness_ctx, file)
         start = time.time()
-        effects = process_target(harness_ctx, lib, context)
+        effects = process_target(harness_ctx, lib, serialize_context(harness_ctx, file))
         end = time.time()
 
         print(f"Total time taken for {file}: {(end - start) * 1000} ms\n------------")
@@ -118,7 +117,6 @@ def execute(
 
         # Prune execution results
         serialized_effects = harness_ctx.prune_effects_fn(
-            harness_ctx,
             context,
             {shared_library: serialized_effects},
         )[shared_library]
@@ -261,7 +259,7 @@ def create_fixtures(
 
     test_cases = [input] if input.is_file() else list(input.iterdir())
     num_test_cases = len(test_cases)
-    globals.default_harness_ctx = eval(default_harness_ctx)
+    globals.default_harness_ctx = HARNESS_MAP[default_harness_ctx]
 
     # Generate the test cases in parallel from files on disk
     print("Creating fixtures...")
@@ -375,7 +373,7 @@ def run_tests(
     # Specify globals
     globals.output_dir = output_dir
     globals.reference_shared_library = reference_shared_library
-    globals.default_harness_ctx = eval(default_harness_ctx)
+    globals.default_harness_ctx = HARNESS_MAP[default_harness_ctx]
 
     # Set diff mode to consensus if specified
     globals.consensus_mode = consensus_mode
@@ -507,7 +505,7 @@ def decode_protobufs(
     if globals.output_dir.exists():
         shutil.rmtree(globals.output_dir)
     globals.output_dir.mkdir(parents=True, exist_ok=True)
-    globals.default_harness_ctx = eval(default_harness_ctx)
+    globals.default_harness_ctx = HARNESS_MAP[default_harness_ctx]
 
     test_cases = list(input.iterdir()) if input.is_dir() else [input]
     num_test_cases = len(test_cases)
@@ -529,7 +527,7 @@ def decode_protobufs(
 def list_harness_types():
     # pretty print harness types
     print("Available harness types:")
-    for name in HARNESS_LIST:
+    for name in HARNESS_MAP:
         print(f"- {name}")
 
 
@@ -851,7 +849,7 @@ def regenerate_fixtures(
 
     for file in test_cases:
         fixture = read_fixture(file)
-        harness_ctx = HARNESS_ENTRYPOINT_MAP[fixture.metadata.fn_entrypoint]
+        harness_ctx = ENTRYPOINT_HARNESS_MAP[fixture.metadata.fn_entrypoint]
 
         target_features = features_utils.get_sol_compat_features_t(lib)
         features_path = pb_utils.find_field_with_type(

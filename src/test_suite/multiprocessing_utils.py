@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from test_suite.constants import OUTPUT_BUFFER_SIZE
-from test_suite.fuzz_context import HARNESS_ENTRYPOINT_MAP, HarnessCtx
+from test_suite.fuzz_context import ENTRYPOINT_HARNESS_MAP, HarnessCtx
+from test_suite.fuzz_interface import ContextType
 import test_suite.invoke_pb2 as invoke_pb
 import test_suite.metadata_pb2 as metadata_pb2
 import ctypes
@@ -61,7 +62,7 @@ def process_target(
 
 def read_context_serialized(harness_ctx: HarnessCtx, test_file: Path) -> str | None:
     """
-    Reads in test files and generates an Context Protobuf object for a test case.
+    Reads in test files and generates a serialized Context Protobuf message for a test case.
 
     Args:
         - test_file (Path): Path to the instruction context message.
@@ -102,8 +103,6 @@ def extract_metadata(fixture_file: Path) -> str | None:
         except message.DecodeError as e:
             print(f"Failed to parse 'metadata': {e}")
             return None
-
-    return getattr(metadata, "fn_entrypoint", None)
 
 
 def read_context(harness_ctx: HarnessCtx, test_file: Path) -> message.Message | None:
@@ -180,7 +179,7 @@ def read_fixture(fixture_file: Path) -> message.Message | None:
     try:
         # Read in binary Protobuf messages
         fn_entrypoint = extract_metadata(fixture_file).fn_entrypoint
-        harness_ctx = HARNESS_ENTRYPOINT_MAP[fn_entrypoint]
+        harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
         with open(fixture_file, "rb") as f:
             fixture = harness_ctx.fixture_type()
             fixture.ParseFromString(f.read())
@@ -209,7 +208,7 @@ def decode_single_test_case(test_file: Path) -> int:
     """
     if test_file.suffix == ".fix":
         fn_entrypoint = extract_metadata(test_file).fn_entrypoint
-        harness_ctx = HARNESS_ENTRYPOINT_MAP[fn_entrypoint]
+        harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
         serialized_protobuf = read_fixture_serialized(test_file)
     else:
         harness_ctx = globals.default_harness_ctx
@@ -240,7 +239,7 @@ def decode_single_test_case(test_file: Path) -> int:
 
 def process_single_test_case(
     harness_ctx: HarnessCtx,
-    serialized_instruction_context: str | None,
+    context: ContextType | None,
 ) -> dict[str, str | None] | None:
     """
     Process a single execution context (file, serialized instruction context) through
@@ -253,6 +252,7 @@ def process_single_test_case(
         - dict[str, str | None] | None: Dictionary of target library names and instruction effects.
     """
     # Mark as skipped if instruction context doesn't exist
+    serialized_instruction_context = context.SerializeToString(deterministic=True)
     if serialized_instruction_context is None:
         return None
 
@@ -406,10 +406,12 @@ def run_test(test_file: Path) -> tuple[str, int, dict | None]:
     # Process fixtures through this entrypoint as well
     if test_file.suffix == ".fix":
         fn_entrypoint = extract_metadata(test_file).fn_entrypoint
-        harness_ctx = HARNESS_ENTRYPOINT_MAP[fn_entrypoint]
+        harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
+        context = read_fixture(test_file).input
     else:
         harness_ctx = globals.default_harness_ctx
-    context = serialize_context(harness_ctx, test_file)
+        context = read_context(harness_ctx, test_file)
+
     results = process_single_test_case(harness_ctx, context)
-    pruned_results = harness_ctx.prune_effects_fn(harness_ctx, context, results)
+    pruned_results = harness_ctx.prune_effects_fn(context, results)
     return test_file.stem, *build_test_results(harness_ctx, pruned_results)
