@@ -78,6 +78,12 @@ def exec_instr(
         "-r",
         help="Randomizes bytes in output buffer before shared library execution",
     ),
+    log_level: int = typer.Option(
+        2,
+        "--log-level",
+        "-l",
+        help="FD logging level",
+    ),
 ):
     # Initialize output buffers and shared library
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
@@ -85,7 +91,7 @@ def exec_instr(
         lib = ctypes.CDLL(shared_library)
     except:
         set_ld_preload_asan()
-    lib.sol_compat_init()
+    lib.sol_compat_init(log_level)
 
     files_to_exec = file_or_dir.iterdir() if file_or_dir.is_dir() else [file_or_dir]
     for file in files_to_exec:
@@ -236,6 +242,12 @@ def create_fixtures(
     organize_fixture_dir: bool = typer.Option(
         False, "--group-by-program", "-g", help="Group fixture output by program type"
     ),
+    log_level: int = typer.Option(
+        5,
+        "--log-level",
+        "-l",
+        help="FD logging level",
+    ),
 ):
     # Add Solana library to shared libraries
     shared_libraries = [reference_shared_library] + shared_libraries
@@ -256,7 +268,7 @@ def create_fixtures(
     for target in shared_libraries:
         # Load in and initialize shared libraries
         lib = ctypes.CDLL(target)
-        lib.sol_compat_init()
+        lib.sol_compat_init(log_level)
         globals.target_libraries[target] = lib
 
     test_cases = [input_path] if input_path.is_file() else list(input_path.iterdir())
@@ -357,6 +369,12 @@ def run_tests(
         "-sf",
         help="Saves failed test cases to results directory",
     ),
+    log_level: int = typer.Option(
+        5,
+        "--log-level",
+        "-l",
+        help="FD logging level",
+    ),
 ):
     # Add Solana library to shared libraries
     shared_libraries = [reference_shared_library] + shared_libraries
@@ -380,7 +398,7 @@ def run_tests(
     for target in shared_libraries:
         # Load in and initialize shared libraries
         lib = ctypes.CDLL(target)
-        lib.sol_compat_init()
+        lib.sol_compat_init(log_level)
         globals.target_libraries[target] = lib
 
         # Make log output directories for each shared library
@@ -827,6 +845,12 @@ def regenerate_fixtures(
         "-a",
         help="Regenerate all fixtures, regardless of FeatureSet compatibility. Will apply minimum compatible features.",
     ),
+    log_level: int = typer.Option(
+        5,
+        "--log-level",
+        "-l",
+        help="FD logging level",
+    ),
 ):
     globals.output_dir = output_dir
     globals.reference_shared_library = shared_library
@@ -836,7 +860,7 @@ def regenerate_fixtures(
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
     lib: ctypes.CDLL = ctypes.CDLL(shared_library)
-    lib.sol_compat_init()
+    lib.sol_compat_init(log_level)
     globals.target_libraries[shared_library] = lib
     initialize_process_output_buffers()
 
