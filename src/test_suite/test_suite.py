@@ -22,7 +22,6 @@ from test_suite.multiprocessing_utils import (
     process_target,
     run_test,
     read_context,
-    serialize_context,
 )
 import test_suite.globals as globals
 from test_suite.util import set_ld_preload_asan
@@ -98,13 +97,14 @@ def execute(
         if file.suffix == ".fix":
             fn_entrypoint = extract_metadata(file).fn_entrypoint
             harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
+            context = read_fixture(file).input
         else:
             harness_ctx = HARNESS_MAP[default_harness_ctx]
+            context = read_context(harness_ctx, file)
 
         # Execute and cleanup
-        context = read_context(harness_ctx, file)
         start = time.time()
-        effects = process_target(harness_ctx, lib, serialize_context(harness_ctx, file))
+        effects = process_target(harness_ctx, lib, context)
         end = time.time()
 
         print(f"Total time taken for {file}: {(end - start) * 1000} ms\n------------")
@@ -259,6 +259,7 @@ def create_fixtures(
 
     test_cases = [input] if input.is_file() else list(input.iterdir())
     num_test_cases = len(test_cases)
+
     globals.default_harness_ctx = HARNESS_MAP[default_harness_ctx]
 
     # Generate the test cases in parallel from files on disk
@@ -453,7 +454,7 @@ def run_tests(
             failed += 1
             failed_tests.append(file_stem)
             if save_failures:
-                failed_protobufs = list(file_or_dir.glob(f"{file_stem}*"))
+                failed_protobufs = list(input.glob(f"{file_stem}*"))
                 for failed_protobuf in failed_protobufs:
                     shutil.copy(failed_protobuf, failed_protobufs_dir)
 
@@ -545,6 +546,12 @@ def debug_mismatches(
         "-s",
         help="Solana (or ground truth) shared object (.so) target file path",
     ),
+    default_harness_ctx: str = typer.Option(
+        "InstrHarness",
+        "--default-harness-type",
+        "-h",
+        help=f"Harness type to use for Context protobufs",
+    ),
     shared_libraries: List[Path] = typer.Option(
         [Path(os.getenv("FIREDANCER_TARGET", "impl/lib/libsolfuzz_firedancer.so"))],
         "--target",
@@ -573,7 +580,25 @@ def debug_mismatches(
         "-f",
         help="Comma-delimited list of FuzzCorp section names",
     ),
+    log_level: int = typer.Option(
+        5,
+        "--log-level",
+        "-l",
+        help="FD logging level",
+    ),
 ):
+    globals.output_dir = output_dir
+
+    if globals.output_dir.exists():
+        shutil.rmtree(globals.output_dir)
+    globals.output_dir.mkdir(parents=True, exist_ok=True)
+
+    globals.inputs_dir = globals.output_dir / "inputs"
+
+    if globals.inputs_dir.exists():
+        shutil.rmtree(globals.inputs_dir)
+    globals.inputs_dir.mkdir(parents=True, exist_ok=True)
+
     fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
     repro_urls_list = repro_urls.split(",") if repro_urls else []
     section_names_list = section_names.split(",") if section_names else []
@@ -621,18 +646,6 @@ def debug_mismatches(
         ].strip()
         custom_data_urls.append(custom_url)
 
-    globals.output_dir = output_dir
-
-    if globals.output_dir.exists():
-        shutil.rmtree(globals.output_dir)
-    globals.output_dir.mkdir(parents=True, exist_ok=True)
-
-    globals.inputs_dir = globals.output_dir / "inputs"
-
-    if globals.inputs_dir.exists():
-        shutil.rmtree(globals.inputs_dir)
-    globals.inputs_dir.mkdir(parents=True, exist_ok=True)
-
     for url in custom_data_urls:
         zip_name = url.split("/")[-1]
         result = subprocess.run(
@@ -648,15 +661,16 @@ def debug_mismatches(
         )
 
         result = subprocess.run(
-            f"mv {globals.output_dir}/repro_custom/*ctx {globals.inputs_dir}",
+            f"mv {globals.output_dir}/repro_custom/*.fix {globals.inputs_dir}",
             shell=True,
             capture_output=True,
             text=True,
         )
 
     run_tests(
-        file_or_dir=globals.inputs_dir,
+        input=globals.inputs_dir,
         reference_shared_library=reference_shared_library,
+        default_harness_ctx=default_harness_ctx,
         shared_libraries=shared_libraries,
         output_dir=globals.output_dir / "test_results",
         num_processes=4,
@@ -666,6 +680,7 @@ def debug_mismatches(
         consensus_mode=False,
         failures_only=False,
         save_failures=True,
+        log_level=log_level,
     )
 
 
@@ -710,6 +725,12 @@ def debug_non_repros(
         "--fuzzcorp-url",
         "-f",
         help="Comma-delimited list of FuzzCorp section names",
+    ),
+    log_level: int = typer.Option(
+        5,
+        "--log-level",
+        "-l",
+        help="FD logging level",
     ),
 ):
     fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
@@ -775,7 +796,7 @@ def debug_non_repros(
         )
 
     run_tests(
-        file_or_dir=globals.inputs_dir,
+        input=globals.inputs_dir,
         reference_shared_library=reference_shared_library,
         shared_libraries=shared_libraries,
         output_dir=globals.output_dir / "test_results",
@@ -786,6 +807,7 @@ def debug_non_repros(
         consensus_mode=False,
         failures_only=False,
         save_failures=True,
+        log_level=log_level,
     )
 
 
@@ -795,7 +817,7 @@ def debug_non_repros(
     """
 )
 def regenerate_fixtures(
-    input_path: Path = typer.Option(
+    input: Path = typer.Option(
         Path("corpus8"),
         "--input",
         "-i",
@@ -844,7 +866,7 @@ def regenerate_fixtures(
     globals.target_libraries[shared_library] = lib
     initialize_process_output_buffers()
 
-    test_cases = list(input_path.iterdir()) if input_path.is_dir() else [input_path]
+    test_cases = list(input.iterdir()) if input.is_dir() else [input]
     num_regenerated = 0
 
     for file in test_cases:
@@ -971,7 +993,7 @@ def regenerate_all_fixtures(
         )
         if folder_harness_type in ["CpiHarness"]:
             regenerate_fixtures(
-                input_path=Path(source_folder),
+                input=Path(source_folder),
                 shared_library=stubbed_shared_library,
                 output_dir=Path(output_folder),
                 dry_run=False,
@@ -981,7 +1003,7 @@ def regenerate_all_fixtures(
             shutil.copytree(source_folder, output_folder, dirs_exist_ok=True)
         else:
             regenerate_fixtures(
-                input_path=Path(source_folder),
+                input=Path(source_folder),
                 shared_library=shared_library,
                 output_dir=Path(output_folder),
                 dry_run=False,
