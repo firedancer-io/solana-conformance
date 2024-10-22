@@ -65,22 +65,6 @@ def process_target(
     return output_object
 
 
-def read_context_serialized(harness_ctx: HarnessCtx, test_file: Path) -> str | None:
-    """
-    Reads in test files and generates a serialized Context Protobuf message for a test case.
-
-    Args:
-        - test_file (Path): Path to the instruction context message.
-
-    Returns:
-        - str | None: Serialized instruction context, or None if reading failed.
-    """
-
-    # Serialize instruction context to string (pickleable)
-    ctx = read_context(harness_ctx, test_file)
-    return ctx.SerializeToString(deterministic=True) if ctx else None
-
-
 def extract_metadata(fixture_file: Path) -> str | None:
     """
     Extracts metadata from a fixture file.

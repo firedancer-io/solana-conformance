@@ -69,11 +69,13 @@ $ solana-test-suite debug-mismatches [OPTIONS]
 **Options**:
 
 * `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
+* `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
 * `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: impl/lib/libsolfuzz_firedancer.so]
 * `-o, --output-dir PATH`: Output directory for messages  [default: debug_mismatch]
 * `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
 * `-s, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
 * `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
+* `-l, --log-level INTEGER`: FD logging level  [default: 5]
 * `--help`: Show this message and exit.
 
 ## `solana-test-suite debug-non-repros`
@@ -96,6 +98,7 @@ $ solana-test-suite debug-non-repros [OPTIONS]
 * `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
 * `-s, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
 * `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
+* `-l, --log-level INTEGER`: FD logging level  [default: 5]
 * `--help`: Show this message and exit.
 
 ## `solana-test-suite decode-protobufs`
