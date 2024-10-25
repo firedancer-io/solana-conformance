@@ -575,7 +575,10 @@ def debug_mismatches(
         help="Comma-delimited list of FuzzCorp section names",
     ),
     fuzzcorp_url: str = typer.Option(
-        os.getenv("FUZZCORP_URL", ""),
+        os.getenv(
+            "FUZZCORP_URL",
+            "https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/",
+        ),
         "--fuzzcorp-url",
         "-f",
         help="Comma-delimited list of FuzzCorp section names",
@@ -721,7 +724,10 @@ def debug_non_repros(
         help="Comma-delimited list of FuzzCorp section names",
     ),
     fuzzcorp_url: str = typer.Option(
-        os.getenv("FUZZCORP_URL", ""),
+        os.getenv(
+            "FUZZCORP_URL",
+            "https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/",
+        ),
         "--fuzzcorp-url",
         "-f",
         help="Comma-delimited list of FuzzCorp section names",
