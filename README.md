@@ -4,14 +4,20 @@ This tool allows for validation of targets (e.g. Firedancer) against Solana Agav
 
 ## Requirements
 
-This tool only works on RHEL8.
+This tool works on RHEL8 or Ubuntu.
 
 ## Installation
 
-Clone this repository and run:
+Clone this repository and, for RHEL8, run:
 
 ```sh
 source install.sh
+```
+
+For Ubuntu, run:
+
+```sh
+source install_ubuntu.sh
 ```
 
 ### Install auto-completion
