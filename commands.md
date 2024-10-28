@@ -18,13 +18,12 @@ $ solana-test-suite [OPTIONS] COMMAND [ARGS]...
 
 * `create-fixtures`: Create test fixtures from a directory of...
 * `debug-mismatches`: Run tests on a set of targets with a list...
-* `debug-non-repros`: Run tests on a set of targets with a list...
 * `decode-protobufs`: Convert Context and/or Fixture messages to...
 * `execute`: Execute Context or Fixture message(s) and...
 * `fix-to-ctx`: Extract Context messages from Fixtures.
 * `list-harness-types`: List harness types available for use.
 * `regenerate-all-fixtures`: Regenerate all fixtures in provided...
-* `regenerate-fixtures`: Regenerate Fixture messages by checking...
+* `regenerate-fixtures`: Run tests on a set of targets with a list...
 * `run-tests`: Run tests on a set of targets with a...
 
 ## `solana-test-suite create-fixtures`
@@ -70,29 +69,6 @@ $ solana-test-suite debug-mismatches [OPTIONS]
 
 * `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
-* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: impl/lib/libsolfuzz_firedancer.so]
-* `-o, --output-dir PATH`: Output directory for messages  [default: debug_mismatch]
-* `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
-* `-s, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
-* `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
-* `-l, --log-level INTEGER`: FD logging level  [default: 5]
-* `--help`: Show this message and exit.
-
-## `solana-test-suite debug-non-repros`
-
-Run tests on a set of targets with a list of FuzzCorp mismatch links.
-
-Note: each `.so` target filename must be unique.
-
-**Usage**:
-
-```console
-$ solana-test-suite debug-non-repros [OPTIONS]
-```
-
-**Options**:
-
-* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
 * `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: impl/lib/libsolfuzz_firedancer.so]
 * `-o, --output-dir PATH`: Output directory for messages  [default: debug_mismatch]
 * `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
@@ -189,7 +165,9 @@ $ solana-test-suite regenerate-all-fixtures [OPTIONS]
 
 ## `solana-test-suite regenerate-fixtures`
 
-Regenerate Fixture messages by checking FeatureSet compatibility with the target shared library. 
+Run tests on a set of targets with a list of FuzzCorp mismatch links.
+
+Note: each `.so` target filename must be unique.
 
 **Usage**:
 
