@@ -703,13 +703,6 @@ def debug_mismatches(
 
 @app.command(
     help=f"""
-            Run tests on a set of targets with a list of FuzzCorp mismatch links.
-
-            Note: each `.so` target filename must be unique.
-            """
-)
-@app.command(
-    help=f"""
         Regenerate Fixture messages by checking FeatureSet compatibility with the target shared library. 
     """
 )

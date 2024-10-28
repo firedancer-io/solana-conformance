@@ -23,7 +23,7 @@ $ solana-test-suite [OPTIONS] COMMAND [ARGS]...
 * `fix-to-ctx`: Extract Context messages from Fixtures.
 * `list-harness-types`: List harness types available for use.
 * `regenerate-all-fixtures`: Regenerate all fixtures in provided...
-* `regenerate-fixtures`: Run tests on a set of targets with a list...
+* `regenerate-fixtures`: Regenerate Fixture messages by checking...
 * `run-tests`: Run tests on a set of targets with a...
 
 ## `solana-test-suite create-fixtures`
@@ -165,9 +165,7 @@ $ solana-test-suite regenerate-all-fixtures [OPTIONS]
 
 ## `solana-test-suite regenerate-fixtures`
 
-Run tests on a set of targets with a list of FuzzCorp mismatch links.
-
-Note: each `.so` target filename must be unique.
+Regenerate Fixture messages by checking FeatureSet compatibility with the target shared library. 
 
 **Usage**:
 
