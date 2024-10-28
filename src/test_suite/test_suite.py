@@ -3,6 +3,7 @@ from typing import List
 import typer
 from collections import defaultdict
 import ctypes
+import filecmp
 from glob import glob
 from multiprocessing import Pool
 from pathlib import Path
@@ -673,6 +674,15 @@ def debug_mismatches(
     repro_custom = globals.output_dir / "repro_custom"
     if repro_custom.exists():
         shutil.rmtree(repro_custom)
+
+    files = glob(str(globals.inputs_dir) + "/*")
+
+    for i in range(len(files)):
+        for j in range(i + 1, len(files)):
+            if os.path.exists(files[j]) and filecmp.cmp(
+                files[i], files[j], shallow=False
+            ):
+                os.remove(files[j])
 
     run_tests(
         input=globals.inputs_dir,
