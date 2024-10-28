@@ -670,6 +670,10 @@ def debug_mismatches(
             text=True,
         )
 
+    repro_custom = globals.output_dir / "repro_custom"
+    if repro_custom.exists():
+        shutil.rmtree(repro_custom)
+
     run_tests(
         input=globals.inputs_dir,
         reference_shared_library=reference_shared_library,
