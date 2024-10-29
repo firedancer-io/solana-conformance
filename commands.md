@@ -112,6 +112,7 @@ $ solana-test-suite exec-fixtures [OPTIONS]
 * `-t, --target PATH`: Shared object (.so) target file path to execute  [default: impl/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
 * `-l, --log-level INTEGER`: FD logging level  [default: 2]
+* `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `--help`: Show this message and exit.
 
 ## `solana-test-suite execute`
