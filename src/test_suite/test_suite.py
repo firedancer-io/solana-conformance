@@ -3,8 +3,10 @@ from typing import List
 import typer
 from collections import defaultdict
 import ctypes
+import difflib
 import filecmp
 from glob import glob
+import itertools
 from multiprocessing import Pool
 from pathlib import Path
 import subprocess
@@ -357,7 +359,7 @@ def run_tests(
         help="Only log failed test cases",
     ),
     save_failures: bool = typer.Option(
-        False,
+        True,
         "--save-failures",
         "-sf",
         help="Saves failed test cases to results directory",
@@ -475,6 +477,14 @@ def run_tests(
         print(f"Skipped tests: {skipped_tests}")
     if failed != 0 and save_failures:
         print("Failures tests are in: ", globals.output_dir / "failed_protobufs")
+
+    binary_to_log_file = {
+        path.stem: log_file.name for path, log_file in target_log_files.items()
+    }
+    for (name1, file1), (name2, file2) in itertools.combinations(
+        binary_to_log_file.items(), 2
+    ):
+        print(f"Diff between {name1} and {name2}: vimdiff {file1} {file2}")
 
 
 @app.command(help=f"Convert Context and/or Fixture messages to human-readable format.")

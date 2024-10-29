@@ -208,6 +208,6 @@ $ solana-test-suite run-tests [OPTIONS]
 * `-v, --verbose`: Verbose output: log failed test cases
 * `-c, --consensus-mode`: Only fail on consensus failures. One such effect is to normalize error codes when comparing results
 * `-f, --failures-only`: Only log failed test cases
-* `-sf, --save-failures`: Saves failed test cases to results directory
+* `-sf, --save-failures`: Saves failed test cases to results directory  [default: True]
 * `-l, --log-level INTEGER`: FD logging level  [default: 5]
 * `--help`: Show this message and exit.
