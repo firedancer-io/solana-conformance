@@ -679,8 +679,10 @@ def debug_mismatches(
 
     for i in range(len(files)):
         for j in range(i + 1, len(files)):
-            if os.path.exists(files[j]) and filecmp.cmp(
-                files[i], files[j], shallow=False
+            if (
+                os.path.exists(files[i])
+                and os.path.exists(files[j])
+                and filecmp.cmp(files[i], files[j], shallow=False)
             ):
                 os.remove(files[j])
 
