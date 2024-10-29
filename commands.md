@@ -19,6 +19,7 @@ $ solana-test-suite [OPTIONS] COMMAND [ARGS]...
 * `create-fixtures`: Create test fixtures from a directory of...
 * `debug-mismatches`: Run tests on a set of targets with a list...
 * `decode-protobufs`: Convert Context and/or Fixture messages to...
+* `exec-fixtures`: Execute fixtures and check for correct...
 * `execute`: Execute Context or Fixture message(s) and...
 * `fix-to-ctx`: Extract Context messages from Fixtures.
 * `list-harness-types`: List harness types available for use.
@@ -93,6 +94,25 @@ $ solana-test-suite decode-protobufs [OPTIONS]
 * `-o, --output-dir PATH`: Output directory for base58-encoded, Context and/or Fixture human-readable messages  [default: readable_context]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
+* `--help`: Show this message and exit.
+
+## `solana-test-suite exec-fixtures`
+
+Execute fixtures and check for correct effects
+
+**Usage**:
+
+```console
+$ solana-test-suite exec-fixtures [OPTIONS]
+```
+
+**Options**:
+
+* `-i, --input PATH`: Input protobuf file or directory of protobuf files
+* `-t, --target PATH`: Shared object (.so) target file path to execute  [default: impl/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so]
+* `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
+* `-l, --log-level INTEGER`: FD logging level  [default: 2]
+* `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `--help`: Show this message and exit.
 
 ## `solana-test-suite execute`

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from test_suite.constants import OUTPUT_BUFFER_SIZE
 from test_suite.fuzz_context import ENTRYPOINT_HARNESS_MAP, HarnessCtx
-from test_suite.fuzz_interface import ContextType
+from test_suite.fuzz_interface import ContextType, EffectsType
 import test_suite.invoke_pb2 as invoke_pb
 import test_suite.metadata_pb2 as metadata_pb2
 import ctypes
@@ -372,3 +372,21 @@ def run_test(test_file: Path) -> tuple[str, int, dict | None]:
     results = process_single_test_case(harness_ctx, context)
     pruned_results = harness_ctx.prune_effects_fn(context, results)
     return test_file.stem, *build_test_results(harness_ctx, pruned_results)
+
+
+def execute_fixture(test_file: Path) -> tuple[str, int | None]:
+    if test_file.suffix != ".fix":
+        print(f"File {test_file} is not a fixture")
+        return test_file.stem, None
+
+    fn_entrypoint = extract_metadata(test_file).fn_entrypoint
+    harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
+    fixture = read_fixture(test_file)
+    context = fixture.input
+    output = fixture.output
+
+    effects = process_target(
+        harness_ctx, globals.target_libraries[globals.reference_shared_library], context
+    )
+
+    return test_file.stem, effects == output

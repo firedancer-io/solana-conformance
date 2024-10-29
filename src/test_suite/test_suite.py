@@ -19,6 +19,7 @@ from test_suite.fixture_utils import (
 )
 from test_suite.multiprocessing_utils import (
     decode_single_test_case,
+    execute_fixture,
     extract_metadata,
     read_fixture,
     initialize_process_output_buffers,
@@ -94,7 +95,7 @@ def execute(
     except:
         set_ld_preload_asan()
 
-    files_to_exec = input.iterdir() if input.is_dir() else [input]
+    files_to_exec = list(input.iterdir()) if input.is_dir() else [input]
     for file in files_to_exec:
         print(f"Handling {file}...")
         if file.suffix == ".fix":
@@ -162,7 +163,7 @@ def fix_to_ctx(
         shutil.rmtree(globals.output_dir)
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
-    test_cases = input.iterdir() if input.is_dir() else [input]
+    test_cases = list(input.iterdir()) if input.is_dir() else [input]
     num_test_cases = len(test_cases)
 
     print(f"Converting to Fixture messages...")
@@ -473,8 +474,10 @@ def run_tests(
     print(f"Total test cases: {passed + failed + skipped}")
     print(f"Passed: {passed}, Failed: {failed}, Skipped: {skipped}")
     if verbose:
-        print(f"Failed tests: {failed_tests}")
-        print(f"Skipped tests: {skipped_tests}")
+        if failed != 0:
+            print(f"Failed tests: {failed_tests}")
+        if skipped != 0:
+            print(f"Skipped tests: {skipped_tests}")
     if failed != 0 and save_failures:
         print("Failures tests are in: ", globals.output_dir / "failed_protobufs")
 
@@ -921,6 +924,91 @@ def regenerate_all_fixtures(
             )
 
     print(f"Regenerated fixtures from {test_vectors} to {output_dir}")
+
+
+@app.command(
+    help=f"""
+        Execute fixtures and check for correct effects
+    """
+)
+def exec_fixtures(
+    input: Path = typer.Option(
+        None,
+        "--input",
+        "-i",
+        help=f"Input protobuf file or directory of protobuf files",
+    ),
+    shared_library: Path = typer.Option(
+        Path("impl/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so"),
+        "--target",
+        "-t",
+        help="Shared object (.so) target file path to execute",
+    ),
+    randomize_output_buffer: bool = typer.Option(
+        False,
+        "--randomize-output-buffer",
+        "-r",
+        help="Randomizes bytes in output buffer before shared library execution",
+    ),
+    log_level: int = typer.Option(
+        2,
+        "--log-level",
+        "-l",
+        help="FD logging level",
+    ),
+    num_processes: int = typer.Option(
+        4, "--num-processes", "-p", help="Number of processes to use"
+    ),
+):
+    # Initialize output buffers and shared library
+    initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
+    try:
+        lib = ctypes.CDLL(shared_library)
+        lib.sol_compat_init(log_level)
+        globals.target_libraries[shared_library] = lib
+        globals.reference_shared_library = shared_library
+    except:
+        set_ld_preload_asan()
+
+    test_cases = list(input.iterdir()) if input.is_dir() else [input]
+    num_test_cases = len(test_cases)
+    print("Running tests...")
+    results = []
+    with Pool(
+        processes=num_processes,
+        initializer=initialize_process_output_buffers,
+        initargs=(randomize_output_buffer,),
+    ) as pool:
+        for result in tqdm.tqdm(
+            pool.imap(execute_fixture, test_cases),
+            total=num_test_cases,
+        ):
+            results.append(result)
+
+    passed = 0
+    failed = 0
+    skipped = 0
+    failed_tests = []
+    skipped_tests = []
+
+    for file, status in results:
+        if status == None:
+            skipped += 1
+            skipped_tests.append(file)
+        elif status == 1:
+            passed += 1
+        else:
+            failed += 1
+            failed_tests.append(file)
+
+    print(f"Total test cases: {passed + failed + skipped}")
+    print(f"Passed: {passed}, Failed: {failed}, Skipped: {skipped}")
+    if failed != 0:
+        print(f"Failed tests: {failed_tests}")
+    if skipped != 0:
+        print(f"Skipped tests: {skipped_tests}")
+
+    lib.sol_compat_fini()
 
 
 if __name__ == "__main__":
