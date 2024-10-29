@@ -76,6 +76,8 @@ $ solana-test-suite debug-mismatches [OPTIONS]
 * `-s, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
 * `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
 * `-l, --log-level INTEGER`: FD logging level  [default: 5]
+* `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
+* `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `--help`: Show this message and exit.
 
 ## `solana-test-suite decode-protobufs`
