@@ -617,34 +617,42 @@ def debug_mismatches(
     repro_urls_list = repro_urls.split(",") if repro_urls else []
     section_names_list = section_names.split(",") if section_names else []
 
-    curl_command = f"curl {fuzzcorp_url} --cookie s={fuzzcorp_cookie}"
-    result = subprocess.run(curl_command, shell=True, capture_output=True, text=True)
-    page_content = result.stdout
-    soup = BeautifulSoup(page_content, "html.parser")
-    for section_name in section_names_list:
-        section_anchor = soup.find("a", {"name": f"lin_{section_name}"})
+    if len(section_names_list) != 0:
+        curl_command = f"curl {fuzzcorp_url} --cookie s={fuzzcorp_cookie}"
+        result = subprocess.run(
+            curl_command, shell=True, capture_output=True, text=True
+        )
+        page_content = result.stdout
+        soup = BeautifulSoup(page_content, "html.parser")
+        for section_name in section_names_list:
+            section_anchor = soup.find("a", {"name": f"lin_{section_name}"})
 
-        if section_anchor:
-            next_element = section_anchor.find_next_sibling()
-            while next_element:
-                if next_element.name == "table":
-                    hrefs = [a["href"] for a in next_element.find_all("a", href=True)]
-                    for href in hrefs:
-                        repro_urls_list.append(urljoin(fuzzcorp_url, href))
-                    break
-                elif next_element.name == "p" and "No bugs found" in next_element.text:
-                    print(f"No bugs found for section {section_name}.")
-                    break
-                elif next_element.name == "a" and next_element.has_attr("name"):
-                    print(f"No table found in section {section_name}.")
-                    break
+            if section_anchor:
+                next_element = section_anchor.find_next_sibling()
+                while next_element:
+                    if next_element.name == "table":
+                        hrefs = [
+                            a["href"] for a in next_element.find_all("a", href=True)
+                        ]
+                        for href in hrefs:
+                            repro_urls_list.append(urljoin(fuzzcorp_url, href))
+                        break
+                    elif (
+                        next_element.name == "p"
+                        and "No bugs found" in next_element.text
+                    ):
+                        print(f"No bugs found for section {section_name}.")
+                        break
+                    elif next_element.name == "a" and next_element.has_attr("name"):
+                        print(f"No table found in section {section_name}.")
+                        break
 
-                next_element = next_element.find_next_sibling()
+                    next_element = next_element.find_next_sibling()
 
-            if not next_element:
-                print(f"No relevant content found after section {section_name}.")
-        else:
-            print(f"Section {section_name} not found.")
+                if not next_element:
+                    print(f"No relevant content found after section {section_name}.")
+            else:
+                print(f"Section {section_name} not found.")
 
     custom_data_urls = []
     for url in repro_urls_list:
