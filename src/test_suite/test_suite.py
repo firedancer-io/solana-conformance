@@ -473,8 +473,10 @@ def run_tests(
     print(f"Total test cases: {passed + failed + skipped}")
     print(f"Passed: {passed}, Failed: {failed}, Skipped: {skipped}")
     if verbose:
-        print(f"Failed tests: {failed_tests}")
-        print(f"Skipped tests: {skipped_tests}")
+        if failed != 0:
+            print(f"Failed tests: {failed_tests}")
+        if skipped != 0:
+            print(f"Skipped tests: {skipped_tests}")
     if failed != 0 and save_failures:
         print("Failures tests are in: ", globals.output_dir / "failed_protobufs")
 
@@ -921,6 +923,91 @@ def regenerate_all_fixtures(
             )
 
     print(f"Regenerated fixtures from {test_vectors} to {output_dir}")
+
+
+@app.command(
+    help=f"""
+        Execute fixtures and check for correct effects
+    """
+)
+def exec_fixtures(
+    input: Path = typer.Option(
+        None,
+        "--input",
+        "-i",
+        help=f"Input protobuf file or directory of protobuf files",
+    ),
+    shared_library: Path = typer.Option(
+        Path("impl/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so"),
+        "--target",
+        "-t",
+        help="Shared object (.so) target file path to execute",
+    ),
+    randomize_output_buffer: bool = typer.Option(
+        False,
+        "--randomize-output-buffer",
+        "-r",
+        help="Randomizes bytes in output buffer before shared library execution",
+    ),
+    log_level: int = typer.Option(
+        2,
+        "--log-level",
+        "-l",
+        help="FD logging level",
+    ),
+):
+    # Initialize output buffers and shared library
+    initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
+    try:
+        lib = ctypes.CDLL(shared_library)
+        lib.sol_compat_init(log_level)
+        globals.target_libraries[shared_library] = lib
+        globals.reference_shared_library = shared_library
+    except:
+        set_ld_preload_asan()
+
+    passed = 0
+    failed = 0
+    skipped = 0
+    failed_tests = []
+    skipped_tests = []
+
+    files_to_exec = input.iterdir() if input.is_dir() else [input]
+    for file in files_to_exec:
+        if file.suffix == ".fix":
+            fn_entrypoint = extract_metadata(file).fn_entrypoint
+            harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
+            fixture = read_fixture(file)
+            context = fixture.input
+            output = fixture.output
+        else:
+            print(f"File {file} is not a fixture")
+            skipped += 1
+            skipped_tests.append(file.stem)
+            continue
+
+        effects = process_target(harness_ctx, lib, context)
+
+        if not effects:
+            print(f"No {harness_ctx.effects_type.__name__} returned for file {file}")
+            skipped += 1
+            skipped_tests.append(file.stem)
+            continue
+
+        if output == effects:
+            passed += 1
+        else:
+            failed += 1
+            failed_tests.append(file.stem)
+
+    print(f"Total test cases: {passed + failed + skipped}")
+    print(f"Passed: {passed}, Failed: {failed}, Skipped: {skipped}")
+    if failed != 0:
+        print(f"Failed tests: {failed_tests}")
+    if skipped != 0:
+        print(f"Skipped tests: {skipped_tests}")
+
+    lib.sol_compat_fini()
 
 
 if __name__ == "__main__":
