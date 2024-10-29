@@ -6,6 +6,7 @@ import test_suite.invoke_pb2 as invoke_pb
 import test_suite.metadata_pb2 as metadata_pb2
 import ctypes
 from ctypes import c_uint64, c_int, POINTER
+import subprocess
 from pathlib import Path
 import test_suite.globals as globals
 from google.protobuf import text_format, message
@@ -390,3 +391,29 @@ def execute_fixture(test_file: Path) -> tuple[str, int | None]:
     )
 
     return test_file.stem, effects == output
+
+
+def download_and_process(url):
+    zip_name = url.split("/")[-1]
+
+    # Step 1: Download the file
+    result = subprocess.run(
+        ["wget", "-q", url, "-O", f"{globals.output_dir}/{zip_name}"],
+        capture_output=True,
+        text=True,
+    )
+
+    result = subprocess.run(
+        ["unzip", f"{globals.output_dir}/{zip_name}", "-d", globals.output_dir],
+        capture_output=True,
+        text=True,
+    )
+
+    result = subprocess.run(
+        f"mv {globals.output_dir}/repro_custom/*.fix {globals.inputs_dir}",
+        shell=True,
+        capture_output=True,
+        text=True,
+    )
+
+    return f"Processed {zip_name} successfully"

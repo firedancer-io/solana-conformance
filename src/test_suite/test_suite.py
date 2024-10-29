@@ -19,6 +19,7 @@ from test_suite.fixture_utils import (
 )
 from test_suite.multiprocessing_utils import (
     decode_single_test_case,
+    download_and_process,
     execute_fixture,
     extract_metadata,
     read_fixture,
@@ -603,7 +604,18 @@ def debug_mismatches(
         "-l",
         help="FD logging level",
     ),
+    randomize_output_buffer: bool = typer.Option(
+        False,
+        "--randomize-output-buffer",
+        "-r",
+        help="Randomizes bytes in output buffer before shared library execution",
+    ),
+    num_processes: int = typer.Option(
+        4, "--num-processes", "-p", help="Number of processes to use"
+    ),
 ):
+    initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
+
     globals.output_dir = output_dir
 
     if globals.output_dir.exists():
@@ -628,6 +640,7 @@ def debug_mismatches(
         page_content = result.stdout
         soup = BeautifulSoup(page_content, "html.parser")
         for section_name in section_names_list:
+            print(f"Getting links from section {section_name}...")
             section_anchor = soup.find("a", {"name": f"lin_{section_name}"})
 
             if section_anchor:
@@ -671,26 +684,19 @@ def debug_mismatches(
         ].strip()
         custom_data_urls.append(custom_url)
 
-    for url in custom_data_urls:
-        zip_name = url.split("/")[-1]
-        result = subprocess.run(
-            ["wget", "-q", url, "-O", f"{globals.output_dir}/{zip_name}"],
-            capture_output=True,
-            text=True,
-        )
-
-        result = subprocess.run(
-            ["unzip", f"{globals.output_dir}/{zip_name}", "-d", globals.output_dir],
-            capture_output=True,
-            text=True,
-        )
-
-        result = subprocess.run(
-            f"mv {globals.output_dir}/repro_custom/*.fix {globals.inputs_dir}",
-            shell=True,
-            capture_output=True,
-            text=True,
-        )
+    num_test_cases = len(custom_data_urls)
+    print("Downloading tests...")
+    results = []
+    with Pool(
+        processes=num_processes,
+        initializer=initialize_process_output_buffers,
+        initargs=(randomize_output_buffer,),
+    ) as pool:
+        for result in tqdm.tqdm(
+            pool.imap(download_and_process, custom_data_urls),
+            total=num_test_cases,
+        ):
+            results.append(result)
 
     repro_custom = globals.output_dir / "repro_custom"
     if repro_custom.exists():
@@ -713,7 +719,7 @@ def debug_mismatches(
         default_harness_ctx=default_harness_ctx,
         shared_libraries=shared_libraries,
         output_dir=globals.output_dir / "test_results",
-        num_processes=4,
+        num_processes=num_processes,
         randomize_output_buffer=False,
         log_chunk_size=10000,
         verbose=True,
