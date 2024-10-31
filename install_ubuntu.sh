@@ -5,6 +5,7 @@ cd impl
 git clone http://github.com/firedancer-io/firedancer.git
 git clone -b agave-v1.17 http://github.com/firedancer-io/solfuzz-agave.git agave-v1.17
 git clone -b agave-v2.0 http://github.com/firedancer-io/solfuzz-agave.git agave-v2.0
+git clone -b agave-v2.1.0 http://github.com/firedancer-io/solfuzz-agave.git agave-v2.1.0
 cd ..
 
 # Configure GCC.
