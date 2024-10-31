@@ -613,6 +613,9 @@ def debug_mismatches(
     num_processes: int = typer.Option(
         4, "--num-processes", "-p", help="Number of processes to use"
     ),
+    section_limit: int = typer.Option(
+        0, "--section-limit", "-l", help="Limit number of fixture per section"
+    ),
 ):
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
 
@@ -640,6 +643,7 @@ def debug_mismatches(
         page_content = result.stdout
         soup = BeautifulSoup(page_content, "html.parser")
         for section_name in section_names_list:
+            current_section_count = 0
             print(f"Getting links from section {section_name}...")
             section_anchor = soup.find("a", {"name": f"lin_{section_name}"})
 
@@ -651,7 +655,13 @@ def debug_mismatches(
                             a["href"] for a in next_element.find_all("a", href=True)
                         ]
                         for href in hrefs:
+                            if (
+                                section_limit != 0
+                                and current_section_count >= section_limit
+                            ):
+                                break
                             repro_urls_list.append(urljoin(fuzzcorp_url, href))
+                            current_section_count += 1
                         break
                     elif (
                         next_element.name == "p"

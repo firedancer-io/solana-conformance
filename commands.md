@@ -78,6 +78,7 @@ $ solana-test-suite debug-mismatches [OPTIONS]
 * `-l, --log-level INTEGER`: FD logging level  [default: 5]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
+* `-l, --section-limit INTEGER`: Limit number of fixture per section  [default: 0]
 * `--help`: Show this message and exit.
 
 ## `solana-test-suite decode-protobufs`
