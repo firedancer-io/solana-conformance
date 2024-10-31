@@ -16,7 +16,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     package="org.solana.sealevel.v1",
     syntax="proto3",
     serialized_pb=_b(
-        '\n\ttxn.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\x0emetadata.proto"~\n\rMessageHeader\x12\x1f\n\x17num_required_signatures\x18\x01 \x01(\r\x12$\n\x1cnum_readonly_signed_accounts\x18\x02 \x01(\r\x12&\n\x1enum_readonly_unsigned_accounts\x18\x03 \x01(\r"O\n\x13CompiledInstruction\x12\x18\n\x10program_id_index\x18\x01 \x01(\r\x12\x10\n\x08accounts\x18\x02 \x03(\r\x12\x0c\n\x04data\x18\x03 \x01(\x0c"d\n\x19MessageAddressTableLookup\x12\x13\n\x0baccount_key\x18\x01 \x01(\x0c\x12\x18\n\x10writable_indexes\x18\x02 \x03(\r\x12\x18\n\x10readonly_indexes\x18\x03 \x03(\r"ã\x02\n\x12TransactionMessage\x12\x11\n\tis_legacy\x18\x01 \x01(\x08\x125\n\x06header\x18\x02 \x01(\x0b2%.org.solana.sealevel.v1.MessageHeader\x12\x14\n\x0caccount_keys\x18\x03 \x03(\x0c\x12>\n\x13account_shared_data\x18\x04 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x12\x18\n\x10recent_blockhash\x18\x05 \x01(\x0c\x12A\n\x0cinstructions\x18\x06 \x03(\x0b2+.org.solana.sealevel.v1.CompiledInstruction\x12P\n\x15address_table_lookups\x18\x07 \x03(\x0b21.org.solana.sealevel.v1.MessageAddressTableLookup"\x98\x01\n\x14SanitizedTransaction\x12;\n\x07message\x18\x01 \x01(\x0b2*.org.solana.sealevel.v1.TransactionMessage\x12\x14\n\x0cmessage_hash\x18\x02 \x01(\x0c\x12\x19\n\x11is_simple_vote_tx\x18\x03 \x01(\x08\x12\x12\n\nsignatures\x18\x04 \x03(\x0c"à\x01\n\nTxnContext\x128\n\x02tx\x18\x01 \x01(\x0b2,.org.solana.sealevel.v1.SanitizedTransaction\x12\x0f\n\x07max_age\x18\x02 \x01(\x04\x12\x17\n\x0fblockhash_queue\x18\x03 \x03(\x0c\x127\n\tepoch_ctx\x18\x04 \x01(\x0b2$.org.solana.sealevel.v1.EpochContext\x125\n\x08slot_ctx\x18\x05 \x01(\x0b2#.org.solana.sealevel.v1.SlotContext"\x9b\x01\n\x0eResultingState\x126\n\x0bacct_states\x18\x01 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x127\n\x0brent_debits\x18\x02 \x03(\x0b2".org.solana.sealevel.v1.RentDebits\x12\x18\n\x10transaction_rent\x18\x03 \x01(\x04"4\n\nRentDebits\x12\x0e\n\x06pubkey\x18\x01 \x01(\x0c\x12\x16\n\x0erent_collected\x18\x02 \x01(\x03"A\n\nFeeDetails\x12\x17\n\x0ftransaction_fee\x18\x01 \x01(\x04\x12\x1a\n\x12prioritization_fee\x18\x02 \x01(\x04"ß\x02\n\tTxnResult\x12\x10\n\x08executed\x18\x01 \x01(\x08\x12\x1a\n\x12sanitization_error\x18\x02 \x01(\x08\x12?\n\x0fresulting_state\x18\x03 \x01(\x0b2&.org.solana.sealevel.v1.ResultingState\x12\x0c\n\x04rent\x18\x04 \x01(\x04\x12\r\n\x05is_ok\x18\x05 \x01(\x08\x12\x0e\n\x06status\x18\x06 \x01(\r\x12\x19\n\x11instruction_error\x18\x07 \x01(\r\x12\x1f\n\x17instruction_error_index\x18\x08 \x01(\r\x12\x14\n\x0ccustom_error\x18\t \x01(\r\x12\x13\n\x0breturn_data\x18\n \x01(\x0c\x12\x16\n\x0eexecuted_units\x18\x0b \x01(\x04\x127\n\x0bfee_details\x18\x0c \x01(\x0b2".org.solana.sealevel.v1.FeeDetails"\xad\x01\n\nTxnFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x121\n\x05input\x18\x02 \x01(\x0b2".org.solana.sealevel.v1.TxnContext\x121\n\x06output\x18\x03 \x01(\x0b2!.org.solana.sealevel.v1.TxnResultb\x06proto3'
+        '\n\ttxn.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\x0emetadata.proto"~\n\rMessageHeader\x12\x1f\n\x17num_required_signatures\x18\x01 \x01(\r\x12$\n\x1cnum_readonly_signed_accounts\x18\x02 \x01(\r\x12&\n\x1enum_readonly_unsigned_accounts\x18\x03 \x01(\r"O\n\x13CompiledInstruction\x12\x18\n\x10program_id_index\x18\x01 \x01(\r\x12\x10\n\x08accounts\x18\x02 \x03(\r\x12\x0c\n\x04data\x18\x03 \x01(\x0c"d\n\x19MessageAddressTableLookup\x12\x13\n\x0baccount_key\x18\x01 \x01(\x0c\x12\x18\n\x10writable_indexes\x18\x02 \x03(\r\x12\x18\n\x10readonly_indexes\x18\x03 \x03(\r"ã\x02\n\x12TransactionMessage\x12\x11\n\tis_legacy\x18\x01 \x01(\x08\x125\n\x06header\x18\x02 \x01(\x0b2%.org.solana.sealevel.v1.MessageHeader\x12\x14\n\x0caccount_keys\x18\x03 \x03(\x0c\x12>\n\x13account_shared_data\x18\x04 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x12\x18\n\x10recent_blockhash\x18\x05 \x01(\x0c\x12A\n\x0cinstructions\x18\x06 \x03(\x0b2+.org.solana.sealevel.v1.CompiledInstruction\x12P\n\x15address_table_lookups\x18\x07 \x03(\x0b21.org.solana.sealevel.v1.MessageAddressTableLookup"\x98\x01\n\x14SanitizedTransaction\x12;\n\x07message\x18\x01 \x01(\x0b2*.org.solana.sealevel.v1.TransactionMessage\x12\x14\n\x0cmessage_hash\x18\x02 \x01(\x0c\x12\x19\n\x11is_simple_vote_tx\x18\x03 \x01(\x08\x12\x12\n\nsignatures\x18\x04 \x03(\x0c"Ï\x01\n\nTxnContext\x128\n\x02tx\x18\x01 \x01(\x0b2,.org.solana.sealevel.v1.SanitizedTransaction\x12\x17\n\x0fblockhash_queue\x18\x03 \x03(\x0c\x127\n\tepoch_ctx\x18\x04 \x01(\x0b2$.org.solana.sealevel.v1.EpochContext\x125\n\x08slot_ctx\x18\x05 \x01(\x0b2#.org.solana.sealevel.v1.SlotContext"\x9b\x01\n\x0eResultingState\x126\n\x0bacct_states\x18\x01 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x127\n\x0brent_debits\x18\x02 \x03(\x0b2".org.solana.sealevel.v1.RentDebits\x12\x18\n\x10transaction_rent\x18\x03 \x01(\x04"4\n\nRentDebits\x12\x0e\n\x06pubkey\x18\x01 \x01(\x0c\x12\x16\n\x0erent_collected\x18\x02 \x01(\x03"A\n\nFeeDetails\x12\x17\n\x0ftransaction_fee\x18\x01 \x01(\x04\x12\x1a\n\x12prioritization_fee\x18\x02 \x01(\x04"ß\x02\n\tTxnResult\x12\x10\n\x08executed\x18\x01 \x01(\x08\x12\x1a\n\x12sanitization_error\x18\x02 \x01(\x08\x12?\n\x0fresulting_state\x18\x03 \x01(\x0b2&.org.solana.sealevel.v1.ResultingState\x12\x0c\n\x04rent\x18\x04 \x01(\x04\x12\r\n\x05is_ok\x18\x05 \x01(\x08\x12\x0e\n\x06status\x18\x06 \x01(\r\x12\x19\n\x11instruction_error\x18\x07 \x01(\r\x12\x1f\n\x17instruction_error_index\x18\x08 \x01(\r\x12\x14\n\x0ccustom_error\x18\t \x01(\r\x12\x13\n\x0breturn_data\x18\n \x01(\x0c\x12\x16\n\x0eexecuted_units\x18\x0b \x01(\x04\x127\n\x0bfee_details\x18\x0c \x01(\x0b2".org.solana.sealevel.v1.FeeDetails"\xad\x01\n\nTxnFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x121\n\x05input\x18\x02 \x01(\x0b2".org.solana.sealevel.v1.TxnContext\x121\n\x06output\x18\x03 \x01(\x0b2!.org.solana.sealevel.v1.TxnResultb\x06proto3'
     ),
     dependencies=[context__pb2.DESCRIPTOR, metadata__pb2.DESCRIPTOR],
 )
@@ -501,27 +501,9 @@ _TXNCONTEXT = _descriptor.Descriptor(
             file=DESCRIPTOR,
         ),
         _descriptor.FieldDescriptor(
-            name="max_age",
-            full_name="org.solana.sealevel.v1.TxnContext.max_age",
-            index=1,
-            number=2,
-            type=4,
-            cpp_type=4,
-            label=1,
-            has_default_value=False,
-            default_value=0,
-            message_type=None,
-            enum_type=None,
-            containing_type=None,
-            is_extension=False,
-            extension_scope=None,
-            options=None,
-            file=DESCRIPTOR,
-        ),
-        _descriptor.FieldDescriptor(
             name="blockhash_queue",
             full_name="org.solana.sealevel.v1.TxnContext.blockhash_queue",
-            index=2,
+            index=1,
             number=3,
             type=12,
             cpp_type=9,
@@ -539,7 +521,7 @@ _TXNCONTEXT = _descriptor.Descriptor(
         _descriptor.FieldDescriptor(
             name="epoch_ctx",
             full_name="org.solana.sealevel.v1.TxnContext.epoch_ctx",
-            index=3,
+            index=2,
             number=4,
             type=11,
             cpp_type=10,
@@ -557,7 +539,7 @@ _TXNCONTEXT = _descriptor.Descriptor(
         _descriptor.FieldDescriptor(
             name="slot_ctx",
             full_name="org.solana.sealevel.v1.TxnContext.slot_ctx",
-            index=4,
+            index=3,
             number=5,
             type=11,
             cpp_type=10,
@@ -582,7 +564,7 @@ _TXNCONTEXT = _descriptor.Descriptor(
     extension_ranges=[],
     oneofs=[],
     serialized_start=893,
-    serialized_end=1117,
+    serialized_end=1100,
 )
 _RESULTINGSTATE = _descriptor.Descriptor(
     name="ResultingState",
@@ -654,8 +636,8 @@ _RESULTINGSTATE = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=1120,
-    serialized_end=1275,
+    serialized_start=1103,
+    serialized_end=1258,
 )
 _RENTDEBITS = _descriptor.Descriptor(
     name="RentDebits",
@@ -709,8 +691,8 @@ _RENTDEBITS = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=1277,
-    serialized_end=1329,
+    serialized_start=1260,
+    serialized_end=1312,
 )
 _FEEDETAILS = _descriptor.Descriptor(
     name="FeeDetails",
@@ -764,8 +746,8 @@ _FEEDETAILS = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=1331,
-    serialized_end=1396,
+    serialized_start=1314,
+    serialized_end=1379,
 )
 _TXNRESULT = _descriptor.Descriptor(
     name="TxnResult",
@@ -999,8 +981,8 @@ _TXNRESULT = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=1399,
-    serialized_end=1750,
+    serialized_start=1382,
+    serialized_end=1733,
 )
 _TXNFIXTURE = _descriptor.Descriptor(
     name="TxnFixture",
@@ -1072,8 +1054,8 @@ _TXNFIXTURE = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=1753,
-    serialized_end=1926,
+    serialized_start=1736,
+    serialized_end=1909,
 )
 _TRANSACTIONMESSAGE.fields_by_name["header"].message_type = _MESSAGEHEADER
 _TRANSACTIONMESSAGE.fields_by_name["account_shared_data"].message_type = (
