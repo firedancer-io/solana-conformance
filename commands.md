@@ -73,7 +73,7 @@ $ solana-test-suite debug-mismatches [OPTIONS]
 * `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: impl/lib/libsolfuzz_firedancer.so]
 * `-o, --output-dir PATH`: Output directory for messages  [default: debug_mismatch]
 * `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
-* `-s, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
+* `-n, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
 * `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
 * `-l, --log-level INTEGER`: FD logging level  [default: 5]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
