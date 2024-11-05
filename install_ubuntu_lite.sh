@@ -1,12 +1,4 @@
-# Install the toolkit on Ubuntu.
-
-# Clone repositories.
-cd impl
-git clone http://github.com/firedancer-io/firedancer.git
-git clone -b agave-v1.17 http://github.com/firedancer-io/solfuzz-agave.git agave-v1.17
-git clone -b agave-v2.0 http://github.com/firedancer-io/solfuzz-agave.git agave-v2.0
-git clone -b agave-v2.1.0 http://github.com/firedancer-io/solfuzz-agave.git agave-v2.1.0
-cd ..
+# Install the toolkit on Ubuntu without cloning targets.
 
 # Configure GCC.
 sudo apt install -y build-essential software-properties-common
@@ -22,6 +14,5 @@ python3.11 -m venv test_suite_env
 source test_suite_env/bin/activate
 
 # Bootstrap environment.
-make -j -C impl
 pip install -e ".[dev]"
 pre-commit install
