@@ -586,7 +586,7 @@ def debug_mismatches(
     section_names: str = typer.Option(
         "",
         "--section-names",
-        "-s",
+        "-n",
         help="Comma-delimited list of FuzzCorp section names",
     ),
     fuzzcorp_url: str = typer.Option(
@@ -694,6 +694,8 @@ def debug_mismatches(
         ].strip()
         custom_data_urls.append(custom_url)
 
+    ld_preload = os.environ.pop("LD_PRELOAD", None)
+
     num_test_cases = len(custom_data_urls)
     print("Downloading tests...")
     results = []
@@ -707,6 +709,9 @@ def debug_mismatches(
             total=num_test_cases,
         ):
             results.append(result)
+
+    if ld_preload is not None:
+        os.environ["LD_PRELOAD"] = ld_preload
 
     repro_custom = globals.output_dir / "repro_custom"
     if repro_custom.exists():
