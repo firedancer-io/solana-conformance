@@ -693,6 +693,9 @@ def debug_mismatches(
         custom_url = result.stdout[
             start_index + len("REPRO_CUSTOM_URL=") + 1 : end_index - 1
         ].strip()
+        if custom_url == "":
+            print(f"Failed to get custom URL from {url}")
+            continue
         custom_data_urls.append(custom_url)
 
     ld_preload = os.environ.pop("LD_PRELOAD", None)
