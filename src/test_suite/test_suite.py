@@ -366,6 +366,12 @@ def run_tests(
         "-sf",
         help="Saves failed test cases to results directory",
     ),
+    save_successes: bool = typer.Option(
+        False,
+        "--save-successes",
+        "-ss",
+        help="Saves successful test cases to results directory",
+    ),
     log_level: int = typer.Option(
         5,
         "--log-level",
@@ -404,6 +410,9 @@ def run_tests(
     if save_failures:
         failed_protobufs_dir = globals.output_dir / "failed_protobufs"
         failed_protobufs_dir.mkdir(parents=True, exist_ok=True)
+    if save_successes:
+        successful_protobufs_dir = globals.output_dir / "successful_protobufs"
+        successful_protobufs_dir.mkdir(parents=True, exist_ok=True)
 
     test_cases = list(input.iterdir()) if input.is_dir() else [input]
     num_test_cases = len(test_cases)
@@ -455,6 +464,10 @@ def run_tests(
 
         if status == 1:
             passed += 1
+            if save_successes:
+                successful_protobufs = list(input.glob(f"{file_stem}*"))
+                for successful_protobuf in successful_protobufs:
+                    shutil.copy(successful_protobuf, successful_protobufs_dir)
         elif status == -1:
             failed += 1
             failed_tests.append(file_stem)
@@ -481,6 +494,7 @@ def run_tests(
             print(f"Skipped tests: {skipped_tests}")
     if failed != 0 and save_failures:
         print("Failures tests are in: ", globals.output_dir / "failed_protobufs")
+    print("Successful tests are in: ", globals.output_dir / "successful_protobufs")
 
     if failed != 0:
         binary_to_log_file = {
@@ -745,6 +759,7 @@ def debug_mismatches(
         consensus_mode=False,
         failures_only=False,
         save_failures=True,
+        save_successes=True,
         log_level=log_level,
     )
 
