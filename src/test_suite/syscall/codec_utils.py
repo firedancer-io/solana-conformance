@@ -1,6 +1,15 @@
 import base64
+import test_suite.invoke_pb2 as invoke_pb
 import test_suite.vm_pb2 as vm_pb
 from test_suite.fuzz_interface import encode_hex_compact
+from test_suite.instr.codec_utils import encode_input as instr_encode_input
+
+
+def encode_input(input: vm_pb.SyscallContext):
+    instr_ctx = invoke_pb.InstrContext()
+    instr_ctx.CopyFrom(input.instr_ctx)
+    instr_encode_input(instr_ctx)
+    input.instr_ctx.CopyFrom(instr_ctx)
 
 
 def encode_output(effects: vm_pb.SyscallEffects):

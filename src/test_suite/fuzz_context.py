@@ -31,6 +31,7 @@ InstrHarness = HarnessCtx(
 SyscallHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_vm_syscall_execute_v1",
     fixture_desc=vm_pb.SyscallFixture.DESCRIPTOR,
+    context_human_encode_fn=syscall_codec.encode_input,
     effects_human_encode_fn=syscall_codec.encode_output,
 )
 
