@@ -17,6 +17,7 @@ from test_suite.fixture_utils import (
     extract_context_from_fixture,
     write_fixture_to_disk,
 )
+from test_suite.log_utils import log_results
 from test_suite.multiprocessing_utils import (
     decode_single_test_case,
     download_and_process,
@@ -406,14 +407,6 @@ def run_tests(
         log_dir = globals.output_dir / target.stem
         log_dir.mkdir(parents=True, exist_ok=True)
 
-    # Make failed protobuf directory
-    if save_failures:
-        failed_protobufs_dir = globals.output_dir / "failed_protobufs"
-        failed_protobufs_dir.mkdir(parents=True, exist_ok=True)
-    if save_successes:
-        successful_protobufs_dir = globals.output_dir / "successful_protobufs"
-        successful_protobufs_dir.mkdir(parents=True, exist_ok=True)
-
     test_cases = list(input.iterdir()) if input.is_dir() else [input]
     num_test_cases = len(test_cases)
 
@@ -432,54 +425,19 @@ def run_tests(
             test_case_results.append(result)
 
     print("Logging results...")
-    passed = 0
-    failed = 0
-    skipped = 0
-    failed_tests = []
-    skipped_tests = []
-    target_log_files = {target: None for target in shared_libraries}
-    for file_stem, status, stringified_results in test_case_results:
-        if stringified_results is None:
-            skipped += 1
-            skipped_tests.append(file_stem)
-            continue
-
-        for target, string_result in stringified_results.items():
-            if (passed + failed) % log_chunk_size == 0:
-                if target_log_files[target]:
-                    target_log_files[target].close()
-                target_log_files[target] = open(
-                    globals.output_dir / target.stem / (file_stem + ".txt"), "w"
-                )
-
-            if not failures_only or status == -1:
-                target_log_files[target].write(
-                    file_stem
-                    + ":\n"
-                    + string_result
-                    + "\n"
-                    + "-" * LOG_FILE_SEPARATOR_LENGTH
-                    + "\n"
-                )
-
-        if status == 1:
-            passed += 1
-            if save_successes:
-                successful_protobufs = list(input.glob(f"{file_stem}*"))
-                for successful_protobuf in successful_protobufs:
-                    shutil.copy(successful_protobuf, successful_protobufs_dir)
-        elif status == -1:
-            failed += 1
-            failed_tests.append(file_stem)
-            if save_failures:
-                failed_protobufs = list(input.glob(f"{file_stem}*"))
-                for failed_protobuf in failed_protobufs:
-                    shutil.copy(failed_protobuf, failed_protobufs_dir)
+    passed, failed, skipped, target_log_files, failed_tests, skipped_tests = (
+        log_results(
+            test_case_results,
+            shared_libraries,
+            log_chunk_size,
+            failures_only,
+            save_failures,
+            save_successes,
+        )
+    )
 
     print("Cleaning up...")
     for target in shared_libraries:
-        if target_log_files[target]:
-            target_log_files[target].close()
         globals.target_libraries[target].sol_compat_fini()
 
     peak_memory_usage_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
@@ -984,6 +942,12 @@ def exec_fixtures(
         "-t",
         help="Shared object (.so) target file path to execute",
     ),
+    output_dir: Path = typer.Option(
+        Path("test_results"),
+        "--output-dir",
+        "-o",
+        help="Output directory for test results",
+    ),
     randomize_output_buffer: bool = typer.Option(
         False,
         "--randomize-output-buffer",
@@ -1000,6 +964,18 @@ def exec_fixtures(
         4, "--num-processes", "-p", help="Number of processes to use"
     ),
 ):
+    # Specify globals
+    globals.output_dir = output_dir
+
+    # Create the output directory, if necessary
+    if globals.output_dir.exists():
+        shutil.rmtree(globals.output_dir)
+    globals.output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Make expected and actual results directories
+    (globals.output_dir / shared_library.stem).mkdir(parents=True, exist_ok=True)
+    (globals.output_dir / "actual").mkdir(parents=True, exist_ok=True)
+
     # Initialize output buffers and shared library
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
     try:
@@ -1013,7 +989,7 @@ def exec_fixtures(
     test_cases = list(input.iterdir()) if input.is_dir() else [input]
     num_test_cases = len(test_cases)
     print("Running tests...")
-    results = []
+    test_case_results = []
     with Pool(
         processes=num_processes,
         initializer=initialize_process_output_buffers,
@@ -1023,23 +999,22 @@ def exec_fixtures(
             pool.imap(execute_fixture, test_cases),
             total=num_test_cases,
         ):
-            results.append(result)
+            test_case_results.append(result)
 
-    passed = 0
-    failed = 0
-    skipped = 0
-    failed_tests = []
-    skipped_tests = []
+    print("Logging results...")
+    # TODO: add CLI options for last four arguments
+    passed, failed, skipped, target_log_files, failed_tests, skipped_tests = (
+        log_results(
+            test_case_results,
+            [globals.reference_shared_library, Path("actual")],
+            10000,
+            1,
+            0,
+            0,
+        )
+    )
 
-    for file, status in results:
-        if status == None:
-            skipped += 1
-            skipped_tests.append(file)
-        elif status == 1:
-            passed += 1
-        else:
-            failed += 1
-            failed_tests.append(file)
+    lib.sol_compat_fini()
 
     print(f"Total test cases: {passed + failed + skipped}")
     print(f"Passed: {passed}, Failed: {failed}, Skipped: {skipped}")
@@ -1047,8 +1022,6 @@ def exec_fixtures(
         print(f"Failed tests: {failed_tests}")
     if skipped != 0:
         print(f"Skipped tests: {skipped_tests}")
-
-    lib.sol_compat_fini()
 
 
 if __name__ == "__main__":

@@ -113,6 +113,7 @@ $ solana-test-suite exec-fixtures [OPTIONS]
 
 * `-i, --input PATH`: Input protobuf file or directory of protobuf files
 * `-t, --target PATH`: Shared object (.so) target file path to execute  [default: impl/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so]
+* `-o, --output-dir PATH`: Output directory for test results  [default: test_results]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
 * `-l, --log-level INTEGER`: FD logging level  [default: 2]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]

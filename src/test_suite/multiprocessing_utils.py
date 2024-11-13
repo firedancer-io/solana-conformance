@@ -375,7 +375,7 @@ def run_test(test_file: Path) -> tuple[str, int, dict | None]:
     return test_file.stem, *build_test_results(harness_ctx, pruned_results)
 
 
-def execute_fixture(test_file: Path) -> tuple[str, int | None]:
+def execute_fixture(test_file: Path) -> tuple[str, int, dict | None]:
     if test_file.suffix != ".fix":
         print(f"File {test_file} is not a fixture")
         return test_file.stem, None
@@ -390,7 +390,13 @@ def execute_fixture(test_file: Path) -> tuple[str, int | None]:
         harness_ctx, globals.target_libraries[globals.reference_shared_library], context
     )
 
-    return test_file.stem, effects == output
+    results = {
+        globals.reference_shared_library: output.SerializeToString(deterministic=True),
+        Path("actual"): effects.SerializeToString(deterministic=True),
+    }
+    prune_results = harness_ctx.prune_effects_fn(context, results)
+
+    return test_file.stem, *build_test_results(harness_ctx, prune_results)
 
 
 def download_and_process(url):
