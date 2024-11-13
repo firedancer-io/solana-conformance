@@ -361,7 +361,7 @@ def run_tests(
         help="Only log failed test cases",
     ),
     save_failures: bool = typer.Option(
-        True,
+        False,
         "--save-failures",
         "-sf",
         help="Saves failed test cases to results directory",
