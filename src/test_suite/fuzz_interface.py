@@ -38,6 +38,7 @@ def encode_hex_compact(buf):
             if skipped > 0:
                 res += f"...{skipped} zeros..."
             res += "".join([f"{b:0>2x}" for b in buf[i : i + 16]])
+            skipped = 0
     if skipped > 0:
         res += f"...{skipped} zeros..."
     return bytes(res, "ascii")
