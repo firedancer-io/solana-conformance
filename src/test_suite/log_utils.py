@@ -1,3 +1,4 @@
+from pathlib import Path
 import shutil
 from typing import List
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
@@ -5,6 +6,7 @@ import test_suite.globals as globals
 
 
 def log_results(
+    input_dir: Path,
     test_case_results,
     shared_libraries,
     log_chunk_size: int,
@@ -53,14 +55,14 @@ def log_results(
         if status == 1:
             passed += 1
             if save_successes:
-                successful_protobufs = list(input.glob(f"{file_stem}*"))
+                successful_protobufs = list(input_dir.glob(f"{file_stem}*"))
                 for successful_protobuf in successful_protobufs:
                     shutil.copy(successful_protobuf, successful_protobufs_dir)
         elif status == -1:
             failed += 1
             failed_tests.append(file_stem)
             if save_failures:
-                failed_protobufs = list(input.glob(f"{file_stem}*"))
+                failed_protobufs = list(input_dir.glob(f"{file_stem}*"))
                 for failed_protobuf in failed_protobufs:
                     shutil.copy(failed_protobuf, failed_protobufs_dir)
 

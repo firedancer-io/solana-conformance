@@ -427,6 +427,7 @@ def run_tests(
     print("Logging results...")
     passed, failed, skipped, target_log_files, failed_tests, skipped_tests = (
         log_results(
+            input,
             test_case_results,
             shared_libraries,
             log_chunk_size,
@@ -1005,6 +1006,7 @@ def exec_fixtures(
     # TODO: add CLI options for last four arguments
     passed, failed, skipped, target_log_files, failed_tests, skipped_tests = (
         log_results(
+            input,
             test_case_results,
             [globals.reference_shared_library, Path("actual")],
             10000,
