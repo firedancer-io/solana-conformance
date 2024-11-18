@@ -7,11 +7,13 @@ def consensus_instr_diff_effects(a: invoke_pb.InstrEffects, b: invoke_pb.InstrEf
     b_san = invoke_pb.InstrEffects()
     b_san.CopyFrom(b)
 
-    # Normalize error codes
+    # Normalize error codes and cus
     a_san.result = 0
     a_san.custom_err = 0
+    a_san.cu_avail = 0
 
     b_san.result = 0
     b_san.custom_err = 0
+    b_san.cu_avail = 0
 
     return a_san == b_san

@@ -24,7 +24,6 @@ InstrHarness = HarnessCtx(
     context_human_encode_fn=instr_codec.encode_input,
     context_human_decode_fn=instr_codec.decode_input,
     effects_human_encode_fn=instr_codec.encode_output,
-    ignore_fields_for_consensus=["custom_err", "cu_avail"],
     consensus_diff_effect_fn=instr_diff.consensus_instr_diff_effects,
 )
 
@@ -33,18 +32,23 @@ SyscallHarness = HarnessCtx(
     fixture_desc=vm_pb.SyscallFixture.DESCRIPTOR,
     context_human_encode_fn=syscall_codec.encode_input,
     effects_human_encode_fn=syscall_codec.encode_output,
+    context_human_decode_fn=syscall_codec.decode_input,
 )
 
 CpiHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_vm_cpi_syscall_v1",
     fixture_desc=vm_pb.SyscallFixture.DESCRIPTOR,
+    context_human_encode_fn=syscall_codec.encode_input,
     effects_human_encode_fn=syscall_codec.encode_output,
+    context_human_decode_fn=syscall_codec.decode_input,
 )
 
 VmInterpHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_vm_interp_v1",
     fixture_desc=vm_pb.SyscallFixture.DESCRIPTOR,
+    context_human_encode_fn=syscall_codec.encode_input,
     effects_human_encode_fn=syscall_codec.encode_output,
+    context_human_decode_fn=syscall_codec.decode_input,
 )
 
 VmValidateHarness = HarnessCtx(
