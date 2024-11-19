@@ -25,6 +25,11 @@ def encode_output(effects: vm_pb.SyscallEffects):
     effects.stack = encode_hex_compact(effects.stack)
     effects.rodata = encode_hex_compact(effects.rodata)
 
+    for i in range(len(effects.input_data_regions)):
+        effects.input_data_regions[i].content = encode_hex_compact(
+            effects.input_data_regions[i].content
+        )
+
 
 def decode_input(input: vm_pb.SyscallContext):
     instr_ctx = invoke_pb.InstrContext()
