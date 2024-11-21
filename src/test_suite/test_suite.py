@@ -619,38 +619,25 @@ def debug_mismatches(
         for section_name in section_names_list:
             current_section_count = 0
             print(f"Getting links from section {section_name}...")
-            section_anchor = soup.find("a", {"name": f"lin_{section_name}"})
+            lineage_div = soup.find("div", id=f"lin_{section_name}")
 
-            if section_anchor:
-                next_element = section_anchor.find_next_sibling()
-                while next_element:
-                    if next_element.name == "table":
-                        hrefs = [
-                            a["href"] for a in next_element.find_all("a", href=True)
-                        ]
-                        for href in hrefs:
-                            if (
-                                section_limit != 0
-                                and current_section_count >= section_limit
-                            ):
-                                break
-                            repro_urls_list.append(urljoin(fuzzcorp_url, href))
-                            current_section_count += 1
-                        break
-                    elif (
-                        next_element.name == "p"
-                        and "No bugs found" in next_element.text
-                    ):
-                        print(f"No bugs found for section {section_name}.")
-                        break
-                    elif next_element.name == "a" and next_element.has_attr("name"):
-                        print(f"No table found in section {section_name}.")
-                        break
-
-                    next_element = next_element.find_next_sibling()
-
-                if not next_element:
-                    print(f"No relevant content found after section {section_name}.")
+            if lineage_div:
+                tables = lineage_div.find_all("table")
+                if len(tables) > 1:
+                    issues_table = tables[1]
+                    hrefs = [
+                        link["href"] for link in issues_table.find_all("a", href=True)
+                    ]
+                    for href in hrefs:
+                        if (
+                            section_limit != 0
+                            and current_section_count >= section_limit
+                        ):
+                            break
+                        repro_urls_list.append(urljoin(fuzzcorp_url, href))
+                        current_section_count += 1
+                else:
+                    print(f"No bugs found for section {section_name}.")
             else:
                 print(f"Section {section_name} not found.")
 
