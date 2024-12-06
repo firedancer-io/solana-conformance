@@ -231,6 +231,7 @@ $ solana-test-suite run-tests [OPTIONS]
 * `-c, --chunk-size INTEGER`: Number of test results per file  [default: 10000]
 * `-v, --verbose`: Verbose output: log failed test cases
 * `-c, --consensus-mode`: Only fail on consensus failures. One such effect is to normalize error codes when comparing results
+* `-cb, --core-bpf-mode`: Deliberately skip known mismatches between BPF programs and builtins, only failing on genuine mimatches. For example, builtin programs may throw errors on readonly account state violations sooner than BPF programs, compute unit usage will be different, etc. This feature is primarily used to test a BPF program against a builtin.
 * `-f, --failures-only`: Only log failed test cases
 * `-sf, --save-failures`: Saves failed test cases to results directory
 * `-ss, --save-successes`: Saves successful test cases to results directory

@@ -314,11 +314,8 @@ def build_test_results(
             effects = harness_ctx.effects_type()
             effects.ParseFromString(result)
 
-            if globals.consensus_mode:
-                harness_ctx.diff_effect_fn = harness_ctx.consensus_diff_effect_fn
-
-            # Note: diff_effect_fn may modify effects in-place
-            all_passed &= harness_ctx.diff_effect_fn(ref_effects, effects)
+            # Note: apply_diff may modify effects in-place
+            all_passed &= globals.diff_mode.apply_diff(ref_effects, effects)
 
             harness_ctx.effects_human_encode_fn(effects)
             outputs[target] = text_format.MessageToString(effects)
