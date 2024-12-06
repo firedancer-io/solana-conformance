@@ -354,7 +354,8 @@ def run_tests(
         False,
         "--consensus-mode",
         "-c",
-        help="Only fail on consensus failures. One such effect is to normalize error codes when comparing results",
+        help="Only fail on consensus failures. One such effect is to normalize error codes when comparing results. \
+Note: Cannot be used with --core-bpf-mode.",
     ),
     core_bpf_mode: bool = typer.Option(
         False,
@@ -362,7 +363,8 @@ def run_tests(
         "-cb",
         help="Deliberately skip known mismatches between BPF programs and builtins, only failing on genuine mimatches. \
 For example, builtin programs may throw errors on readonly account state violations sooner than BPF programs, \
-compute unit usage will be different, etc. This feature is primarily used to test a BPF program against a builtin.",
+compute unit usage will be different, etc. This feature is primarily used to test a BPF program against a builtin. \
+Note: Cannot be used with --consensus-mode.",
     ),
     failures_only: bool = typer.Option(
         False,
