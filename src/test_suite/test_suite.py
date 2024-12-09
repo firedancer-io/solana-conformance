@@ -46,6 +46,7 @@ import test_suite.pb_utils as pb_utils
 Harness options:
 - InstrHarness
 - TxnHarness
+- BlockHarness
 - SyscallHarness
 - ValidateVM
 - ElfHarness
