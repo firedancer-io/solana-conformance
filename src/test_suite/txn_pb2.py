@@ -1,11 +1,9 @@
-import sys
+"""Generated protocol buffer code."""
 
-_b = sys.version_info[0] < 3 and (lambda x: x) or (lambda x: x.encode("latin1"))
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
-from google.protobuf import descriptor_pb2
 
 _sym_db = _symbol_database.Default()
 from . import context_pb2 as context__pb2
@@ -15,9 +13,9 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     name="txn.proto",
     package="org.solana.sealevel.v1",
     syntax="proto3",
-    serialized_pb=_b(
-        '\n\ttxn.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\x0emetadata.proto"~\n\rMessageHeader\x12\x1f\n\x17num_required_signatures\x18\x01 \x01(\r\x12$\n\x1cnum_readonly_signed_accounts\x18\x02 \x01(\r\x12&\n\x1enum_readonly_unsigned_accounts\x18\x03 \x01(\r"O\n\x13CompiledInstruction\x12\x18\n\x10program_id_index\x18\x01 \x01(\r\x12\x10\n\x08accounts\x18\x02 \x03(\r\x12\x0c\n\x04data\x18\x03 \x01(\x0c"d\n\x19MessageAddressTableLookup\x12\x13\n\x0baccount_key\x18\x01 \x01(\x0c\x12\x18\n\x10writable_indexes\x18\x02 \x03(\r\x12\x18\n\x10readonly_indexes\x18\x03 \x03(\r"£\x02\n\x12TransactionMessage\x12\x11\n\tis_legacy\x18\x01 \x01(\x08\x125\n\x06header\x18\x02 \x01(\x0b2%.org.solana.sealevel.v1.MessageHeader\x12\x14\n\x0caccount_keys\x18\x03 \x03(\x0c\x12\x18\n\x10recent_blockhash\x18\x05 \x01(\x0c\x12A\n\x0cinstructions\x18\x06 \x03(\x0b2+.org.solana.sealevel.v1.CompiledInstruction\x12P\n\x15address_table_lookups\x18\x07 \x03(\x0b21.org.solana.sealevel.v1.MessageAddressTableLookup"}\n\x14SanitizedTransaction\x12;\n\x07message\x18\x01 \x01(\x0b2*.org.solana.sealevel.v1.TransactionMessage\x12\x14\n\x0cmessage_hash\x18\x02 \x01(\x0c\x12\x12\n\nsignatures\x18\x04 \x03(\x0c"\x8f\x02\n\nTxnContext\x128\n\x02tx\x18\x01 \x01(\x0b2,.org.solana.sealevel.v1.SanitizedTransaction\x12>\n\x13account_shared_data\x18\x02 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x12\x17\n\x0fblockhash_queue\x18\x03 \x03(\x0c\x127\n\tepoch_ctx\x18\x04 \x01(\x0b2$.org.solana.sealevel.v1.EpochContext\x125\n\x08slot_ctx\x18\x05 \x01(\x0b2#.org.solana.sealevel.v1.SlotContext"\x9b\x01\n\x0eResultingState\x126\n\x0bacct_states\x18\x01 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x127\n\x0brent_debits\x18\x02 \x03(\x0b2".org.solana.sealevel.v1.RentDebits\x12\x18\n\x10transaction_rent\x18\x03 \x01(\x04"4\n\nRentDebits\x12\x0e\n\x06pubkey\x18\x01 \x01(\x0c\x12\x16\n\x0erent_collected\x18\x02 \x01(\x03"A\n\nFeeDetails\x12\x17\n\x0ftransaction_fee\x18\x01 \x01(\x04\x12\x1a\n\x12prioritization_fee\x18\x02 \x01(\x04"ß\x02\n\tTxnResult\x12\x10\n\x08executed\x18\x01 \x01(\x08\x12\x1a\n\x12sanitization_error\x18\x02 \x01(\x08\x12?\n\x0fresulting_state\x18\x03 \x01(\x0b2&.org.solana.sealevel.v1.ResultingState\x12\x0c\n\x04rent\x18\x04 \x01(\x04\x12\r\n\x05is_ok\x18\x05 \x01(\x08\x12\x0e\n\x06status\x18\x06 \x01(\r\x12\x19\n\x11instruction_error\x18\x07 \x01(\r\x12\x1f\n\x17instruction_error_index\x18\x08 \x01(\r\x12\x14\n\x0ccustom_error\x18\t \x01(\r\x12\x13\n\x0breturn_data\x18\n \x01(\x0c\x12\x16\n\x0eexecuted_units\x18\x0b \x01(\x04\x127\n\x0bfee_details\x18\x0c \x01(\x0b2".org.solana.sealevel.v1.FeeDetails"\xad\x01\n\nTxnFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x121\n\x05input\x18\x02 \x01(\x0b2".org.solana.sealevel.v1.TxnContext\x121\n\x06output\x18\x03 \x01(\x0b2!.org.solana.sealevel.v1.TxnResultb\x06proto3'
-    ),
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+    serialized_pb=b'\n\ttxn.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\x0emetadata.proto"~\n\rMessageHeader\x12\x1f\n\x17num_required_signatures\x18\x01 \x01(\r\x12$\n\x1cnum_readonly_signed_accounts\x18\x02 \x01(\r\x12&\n\x1enum_readonly_unsigned_accounts\x18\x03 \x01(\r"O\n\x13CompiledInstruction\x12\x18\n\x10program_id_index\x18\x01 \x01(\r\x12\x10\n\x08accounts\x18\x02 \x03(\r\x12\x0c\n\x04data\x18\x03 \x01(\x0c"d\n\x19MessageAddressTableLookup\x12\x13\n\x0baccount_key\x18\x01 \x01(\x0c\x12\x18\n\x10writable_indexes\x18\x02 \x03(\r\x12\x18\n\x10readonly_indexes\x18\x03 \x03(\r"\xa3\x02\n\x12TransactionMessage\x12\x11\n\tis_legacy\x18\x01 \x01(\x08\x125\n\x06header\x18\x02 \x01(\x0b2%.org.solana.sealevel.v1.MessageHeader\x12\x14\n\x0caccount_keys\x18\x03 \x03(\x0c\x12\x18\n\x10recent_blockhash\x18\x05 \x01(\x0c\x12A\n\x0cinstructions\x18\x06 \x03(\x0b2+.org.solana.sealevel.v1.CompiledInstruction\x12P\n\x15address_table_lookups\x18\x07 \x03(\x0b21.org.solana.sealevel.v1.MessageAddressTableLookup"}\n\x14SanitizedTransaction\x12;\n\x07message\x18\x01 \x01(\x0b2*.org.solana.sealevel.v1.TransactionMessage\x12\x14\n\x0cmessage_hash\x18\x02 \x01(\x0c\x12\x12\n\nsignatures\x18\x04 \x03(\x0c"\x8f\x02\n\nTxnContext\x128\n\x02tx\x18\x01 \x01(\x0b2,.org.solana.sealevel.v1.SanitizedTransaction\x12>\n\x13account_shared_data\x18\x02 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x12\x17\n\x0fblockhash_queue\x18\x03 \x03(\x0c\x127\n\tepoch_ctx\x18\x04 \x01(\x0b2$.org.solana.sealevel.v1.EpochContext\x125\n\x08slot_ctx\x18\x05 \x01(\x0b2#.org.solana.sealevel.v1.SlotContext"\x9b\x01\n\x0eResultingState\x126\n\x0bacct_states\x18\x01 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x127\n\x0brent_debits\x18\x02 \x03(\x0b2".org.solana.sealevel.v1.RentDebits\x12\x18\n\x10transaction_rent\x18\x03 \x01(\x04"4\n\nRentDebits\x12\x0e\n\x06pubkey\x18\x01 \x01(\x0c\x12\x16\n\x0erent_collected\x18\x02 \x01(\x03"A\n\nFeeDetails\x12\x17\n\x0ftransaction_fee\x18\x01 \x01(\x04\x12\x1a\n\x12prioritization_fee\x18\x02 \x01(\x04"\xdf\x02\n\tTxnResult\x12\x10\n\x08executed\x18\x01 \x01(\x08\x12\x1a\n\x12sanitization_error\x18\x02 \x01(\x08\x12?\n\x0fresulting_state\x18\x03 \x01(\x0b2&.org.solana.sealevel.v1.ResultingState\x12\x0c\n\x04rent\x18\x04 \x01(\x04\x12\r\n\x05is_ok\x18\x05 \x01(\x08\x12\x0e\n\x06status\x18\x06 \x01(\r\x12\x19\n\x11instruction_error\x18\x07 \x01(\r\x12\x1f\n\x17instruction_error_index\x18\x08 \x01(\r\x12\x14\n\x0ccustom_error\x18\t \x01(\r\x12\x13\n\x0breturn_data\x18\n \x01(\x0c\x12\x16\n\x0eexecuted_units\x18\x0b \x01(\x04\x127\n\x0bfee_details\x18\x0c \x01(\x0b2".org.solana.sealevel.v1.FeeDetails"\xad\x01\n\nTxnFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x121\n\x05input\x18\x02 \x01(\x0b2".org.solana.sealevel.v1.TxnContext\x121\n\x06output\x18\x03 \x01(\x0b2!.org.solana.sealevel.v1.TxnResultb\x06proto3',
     dependencies=[context__pb2.DESCRIPTOR, metadata__pb2.DESCRIPTOR],
 )
 _MESSAGEHEADER = _descriptor.Descriptor(
@@ -26,6 +24,7 @@ _MESSAGEHEADER = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="num_required_signatures",
@@ -42,8 +41,9 @@ _MESSAGEHEADER = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="num_readonly_signed_accounts",
@@ -60,8 +60,9 @@ _MESSAGEHEADER = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="num_readonly_unsigned_accounts",
@@ -78,14 +79,15 @@ _MESSAGEHEADER = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    options=None,
+    serialized_options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -99,6 +101,7 @@ _COMPILEDINSTRUCTION = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="program_id_index",
@@ -115,8 +118,9 @@ _COMPILEDINSTRUCTION = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="accounts",
@@ -133,8 +137,9 @@ _COMPILEDINSTRUCTION = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="data",
@@ -145,20 +150,21 @@ _COMPILEDINSTRUCTION = _descriptor.Descriptor(
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=_b(""),
+            default_value=b"",
             message_type=None,
             enum_type=None,
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    options=None,
+    serialized_options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -172,6 +178,7 @@ _MESSAGEADDRESSTABLELOOKUP = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="account_key",
@@ -182,14 +189,15 @@ _MESSAGEADDRESSTABLELOOKUP = _descriptor.Descriptor(
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=_b(""),
+            default_value=b"",
             message_type=None,
             enum_type=None,
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="writable_indexes",
@@ -206,8 +214,9 @@ _MESSAGEADDRESSTABLELOOKUP = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="readonly_indexes",
@@ -224,14 +233,15 @@ _MESSAGEADDRESSTABLELOOKUP = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    options=None,
+    serialized_options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -245,6 +255,7 @@ _TRANSACTIONMESSAGE = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="is_legacy",
@@ -261,8 +272,9 @@ _TRANSACTIONMESSAGE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="header",
@@ -279,8 +291,9 @@ _TRANSACTIONMESSAGE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="account_keys",
@@ -297,8 +310,9 @@ _TRANSACTIONMESSAGE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="recent_blockhash",
@@ -309,14 +323,15 @@ _TRANSACTIONMESSAGE = _descriptor.Descriptor(
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=_b(""),
+            default_value=b"",
             message_type=None,
             enum_type=None,
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="instructions",
@@ -333,8 +348,9 @@ _TRANSACTIONMESSAGE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="address_table_lookups",
@@ -351,14 +367,15 @@ _TRANSACTIONMESSAGE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    options=None,
+    serialized_options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -372,6 +389,7 @@ _SANITIZEDTRANSACTION = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="message",
@@ -388,8 +406,9 @@ _SANITIZEDTRANSACTION = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="message_hash",
@@ -400,14 +419,15 @@ _SANITIZEDTRANSACTION = _descriptor.Descriptor(
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=_b(""),
+            default_value=b"",
             message_type=None,
             enum_type=None,
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="signatures",
@@ -424,14 +444,15 @@ _SANITIZEDTRANSACTION = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    options=None,
+    serialized_options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -445,6 +466,7 @@ _TXNCONTEXT = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="tx",
@@ -461,8 +483,28 @@ _TXNCONTEXT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
+        ),
+        _descriptor.FieldDescriptor(
+            name="account_shared_data",
+            full_name="org.solana.sealevel.v1.TxnContext.account_shared_data",
+            index=1,
+            number=2,
+            type=11,
+            cpp_type=10,
+            label=3,
+            has_default_value=False,
+            default_value=[],
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="account_shared_data",
@@ -497,8 +539,9 @@ _TXNCONTEXT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="epoch_ctx",
@@ -515,8 +558,9 @@ _TXNCONTEXT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="slot_ctx",
@@ -533,14 +577,15 @@ _TXNCONTEXT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    options=None,
+    serialized_options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -554,6 +599,7 @@ _RESULTINGSTATE = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="acct_states",
@@ -570,8 +616,9 @@ _RESULTINGSTATE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="rent_debits",
@@ -588,8 +635,9 @@ _RESULTINGSTATE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="transaction_rent",
@@ -606,14 +654,15 @@ _RESULTINGSTATE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    options=None,
+    serialized_options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -627,6 +676,7 @@ _RENTDEBITS = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="pubkey",
@@ -637,14 +687,15 @@ _RENTDEBITS = _descriptor.Descriptor(
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=_b(""),
+            default_value=b"",
             message_type=None,
             enum_type=None,
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="rent_collected",
@@ -661,14 +712,15 @@ _RENTDEBITS = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    options=None,
+    serialized_options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -682,6 +734,7 @@ _FEEDETAILS = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="transaction_fee",
@@ -698,8 +751,9 @@ _FEEDETAILS = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="prioritization_fee",
@@ -716,14 +770,15 @@ _FEEDETAILS = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    options=None,
+    serialized_options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -737,6 +792,7 @@ _TXNRESULT = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="executed",
@@ -753,8 +809,9 @@ _TXNRESULT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="sanitization_error",
@@ -771,8 +828,9 @@ _TXNRESULT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="resulting_state",
@@ -789,8 +847,9 @@ _TXNRESULT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="rent",
@@ -807,8 +866,9 @@ _TXNRESULT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="is_ok",
@@ -825,8 +885,9 @@ _TXNRESULT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="status",
@@ -843,8 +904,9 @@ _TXNRESULT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="instruction_error",
@@ -861,8 +923,9 @@ _TXNRESULT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="instruction_error_index",
@@ -879,8 +942,9 @@ _TXNRESULT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="custom_error",
@@ -897,8 +961,9 @@ _TXNRESULT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="return_data",
@@ -909,14 +974,15 @@ _TXNRESULT = _descriptor.Descriptor(
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=_b(""),
+            default_value=b"",
             message_type=None,
             enum_type=None,
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="executed_units",
@@ -933,8 +999,9 @@ _TXNRESULT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="fee_details",
@@ -951,14 +1018,15 @@ _TXNRESULT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    options=None,
+    serialized_options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -972,6 +1040,7 @@ _TXNFIXTURE = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="metadata",
@@ -988,8 +1057,9 @@ _TXNFIXTURE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="input",
@@ -1006,8 +1076,9 @@ _TXNFIXTURE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="output",
@@ -1024,14 +1095,15 @@ _TXNFIXTURE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    options=None,
+    serialized_options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -1073,64 +1145,66 @@ _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 MessageHeader = _reflection.GeneratedProtocolMessageType(
     "MessageHeader",
     (_message.Message,),
-    dict(DESCRIPTOR=_MESSAGEHEADER, __module__="txn_pb2"),
+    {"DESCRIPTOR": _MESSAGEHEADER, "__module__": "txn_pb2"},
 )
 _sym_db.RegisterMessage(MessageHeader)
 CompiledInstruction = _reflection.GeneratedProtocolMessageType(
     "CompiledInstruction",
     (_message.Message,),
-    dict(DESCRIPTOR=_COMPILEDINSTRUCTION, __module__="txn_pb2"),
+    {"DESCRIPTOR": _COMPILEDINSTRUCTION, "__module__": "txn_pb2"},
 )
 _sym_db.RegisterMessage(CompiledInstruction)
 MessageAddressTableLookup = _reflection.GeneratedProtocolMessageType(
     "MessageAddressTableLookup",
     (_message.Message,),
-    dict(DESCRIPTOR=_MESSAGEADDRESSTABLELOOKUP, __module__="txn_pb2"),
+    {"DESCRIPTOR": _MESSAGEADDRESSTABLELOOKUP, "__module__": "txn_pb2"},
 )
 _sym_db.RegisterMessage(MessageAddressTableLookup)
 TransactionMessage = _reflection.GeneratedProtocolMessageType(
     "TransactionMessage",
     (_message.Message,),
-    dict(DESCRIPTOR=_TRANSACTIONMESSAGE, __module__="txn_pb2"),
+    {"DESCRIPTOR": _TRANSACTIONMESSAGE, "__module__": "txn_pb2"},
 )
 _sym_db.RegisterMessage(TransactionMessage)
 SanitizedTransaction = _reflection.GeneratedProtocolMessageType(
     "SanitizedTransaction",
     (_message.Message,),
-    dict(DESCRIPTOR=_SANITIZEDTRANSACTION, __module__="txn_pb2"),
+    {"DESCRIPTOR": _SANITIZEDTRANSACTION, "__module__": "txn_pb2"},
 )
 _sym_db.RegisterMessage(SanitizedTransaction)
 TxnContext = _reflection.GeneratedProtocolMessageType(
     "TxnContext",
     (_message.Message,),
-    dict(DESCRIPTOR=_TXNCONTEXT, __module__="txn_pb2"),
+    {"DESCRIPTOR": _TXNCONTEXT, "__module__": "txn_pb2"},
 )
 _sym_db.RegisterMessage(TxnContext)
 ResultingState = _reflection.GeneratedProtocolMessageType(
     "ResultingState",
     (_message.Message,),
-    dict(DESCRIPTOR=_RESULTINGSTATE, __module__="txn_pb2"),
+    {"DESCRIPTOR": _RESULTINGSTATE, "__module__": "txn_pb2"},
 )
 _sym_db.RegisterMessage(ResultingState)
 RentDebits = _reflection.GeneratedProtocolMessageType(
     "RentDebits",
     (_message.Message,),
-    dict(DESCRIPTOR=_RENTDEBITS, __module__="txn_pb2"),
+    {"DESCRIPTOR": _RENTDEBITS, "__module__": "txn_pb2"},
 )
 _sym_db.RegisterMessage(RentDebits)
 FeeDetails = _reflection.GeneratedProtocolMessageType(
     "FeeDetails",
     (_message.Message,),
-    dict(DESCRIPTOR=_FEEDETAILS, __module__="txn_pb2"),
+    {"DESCRIPTOR": _FEEDETAILS, "__module__": "txn_pb2"},
 )
 _sym_db.RegisterMessage(FeeDetails)
 TxnResult = _reflection.GeneratedProtocolMessageType(
-    "TxnResult", (_message.Message,), dict(DESCRIPTOR=_TXNRESULT, __module__="txn_pb2")
+    "TxnResult",
+    (_message.Message,),
+    {"DESCRIPTOR": _TXNRESULT, "__module__": "txn_pb2"},
 )
 _sym_db.RegisterMessage(TxnResult)
 TxnFixture = _reflection.GeneratedProtocolMessageType(
     "TxnFixture",
     (_message.Message,),
-    dict(DESCRIPTOR=_TXNFIXTURE, __module__="txn_pb2"),
+    {"DESCRIPTOR": _TXNFIXTURE, "__module__": "txn_pb2"},
 )
 _sym_db.RegisterMessage(TxnFixture)

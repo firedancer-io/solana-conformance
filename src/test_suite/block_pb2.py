@@ -7,35 +7,40 @@ from google.protobuf import symbol_database as _symbol_database
 
 _sym_db = _symbol_database.Default()
 from . import context_pb2 as context__pb2
+from . import txn_pb2 as txn__pb2
 from . import metadata_pb2 as metadata__pb2
 
 DESCRIPTOR = _descriptor.FileDescriptor(
-    name="elf.proto",
+    name="block.proto",
     package="org.solana.sealevel.v1",
     syntax="proto3",
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
-    serialized_pb=b'\n\telf.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\x0emetadata.proto"\x19\n\tELFBinary\x12\x0c\n\x04data\x18\x01 \x01(\x0c"\x9b\x01\n\x0cELFLoaderCtx\x12.\n\x03elf\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.ELFBinary\x124\n\x08features\x18\x02 \x01(\x0b2".org.solana.sealevel.v1.FeatureSet\x12\x0e\n\x06elf_sz\x18\x03 \x01(\x04\x12\x15\n\rdeploy_checks\x18\x04 \x01(\x08"~\n\x10ELFLoaderEffects\x12\x0e\n\x06rodata\x18\x01 \x01(\x0c\x12\x11\n\trodata_sz\x18\x02 \x01(\x04\x12\x10\n\x08text_cnt\x18\x04 \x01(\x04\x12\x10\n\x08text_off\x18\x05 \x01(\x04\x12\x10\n\x08entry_pc\x18\x06 \x01(\x04\x12\x11\n\tcalldests\x18\x07 \x03(\x04"\xbc\x01\n\x10ELFLoaderFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x123\n\x05input\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.ELFLoaderCtx\x128\n\x06output\x18\x03 \x01(\x0b2(.org.solana.sealevel.v1.ELFLoaderEffectsb\x06proto3',
-    dependencies=[context__pb2.DESCRIPTOR, metadata__pb2.DESCRIPTOR],
+    serialized_pb=b'\n\x0bblock.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\ttxn.proto\x1a\x0emetadata.proto"H\n\nMicroblock\x12:\n\x04txns\x18\x01 \x03(\x0b2,.org.solana.sealevel.v1.SanitizedTransaction"\x88\x02\n\x0cBlockContext\x127\n\x0bmicroblocks\x18\x01 \x03(\x0b2".org.solana.sealevel.v1.Microblock\x126\n\x0bacct_states\x18\x02 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x12\x17\n\x0fblockhash_queue\x18\x03 \x03(\x0c\x125\n\x08slot_ctx\x18\x04 \x01(\x0b2#.org.solana.sealevel.v1.SlotContext\x127\n\tepoch_ctx\x18\x05 \x01(\x0b2$.org.solana.sealevel.v1.EpochContext"\xb6\x01\n\x0cBlockEffects\x12\x11\n\thas_error\x18\x01 \x01(\x08\x126\n\x0bacct_states\x18\x02 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x12\x1b\n\x13slot_capitalization\x18\x03 \x01(\x04\x12\x11\n\tbank_hash\x18\x04 \x01(\x0c\x12\x0f\n\x07lt_hash\x18\x05 \x01(\x0c\x12\x1a\n\x12account_delta_hash\x18\x06 \x01(\x0c"\xb4\x01\n\x0cBlockFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x123\n\x05input\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.BlockContext\x124\n\x06output\x18\x03 \x01(\x0b2$.org.solana.sealevel.v1.BlockEffectsb\x06proto3',
+    dependencies=[
+        context__pb2.DESCRIPTOR,
+        txn__pb2.DESCRIPTOR,
+        metadata__pb2.DESCRIPTOR,
+    ],
 )
-_ELFBINARY = _descriptor.Descriptor(
-    name="ELFBinary",
-    full_name="org.solana.sealevel.v1.ELFBinary",
+_MICROBLOCK = _descriptor.Descriptor(
+    name="Microblock",
+    full_name="org.solana.sealevel.v1.Microblock",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name="data",
-            full_name="org.solana.sealevel.v1.ELFBinary.data",
+            name="txns",
+            full_name="org.solana.sealevel.v1.Microblock.txns",
             index=0,
             number=1,
-            type=12,
-            cpp_type=9,
-            label=1,
+            type=11,
+            cpp_type=10,
+            label=3,
             has_default_value=False,
-            default_value=b"",
+            default_value=[],
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -54,27 +59,27 @@ _ELFBINARY = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=68,
-    serialized_end=93,
+    serialized_start=81,
+    serialized_end=153,
 )
-_ELFLOADERCTX = _descriptor.Descriptor(
-    name="ELFLoaderCtx",
-    full_name="org.solana.sealevel.v1.ELFLoaderCtx",
+_BLOCKCONTEXT = _descriptor.Descriptor(
+    name="BlockContext",
+    full_name="org.solana.sealevel.v1.BlockContext",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name="elf",
-            full_name="org.solana.sealevel.v1.ELFLoaderCtx.elf",
+            name="microblocks",
+            full_name="org.solana.sealevel.v1.BlockContext.microblocks",
             index=0,
             number=1,
             type=11,
             cpp_type=10,
-            label=1,
+            label=3,
             has_default_value=False,
-            default_value=None,
+            default_value=[],
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -85,10 +90,48 @@ _ELFLOADERCTX = _descriptor.Descriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
-            name="features",
-            full_name="org.solana.sealevel.v1.ELFLoaderCtx.features",
+            name="acct_states",
+            full_name="org.solana.sealevel.v1.BlockContext.acct_states",
             index=1,
             number=2,
+            type=11,
+            cpp_type=10,
+            label=3,
+            has_default_value=False,
+            default_value=[],
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
+        ),
+        _descriptor.FieldDescriptor(
+            name="blockhash_queue",
+            full_name="org.solana.sealevel.v1.BlockContext.blockhash_queue",
+            index=2,
+            number=3,
+            type=12,
+            cpp_type=9,
+            label=3,
+            has_default_value=False,
+            default_value=[],
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
+        ),
+        _descriptor.FieldDescriptor(
+            name="slot_ctx",
+            full_name="org.solana.sealevel.v1.BlockContext.slot_ctx",
+            index=3,
+            number=4,
             type=11,
             cpp_type=10,
             label=1,
@@ -104,8 +147,85 @@ _ELFLOADERCTX = _descriptor.Descriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
-            name="elf_sz",
-            full_name="org.solana.sealevel.v1.ELFLoaderCtx.elf_sz",
+            name="epoch_ctx",
+            full_name="org.solana.sealevel.v1.BlockContext.epoch_ctx",
+            index=4,
+            number=5,
+            type=11,
+            cpp_type=10,
+            label=1,
+            has_default_value=False,
+            default_value=None,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
+        ),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    serialized_options=None,
+    is_extendable=False,
+    syntax="proto3",
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=156,
+    serialized_end=420,
+)
+_BLOCKEFFECTS = _descriptor.Descriptor(
+    name="BlockEffects",
+    full_name="org.solana.sealevel.v1.BlockEffects",
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    create_key=_descriptor._internal_create_key,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name="has_error",
+            full_name="org.solana.sealevel.v1.BlockEffects.has_error",
+            index=0,
+            number=1,
+            type=8,
+            cpp_type=7,
+            label=1,
+            has_default_value=False,
+            default_value=False,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
+        ),
+        _descriptor.FieldDescriptor(
+            name="acct_states",
+            full_name="org.solana.sealevel.v1.BlockEffects.acct_states",
+            index=1,
+            number=2,
+            type=11,
+            cpp_type=10,
+            label=3,
+            has_default_value=False,
+            default_value=[],
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
+        ),
+        _descriptor.FieldDescriptor(
+            name="slot_capitalization",
+            full_name="org.solana.sealevel.v1.BlockEffects.slot_capitalization",
             index=2,
             number=3,
             type=4,
@@ -123,49 +243,10 @@ _ELFLOADERCTX = _descriptor.Descriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
-            name="deploy_checks",
-            full_name="org.solana.sealevel.v1.ELFLoaderCtx.deploy_checks",
+            name="bank_hash",
+            full_name="org.solana.sealevel.v1.BlockEffects.bank_hash",
             index=3,
             number=4,
-            type=8,
-            cpp_type=7,
-            label=1,
-            has_default_value=False,
-            default_value=False,
-            message_type=None,
-            enum_type=None,
-            containing_type=None,
-            is_extension=False,
-            extension_scope=None,
-            serialized_options=None,
-            file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
-        ),
-    ],
-    extensions=[],
-    nested_types=[],
-    enum_types=[],
-    serialized_options=None,
-    is_extendable=False,
-    syntax="proto3",
-    extension_ranges=[],
-    oneofs=[],
-    serialized_start=96,
-    serialized_end=251,
-)
-_ELFLOADEREFFECTS = _descriptor.Descriptor(
-    name="ELFLoaderEffects",
-    full_name="org.solana.sealevel.v1.ELFLoaderEffects",
-    filename=None,
-    file=DESCRIPTOR,
-    containing_type=None,
-    create_key=_descriptor._internal_create_key,
-    fields=[
-        _descriptor.FieldDescriptor(
-            name="rodata",
-            full_name="org.solana.sealevel.v1.ELFLoaderEffects.rodata",
-            index=0,
-            number=1,
             type=12,
             cpp_type=9,
             label=1,
@@ -181,72 +262,15 @@ _ELFLOADEREFFECTS = _descriptor.Descriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
-            name="rodata_sz",
-            full_name="org.solana.sealevel.v1.ELFLoaderEffects.rodata_sz",
-            index=1,
-            number=2,
-            type=4,
-            cpp_type=4,
-            label=1,
-            has_default_value=False,
-            default_value=0,
-            message_type=None,
-            enum_type=None,
-            containing_type=None,
-            is_extension=False,
-            extension_scope=None,
-            serialized_options=None,
-            file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
-        ),
-        _descriptor.FieldDescriptor(
-            name="text_cnt",
-            full_name="org.solana.sealevel.v1.ELFLoaderEffects.text_cnt",
-            index=2,
-            number=4,
-            type=4,
-            cpp_type=4,
-            label=1,
-            has_default_value=False,
-            default_value=0,
-            message_type=None,
-            enum_type=None,
-            containing_type=None,
-            is_extension=False,
-            extension_scope=None,
-            serialized_options=None,
-            file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
-        ),
-        _descriptor.FieldDescriptor(
-            name="text_off",
-            full_name="org.solana.sealevel.v1.ELFLoaderEffects.text_off",
-            index=3,
-            number=5,
-            type=4,
-            cpp_type=4,
-            label=1,
-            has_default_value=False,
-            default_value=0,
-            message_type=None,
-            enum_type=None,
-            containing_type=None,
-            is_extension=False,
-            extension_scope=None,
-            serialized_options=None,
-            file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
-        ),
-        _descriptor.FieldDescriptor(
-            name="entry_pc",
-            full_name="org.solana.sealevel.v1.ELFLoaderEffects.entry_pc",
+            name="lt_hash",
+            full_name="org.solana.sealevel.v1.BlockEffects.lt_hash",
             index=4,
-            number=6,
-            type=4,
-            cpp_type=4,
+            number=5,
+            type=12,
+            cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=0,
+            default_value=b"",
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -257,15 +281,15 @@ _ELFLOADEREFFECTS = _descriptor.Descriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
-            name="calldests",
-            full_name="org.solana.sealevel.v1.ELFLoaderEffects.calldests",
+            name="account_delta_hash",
+            full_name="org.solana.sealevel.v1.BlockEffects.account_delta_hash",
             index=5,
-            number=7,
-            type=4,
-            cpp_type=4,
-            label=3,
+            number=6,
+            type=12,
+            cpp_type=9,
+            label=1,
             has_default_value=False,
-            default_value=[],
+            default_value=b"",
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -284,12 +308,12 @@ _ELFLOADEREFFECTS = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=253,
-    serialized_end=379,
+    serialized_start=423,
+    serialized_end=605,
 )
-_ELFLOADERFIXTURE = _descriptor.Descriptor(
-    name="ELFLoaderFixture",
-    full_name="org.solana.sealevel.v1.ELFLoaderFixture",
+_BLOCKFIXTURE = _descriptor.Descriptor(
+    name="BlockFixture",
+    full_name="org.solana.sealevel.v1.BlockFixture",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
@@ -297,7 +321,7 @@ _ELFLOADERFIXTURE = _descriptor.Descriptor(
     fields=[
         _descriptor.FieldDescriptor(
             name="metadata",
-            full_name="org.solana.sealevel.v1.ELFLoaderFixture.metadata",
+            full_name="org.solana.sealevel.v1.BlockFixture.metadata",
             index=0,
             number=1,
             type=11,
@@ -316,7 +340,7 @@ _ELFLOADERFIXTURE = _descriptor.Descriptor(
         ),
         _descriptor.FieldDescriptor(
             name="input",
-            full_name="org.solana.sealevel.v1.ELFLoaderFixture.input",
+            full_name="org.solana.sealevel.v1.BlockFixture.input",
             index=1,
             number=2,
             type=11,
@@ -335,7 +359,7 @@ _ELFLOADERFIXTURE = _descriptor.Descriptor(
         ),
         _descriptor.FieldDescriptor(
             name="output",
-            full_name="org.solana.sealevel.v1.ELFLoaderFixture.output",
+            full_name="org.solana.sealevel.v1.BlockFixture.output",
             index=2,
             number=3,
             type=11,
@@ -361,42 +385,44 @@ _ELFLOADERFIXTURE = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=382,
-    serialized_end=570,
+    serialized_start=608,
+    serialized_end=788,
 )
-_ELFLOADERCTX.fields_by_name["elf"].message_type = _ELFBINARY
-_ELFLOADERCTX.fields_by_name["features"].message_type = context__pb2._FEATURESET
-_ELFLOADERFIXTURE.fields_by_name["metadata"].message_type = (
-    metadata__pb2._FIXTUREMETADATA
-)
-_ELFLOADERFIXTURE.fields_by_name["input"].message_type = _ELFLOADERCTX
-_ELFLOADERFIXTURE.fields_by_name["output"].message_type = _ELFLOADEREFFECTS
-DESCRIPTOR.message_types_by_name["ELFBinary"] = _ELFBINARY
-DESCRIPTOR.message_types_by_name["ELFLoaderCtx"] = _ELFLOADERCTX
-DESCRIPTOR.message_types_by_name["ELFLoaderEffects"] = _ELFLOADEREFFECTS
-DESCRIPTOR.message_types_by_name["ELFLoaderFixture"] = _ELFLOADERFIXTURE
+_MICROBLOCK.fields_by_name["txns"].message_type = txn__pb2._SANITIZEDTRANSACTION
+_BLOCKCONTEXT.fields_by_name["microblocks"].message_type = _MICROBLOCK
+_BLOCKCONTEXT.fields_by_name["acct_states"].message_type = context__pb2._ACCTSTATE
+_BLOCKCONTEXT.fields_by_name["slot_ctx"].message_type = context__pb2._SLOTCONTEXT
+_BLOCKCONTEXT.fields_by_name["epoch_ctx"].message_type = context__pb2._EPOCHCONTEXT
+_BLOCKEFFECTS.fields_by_name["acct_states"].message_type = context__pb2._ACCTSTATE
+_BLOCKFIXTURE.fields_by_name["metadata"].message_type = metadata__pb2._FIXTUREMETADATA
+_BLOCKFIXTURE.fields_by_name["input"].message_type = _BLOCKCONTEXT
+_BLOCKFIXTURE.fields_by_name["output"].message_type = _BLOCKEFFECTS
+DESCRIPTOR.message_types_by_name["Microblock"] = _MICROBLOCK
+DESCRIPTOR.message_types_by_name["BlockContext"] = _BLOCKCONTEXT
+DESCRIPTOR.message_types_by_name["BlockEffects"] = _BLOCKEFFECTS
+DESCRIPTOR.message_types_by_name["BlockFixture"] = _BLOCKFIXTURE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
-ELFBinary = _reflection.GeneratedProtocolMessageType(
-    "ELFBinary",
+Microblock = _reflection.GeneratedProtocolMessageType(
+    "Microblock",
     (_message.Message,),
-    {"DESCRIPTOR": _ELFBINARY, "__module__": "elf_pb2"},
+    {"DESCRIPTOR": _MICROBLOCK, "__module__": "block_pb2"},
 )
-_sym_db.RegisterMessage(ELFBinary)
-ELFLoaderCtx = _reflection.GeneratedProtocolMessageType(
-    "ELFLoaderCtx",
+_sym_db.RegisterMessage(Microblock)
+BlockContext = _reflection.GeneratedProtocolMessageType(
+    "BlockContext",
     (_message.Message,),
-    {"DESCRIPTOR": _ELFLOADERCTX, "__module__": "elf_pb2"},
+    {"DESCRIPTOR": _BLOCKCONTEXT, "__module__": "block_pb2"},
 )
-_sym_db.RegisterMessage(ELFLoaderCtx)
-ELFLoaderEffects = _reflection.GeneratedProtocolMessageType(
-    "ELFLoaderEffects",
+_sym_db.RegisterMessage(BlockContext)
+BlockEffects = _reflection.GeneratedProtocolMessageType(
+    "BlockEffects",
     (_message.Message,),
-    {"DESCRIPTOR": _ELFLOADEREFFECTS, "__module__": "elf_pb2"},
+    {"DESCRIPTOR": _BLOCKEFFECTS, "__module__": "block_pb2"},
 )
-_sym_db.RegisterMessage(ELFLoaderEffects)
-ELFLoaderFixture = _reflection.GeneratedProtocolMessageType(
-    "ELFLoaderFixture",
+_sym_db.RegisterMessage(BlockEffects)
+BlockFixture = _reflection.GeneratedProtocolMessageType(
+    "BlockFixture",
     (_message.Message,),
-    {"DESCRIPTOR": _ELFLOADERFIXTURE, "__module__": "elf_pb2"},
+    {"DESCRIPTOR": _BLOCKFIXTURE, "__module__": "block_pb2"},
 )
-_sym_db.RegisterMessage(ELFLoaderFixture)
+_sym_db.RegisterMessage(BlockFixture)

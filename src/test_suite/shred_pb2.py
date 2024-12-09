@@ -1,20 +1,18 @@
-import sys
+"""Generated protocol buffer code."""
 
-_b = sys.version_info[0] < 3 and (lambda x: x) or (lambda x: x.encode("latin1"))
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
-from google.protobuf import descriptor_pb2
 
 _sym_db = _symbol_database.Default()
 DESCRIPTOR = _descriptor.FileDescriptor(
     name="shred.proto",
     package="org.solana.sealevel.v1",
     syntax="proto3",
-    serialized_pb=_b(
-        '\n\x0bshred.proto\x12\x16org.solana.sealevel.v1"\x1b\n\x0bShredBinary\x12\x0c\n\x04data\x18\x01 \x01(\x0c"=\n\nDataHeader\x12\x12\n\nparent_off\x18\x01 \x01(\r\x12\r\n\x05flags\x18\x02 \x01(\r\x12\x0c\n\x04size\x18\x03 \x01(\r"=\n\nCodeHeader\x12\x10\n\x08data_cnt\x18\x01 \x01(\r\x12\x10\n\x08code_cnt\x18\x02 \x01(\r\x12\x0b\n\x03idx\x18\x03 \x01(\r"è\x01\n\x0bParsedShred\x12\x11\n\tsignature\x18\x01 \x01(\t\x12\x0f\n\x07variant\x18\x02 \x01(\r\x12\x0c\n\x04slot\x18\x03 \x01(\x04\x12\x0b\n\x03idx\x18\x04 \x01(\r\x12\x0f\n\x07version\x18\x05 \x01(\r\x12\x13\n\x0bfec_set_idx\x18\x06 \x01(\r\x122\n\x04data\x18\x07 \x01(\x0b2".org.solana.sealevel.v1.DataHeaderH\x00\x122\n\x04code\x18\x08 \x01(\x0b2".org.solana.sealevel.v1.CodeHeaderH\x00B\x0c\n\nshred_type"\x1d\n\x0cAcceptsShred\x12\r\n\x05valid\x18\x01 \x01(\x08b\x06proto3'
-    ),
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+    serialized_pb=b'\n\x0bshred.proto\x12\x16org.solana.sealevel.v1"\x1b\n\x0bShredBinary\x12\x0c\n\x04data\x18\x01 \x01(\x0c"=\n\nDataHeader\x12\x12\n\nparent_off\x18\x01 \x01(\r\x12\r\n\x05flags\x18\x02 \x01(\r\x12\x0c\n\x04size\x18\x03 \x01(\r"=\n\nCodeHeader\x12\x10\n\x08data_cnt\x18\x01 \x01(\r\x12\x10\n\x08code_cnt\x18\x02 \x01(\r\x12\x0b\n\x03idx\x18\x03 \x01(\r"\xe8\x01\n\x0bParsedShred\x12\x11\n\tsignature\x18\x01 \x01(\t\x12\x0f\n\x07variant\x18\x02 \x01(\r\x12\x0c\n\x04slot\x18\x03 \x01(\x04\x12\x0b\n\x03idx\x18\x04 \x01(\r\x12\x0f\n\x07version\x18\x05 \x01(\r\x12\x13\n\x0bfec_set_idx\x18\x06 \x01(\r\x122\n\x04data\x18\x07 \x01(\x0b2".org.solana.sealevel.v1.DataHeaderH\x00\x122\n\x04code\x18\x08 \x01(\x0b2".org.solana.sealevel.v1.CodeHeaderH\x00B\x0c\n\nshred_type"\x1d\n\x0cAcceptsShred\x12\r\n\x05valid\x18\x01 \x01(\x08b\x06proto3',
 )
 _SHREDBINARY = _descriptor.Descriptor(
     name="ShredBinary",
@@ -22,6 +20,7 @@ _SHREDBINARY = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="data",
@@ -32,20 +31,21 @@ _SHREDBINARY = _descriptor.Descriptor(
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=_b(""),
+            default_value=b"",
             message_type=None,
             enum_type=None,
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         )
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    options=None,
+    serialized_options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -59,6 +59,7 @@ _DATAHEADER = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="parent_off",
@@ -75,8 +76,9 @@ _DATAHEADER = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="flags",
@@ -93,8 +95,9 @@ _DATAHEADER = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="size",
@@ -111,14 +114,15 @@ _DATAHEADER = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    options=None,
+    serialized_options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -132,6 +136,7 @@ _CODEHEADER = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="data_cnt",
@@ -148,8 +153,9 @@ _CODEHEADER = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="code_cnt",
@@ -166,8 +172,9 @@ _CODEHEADER = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="idx",
@@ -184,14 +191,15 @@ _CODEHEADER = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    options=None,
+    serialized_options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -205,6 +213,7 @@ _PARSEDSHRED = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="signature",
@@ -215,14 +224,15 @@ _PARSEDSHRED = _descriptor.Descriptor(
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=_b("").decode("utf-8"),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="variant",
@@ -239,8 +249,9 @@ _PARSEDSHRED = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="slot",
@@ -257,8 +268,9 @@ _PARSEDSHRED = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="idx",
@@ -275,8 +287,9 @@ _PARSEDSHRED = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="version",
@@ -293,8 +306,9 @@ _PARSEDSHRED = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="fec_set_idx",
@@ -311,8 +325,9 @@ _PARSEDSHRED = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="data",
@@ -329,8 +344,9 @@ _PARSEDSHRED = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="code",
@@ -347,14 +363,15 @@ _PARSEDSHRED = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    options=None,
+    serialized_options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -364,6 +381,7 @@ _PARSEDSHRED = _descriptor.Descriptor(
             full_name="org.solana.sealevel.v1.ParsedShred.shred_type",
             index=0,
             containing_type=None,
+            create_key=_descriptor._internal_create_key,
             fields=[],
         )
     ],
@@ -376,6 +394,7 @@ _ACCEPTSSHRED = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
+    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="valid",
@@ -392,14 +411,15 @@ _ACCEPTSSHRED = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=None,
+            serialized_options=None,
             file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
         )
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    options=None,
+    serialized_options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -430,30 +450,30 @@ _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 ShredBinary = _reflection.GeneratedProtocolMessageType(
     "ShredBinary",
     (_message.Message,),
-    dict(DESCRIPTOR=_SHREDBINARY, __module__="shred_pb2"),
+    {"DESCRIPTOR": _SHREDBINARY, "__module__": "shred_pb2"},
 )
 _sym_db.RegisterMessage(ShredBinary)
 DataHeader = _reflection.GeneratedProtocolMessageType(
     "DataHeader",
     (_message.Message,),
-    dict(DESCRIPTOR=_DATAHEADER, __module__="shred_pb2"),
+    {"DESCRIPTOR": _DATAHEADER, "__module__": "shred_pb2"},
 )
 _sym_db.RegisterMessage(DataHeader)
 CodeHeader = _reflection.GeneratedProtocolMessageType(
     "CodeHeader",
     (_message.Message,),
-    dict(DESCRIPTOR=_CODEHEADER, __module__="shred_pb2"),
+    {"DESCRIPTOR": _CODEHEADER, "__module__": "shred_pb2"},
 )
 _sym_db.RegisterMessage(CodeHeader)
 ParsedShred = _reflection.GeneratedProtocolMessageType(
     "ParsedShred",
     (_message.Message,),
-    dict(DESCRIPTOR=_PARSEDSHRED, __module__="shred_pb2"),
+    {"DESCRIPTOR": _PARSEDSHRED, "__module__": "shred_pb2"},
 )
 _sym_db.RegisterMessage(ParsedShred)
 AcceptsShred = _reflection.GeneratedProtocolMessageType(
     "AcceptsShred",
     (_message.Message,),
-    dict(DESCRIPTOR=_ACCEPTSSHRED, __module__="shred_pb2"),
+    {"DESCRIPTOR": _ACCEPTSSHRED, "__module__": "shred_pb2"},
 )
 _sym_db.RegisterMessage(AcceptsShred)
