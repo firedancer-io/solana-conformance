@@ -3,6 +3,7 @@ import test_suite.txn_pb2 as txn_pb
 import test_suite.invoke_pb2 as invoke_pb
 import test_suite.elf_pb2 as elf_pb
 import test_suite.vm_pb2 as vm_pb
+import test_suite.block_pb2 as block_pb
 import test_suite.txn.codec_utils as txn_codec
 import test_suite.txn.prune_utils as txn_prune
 import test_suite.txn.diff_utils as txn_diff
@@ -59,6 +60,12 @@ TxnHarness = HarnessCtx(
     context_human_decode_fn=txn_codec.decode_input,
     effects_human_encode_fn=txn_codec.encode_output,
     consensus_diff_effect_fn=txn_diff.consensus_txn_diff_effects,
+)
+
+BlockHarness = HarnessCtx(
+    fuzz_fn_name="sol_compat_block_execute_v1",
+    fixture_desc=block_pb.BlockFixture.DESCRIPTOR,
+    # TODO: Fill in other fields...
 )
 
 ENTRYPOINT_HARNESS_MAP = {

@@ -45,6 +45,7 @@ import test_suite.pb_utils as pb_utils
 Harness options:
 - InstrHarness
 - TxnHarness
+- BlockHarness
 - SyscallHarness
 - ValidateVM
 - ElfHarness
@@ -133,7 +134,7 @@ def execute(
         if parsed_instruction_effects:
             harness_ctx.effects_human_encode_fn(parsed_instruction_effects)
 
-        print(parsed_instruction_effects)
+        # print(parsed_instruction_effects)
 
     lib.sol_compat_fini()
 
