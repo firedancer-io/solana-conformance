@@ -353,7 +353,17 @@ def run_tests(
         False,
         "--consensus-mode",
         "-c",
-        help="Only fail on consensus failures. One such effect is to normalize error codes when comparing results",
+        help="Only fail on consensus failures. One such effect is to normalize error codes when comparing results. \
+Note: Cannot be used with --core-bpf-mode.",
+    ),
+    core_bpf_mode: bool = typer.Option(
+        False,
+        "--core-bpf-mode",
+        "-cb",
+        help="Deliberately skip known mismatches between BPF programs and builtins, only failing on genuine mimatches. \
+For example, builtin programs may throw errors on readonly account state violations sooner than BPF programs, \
+compute unit usage will be different, etc. This feature is primarily used to test a BPF program against a builtin. \
+Note: Cannot be used with --consensus-mode.",
     ),
     failures_only: bool = typer.Option(
         False,
@@ -388,8 +398,17 @@ def run_tests(
     globals.reference_shared_library = reference_shared_library
     globals.default_harness_ctx = HARNESS_MAP[default_harness_ctx]
 
+    # Set diff mode if specified
+    if consensus_mode and core_bpf_mode:
+        typer.echo(
+            "Error: --consensus-mode and --core-bpf-mode cannot be used together.",
+            err=True,
+        )
+        raise typer.Exit(code=1)
     # Set diff mode to consensus if specified
     globals.consensus_mode = consensus_mode
+    # Set diff mode to core_bpf if specified
+    globals.core_bpf_mode = core_bpf_mode
 
     # Create the output directory, if necessary
     if globals.output_dir.exists():
@@ -703,6 +722,7 @@ def debug_mismatches(
         log_chunk_size=10000,
         verbose=True,
         consensus_mode=False,
+        core_bpf_mode=False,
         failures_only=False,
         save_failures=True,
         save_successes=True,

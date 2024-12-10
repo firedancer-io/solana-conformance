@@ -25,6 +25,7 @@ InstrHarness = HarnessCtx(
     context_human_decode_fn=instr_codec.decode_input,
     effects_human_encode_fn=instr_codec.encode_output,
     consensus_diff_effect_fn=instr_diff.consensus_instr_diff_effects,
+    core_bpf_diff_effect_fn=instr_diff.core_bpf_instr_diff_effects,
 )
 
 SyscallHarness = HarnessCtx(

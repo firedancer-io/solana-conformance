@@ -316,6 +316,8 @@ def build_test_results(
 
             if globals.consensus_mode:
                 harness_ctx.diff_effect_fn = harness_ctx.consensus_diff_effect_fn
+            if globals.core_bpf_mode:
+                harness_ctx.diff_effect_fn = harness_ctx.core_bpf_diff_effect_fn
 
             # Note: diff_effect_fn may modify effects in-place
             all_passed &= harness_ctx.diff_effect_fn(ref_effects, effects)
