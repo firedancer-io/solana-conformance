@@ -17,7 +17,6 @@ from test_suite.fixture_utils import (
     extract_context_from_fixture,
     write_fixture_to_disk,
 )
-from test_suite.instr.diff_utils import DiffMode
 from test_suite.log_utils import log_results
 from test_suite.multiprocessing_utils import (
     decode_single_test_case,
@@ -406,12 +405,10 @@ Note: Cannot be used with --consensus-mode.",
             err=True,
         )
         raise typer.Exit(code=1)
-    if consensus_mode:
-        globals.diff_mode = DiffMode.CONSENSUS
-    elif core_bpf_mode:
-        globals.diff_mode = DiffMode.CORE_BPF
-    else:
-        globals.diff_mode = DIffMode.STANDARD
+    # Set diff mode to consensus if specified
+    globals.consensus_mode = consensus_mode
+    # Set diff mode to core_bpf if specified
+    globals.core_bpf_mode = core_bpf_mode
 
     # Create the output directory, if necessary
     if globals.output_dir.exists():
