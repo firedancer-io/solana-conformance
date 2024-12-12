@@ -16,6 +16,7 @@ $ solana-test-suite [OPTIONS] COMMAND [ARGS]...
 
 **Commands**:
 
+* `create-env`: Set up environment for debugging a...
 * `create-fixtures`: Create test fixtures from a directory of...
 * `debug-mismatches`: Run tests on a set of targets with a list...
 * `decode-protobufs`: Convert Context and/or Fixture messages to...
@@ -26,6 +27,33 @@ $ solana-test-suite [OPTIONS] COMMAND [ARGS]...
 * `regenerate-all-fixtures`: Regenerate all fixtures in provided...
 * `regenerate-fixtures`: Regenerate Fixture messages by checking...
 * `run-tests`: Run tests on a set of targets with a...
+
+## `solana-test-suite create-env`
+
+Set up environment for debugging a mismatch from FuzzCorp
+
+**Usage**:
+
+```console
+$ solana-test-suite create-env [OPTIONS]
+```
+
+**Options**:
+
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
+* `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
+* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: impl/lib/libsolfuzz_firedancer.so]
+* `-o, --output-dir PATH`: Output directory for messages  [default: debug_mismatch]
+* `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
+* `-n, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
+* `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
+* `-l, --log-level INTEGER`: FD logging level  [default: 5]
+* `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
+* `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
+* `-l, --section-limit INTEGER`: Limit number of fixture per section  [default: 0]
+* `-fd, --firedancer-repo PATH`: Path to firedancer repository
+* `-tv, --test-vectors-repo PATH`: Path to test-vectors repository
+* `--help`: Show this message and exit.
 
 ## `solana-test-suite create-fixtures`
 

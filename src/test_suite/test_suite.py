@@ -483,6 +483,8 @@ Note: Cannot be used with --consensus-mode.",
         ):
             print(f"Diff between {name1} and {name2}: vimdiff {file1} {file2}")
 
+    return (failed == 0) and (skipped == 0) and (passed > 0)
+
 
 @app.command(help=f"Convert Context and/or Fixture messages to human-readable format.")
 def decode_protobufs(
@@ -711,7 +713,7 @@ def debug_mismatches(
             ):
                 os.remove(files[j])
 
-    run_tests(
+    return run_tests(
         input=globals.inputs_dir,
         reference_shared_library=reference_shared_library,
         default_harness_ctx=default_harness_ctx,
@@ -1031,6 +1033,158 @@ def exec_fixtures(
         print(f"Failed tests: {failed_tests}")
     if skipped != 0:
         print(f"Skipped tests: {skipped_tests}")
+
+
+@app.command(
+    help=f"""
+            Set up environment for debugging a mismatch from FuzzCorp
+            """
+)
+def create_env(
+    reference_shared_library: Path = typer.Option(
+        Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
+        "--solana-target",
+        "-s",
+        help="Solana (or ground truth) shared object (.so) target file path",
+    ),
+    default_harness_ctx: str = typer.Option(
+        "InstrHarness",
+        "--default-harness-type",
+        "-h",
+        help=f"Harness type to use for Context protobufs",
+    ),
+    shared_libraries: List[Path] = typer.Option(
+        [Path(os.getenv("FIREDANCER_TARGET", "impl/lib/libsolfuzz_firedancer.so"))],
+        "--target",
+        "-t",
+        help="Shared object (.so) target file paths (pairs with --keep-passing)."
+        f" Targets must have required function entrypoints defined",
+    ),
+    output_dir: Path = typer.Option(
+        Path("debug_mismatch"),
+        "--output-dir",
+        "-o",
+        help=f"Output directory for messages",
+    ),
+    repro_urls: str = typer.Option(
+        "", "--repro-urls", "-u", help="Comma-delimited list of FuzzCorp mismatch links"
+    ),
+    section_names: str = typer.Option(
+        "",
+        "--section-names",
+        "-n",
+        help="Comma-delimited list of FuzzCorp section names",
+    ),
+    fuzzcorp_url: str = typer.Option(
+        os.getenv(
+            "FUZZCORP_URL",
+            "https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/",
+        ),
+        "--fuzzcorp-url",
+        "-f",
+        help="Comma-delimited list of FuzzCorp section names",
+    ),
+    log_level: int = typer.Option(
+        5,
+        "--log-level",
+        "-l",
+        help="FD logging level",
+    ),
+    randomize_output_buffer: bool = typer.Option(
+        False,
+        "--randomize-output-buffer",
+        "-r",
+        help="Randomizes bytes in output buffer before shared library execution",
+    ),
+    num_processes: int = typer.Option(
+        4, "--num-processes", "-p", help="Number of processes to use"
+    ),
+    section_limit: int = typer.Option(
+        0, "--section-limit", "-l", help="Limit number of fixture per section"
+    ),
+    firedancer_repo_path: Path = typer.Option(
+        os.getenv("FIREDANCER_DIR"),
+        "--firedancer-repo",
+        "-fd",
+        help="Path to firedancer repository",
+    ),
+    test_vectors_repos_path: Path = typer.Option(
+        os.getenv("TEST_VECTORS_DIR"),
+        "--test-vectors-repo",
+        "-tv",
+        help="Path to test-vectors repository",
+    ),
+):
+    lists = [
+        f"{file.parent.name}/{file.name}"
+        for file in firedancer_repo_path.glob(
+            "contrib/test/test-vectors-fixtures/*fixtures*/*list"
+        )
+    ]
+
+    max_width = max(len(option) for option in lists) + 2
+
+    print("Select correct list for mismatch:")
+    for i, option in enumerate(lists, start=1):
+        print(f"{i}. {option}".ljust(max_width), end="\t")
+        if i % 4 == 0:
+            print()
+
+    if len(lists) % 4 != 0:
+        print()
+
+    while True:
+        try:
+            choice = int(input("Enter the list of your choice: "))
+            if 1 <= choice <= len(lists):
+                selected_option = lists[choice - 1]
+                break
+            else:
+                print(f"Please enter a number between 1 and {len(lists)}.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+    print(f"Adding fixture to: {selected_option}")
+    list_path = glob(
+        str(firedancer_repo_path)
+        + f"/contrib/test/test-vectors-fixtures/{selected_option}"
+    )[0]
+
+    passed = debug_mismatches(
+        reference_shared_library=reference_shared_library,
+        default_harness_ctx=default_harness_ctx,
+        shared_libraries=shared_libraries,
+        output_dir=output_dir,
+        repro_urls=repro_urls,
+        section_names=section_names,
+        fuzzcorp_url=fuzzcorp_url,
+        log_level=log_level,
+        randomize_output_buffer=randomize_output_buffer,
+        num_processes=num_processes,
+        section_limit=section_limit,
+    )
+
+    if passed:
+        print("All fixtures already pass")
+        typer.Exit(code=1)
+
+    failures = glob(str(output_dir) + "/test_results/failed_protobufs/*")
+
+    for failure in failures:
+        with open(list_path, "r") as file:
+            lines = file.readlines()
+
+        last_line = lines[-1].strip()
+
+        failure_path = os.path.dirname(last_line) + "/" + os.path.basename(failure)
+        with open(list_path, "a") as file:
+            file.write(failure_path + "\n")
+        print(f"\nAdded {os.path.basename(failure)} to {list_path}")
+
+        failure_test_vector_path = failure_path.replace(
+            "dump/test-vectors", str(test_vectors_repos_path)
+        )
+        shutil.copy2(failure, os.path.dirname(failure_test_vector_path))
 
 
 if __name__ == "__main__":
