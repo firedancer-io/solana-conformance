@@ -35,3 +35,6 @@ default_harness_ctx: HarnessCtx = None
 
 # Whether to run in consensus mode
 consensus_mode: bool = False
+
+# Whether to run in core bpf mode
+core_bpf_mode: bool = False
