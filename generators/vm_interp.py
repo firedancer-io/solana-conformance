@@ -65,6 +65,7 @@ def exact_cu_cost(data_vec):
 # fmt: off
 test_vectors_all_ix = []
 for op in range(0xFF):
+# for op in [0x07]:
     def validate():
         for sreg in [0, 2, 6, 9, 10, 11]:
             for dreg in [0, 9, 10, 11]:
@@ -169,11 +170,31 @@ for op in range(0xFF):
             0x71e3cf81, # magic - always SIGSTACK (ignore call_whitelist)
             0x12345678, # invalid
             0x0b00c380, # inverse of magic - just invalid
+            0x3770fb22, # syscall: sol_memset_
+            1,          # success without relocation. works in v3+
+            0,
+            2,
+            3,
+            4,
+            0xffffffff, # overflow ok because of negative offsets
         ]:
             test_vectors_all_ix.append({
                 "op": f"{op:02x}",
                 "cu_avail": 100,
-                # hashmap containing vaild pc: 0, 1, 2 (higher are trimmed)
+                # hashmap containing valid function
+                "call_whitelist": [0x04],
+                "rodata":
+                    bytes([op, ((sreg << 4) + dreg) % 0xFF, 0, 0]) + imm.to_bytes(4, "little") + \
+                    bytes([0x95, 0, 0, 0, 0, 0, 0, 0]) + \
+                    bytes([0x95, 0, 0, 0, 0, 0, 0, 0])
+            })
+            # TODO: the following generates invalid functions to test validate()
+            #       it's ok in v0-v2, it should return -2 in v3+
+            test_vectors_all_ix.append({
+                "op": f"{op:02x}",
+                "cu_avail": 100,
+                # hashmap containing valid pc: 0, 1, 2 (higher are trimmed)
+                # these are invalid fn in v3+
                 "call_whitelist": [0xff],
                 "rodata":
                     bytes([op, ((sreg << 4) + dreg) % 0xFF, 0, 0]) + imm.to_bytes(4, "little") + \
@@ -248,6 +269,41 @@ for op in range(0xFF):
                         bytes([op, ((sreg << 4) + dreg) % 0xFF]) + offset.to_bytes(2, "little") + imm.to_bytes(4, "little") + \
                         bytes([0x95, 0, 0, 0, 0, 0, 0, 0])
                 })
+
+    if op in [0xc6, 0xce, 0xd6, 0xde, 0xe6, 0xee, 0xf6, 0xfe]:
+        sreg = 2
+        dreg = 3
+        for imm in [0x0, 0xffffffffffffffff]:
+            for r3 in [
+                0x80000000,         # not INT_MIN / LONG_MIN
+                0xffffffff80000000, # INT_MIN
+                0x8000000000000000, # LONG_MIN
+            ]:
+                test_vectors_all_ix.append({
+                    "op": f"{op:02x}",
+                    "cu_avail": 100,
+                    "r2": imm,
+                    "r3": r3,
+                    "rodata":
+                        bytes([op, ((sreg << 4) + dreg) % 0xFF, 0, 0]) + (imm & 0xFFFFFFFF).to_bytes(4, "little") + \
+                        bytes([0x95, 0, 0, 0, 0, 0, 0, 0])
+                })
+
+    # syscall (v3)
+    if op == 0x95:
+        sreg = 0
+        dreg = 0
+        for imm in [
+            3,   # sol_memset_
+            100, # invalid
+        ]:
+            test_vectors_all_ix.append({
+                "op": f"{op:02x}",
+                "cu_avail": 100,
+                "rodata":
+                    bytes([  op, 0, 0, 0]) + imm.to_bytes(4, "little") + \
+                    bytes([0x9d, 0, 0, 0, 0, 0, 0, 0])
+            })
 # fmt: on
 
 
@@ -318,6 +374,14 @@ if __name__ == "__main__":
         syscall_ctx.vm_ctx.sbpf_version = 2
         serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
         with open(f"{OUTPUT_DIR}/{testname}/v2/{filename}.bin", "wb") as f:
+            f.write(serialized_instr)
+
+        syscall_ctx.vm_ctx.sbpf_version = 3
+        syscall_ctx.vm_ctx.rodata = bytes(
+            [x if x != 0x95 else 0x9D for x in syscall_ctx.vm_ctx.rodata]
+        )
+        serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
+        with open(f"{OUTPUT_DIR}/{testname}/v3/{filename}.bin", "wb") as f:
             f.write(serialized_instr)
 
     print("done!")
