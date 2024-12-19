@@ -734,7 +734,7 @@ def debug_mismatches(
 
 @app.command(
     help=f"""
-        Regenerate Fixture messages by checking FeatureSet compatibility with the target shared library. 
+        Regenerate features in fixture messages.
     """
 )
 def regenerate_fixtures(
@@ -762,11 +762,29 @@ def regenerate_fixtures(
         "-d",
         help="Only print the fixtures that would be regenerated",
     ),
-    all_fixtures: bool = typer.Option(
+    add_features: List[str] = typer.Option(
+        [],
+        "--add-feature",
+        "-f",
+        help="List of feature pubkeys to force add to the fixtures.",
+    ),
+    remove_features: List[str] = typer.Option(
+        [],
+        "--remove-feature",
+        "-r",
+        help="List of feature pubkeys to force remove from the fixtures.",
+    ),
+    rekeyed_features: List[str] = typer.Option(
+        [],
+        "--rekey-feature",
+        "-k",
+        help="List of feature pubkeys to rekey in the fixtures, formatted 'old/new' (e.g. `--rekey-feature old/new`).",
+    ),
+    merge_with_latest: bool = typer.Option(
         False,
-        "--all-fixtures",
-        "-a",
-        help="Regenerate all fixtures, regardless of FeatureSet compatibility. Will apply minimum compatible features.",
+        "--merge-with-latest",
+        "-m",
+        help="Merge with the latest cleaned-up and supported featureset pulled from the target.",
     ),
     log_level: int = typer.Option(
         5,
@@ -790,6 +808,16 @@ def regenerate_fixtures(
     test_cases = list(input.iterdir()) if input.is_dir() else [input]
     num_regenerated = 0
 
+    features_to_add = set(map(features_utils.feature_bytes_to_ulong, add_features))
+    features_to_remove = set(
+        map(features_utils.feature_bytes_to_ulong, remove_features)
+    )
+
+    rekey_features = list(
+        tuple(map(features_utils.feature_bytes_to_ulong, feature.split("/")))
+        for feature in rekeyed_features
+    )
+
     for file in test_cases:
         fixture = read_fixture(file)
         harness_ctx = ENTRYPOINT_HARNESS_MAP[fixture.metadata.fn_entrypoint]
@@ -804,13 +832,20 @@ def regenerate_fixtures(
         features_path = features_path[0]
 
         features = pb_utils.access_nested_field_safe(fixture.input, features_path)
-        feature_set = set(features.features) if features else set()
+        original_feature_set = set(features.features) if features else set()
+        new_feature_set = (original_feature_set | features_to_add) - features_to_remove
 
-        regenerate = True
-        if not all_fixtures:
-            # Skip regeneration if the features are already compatible with the target
-            if features_utils.is_featureset_compatible(target_features, feature_set):
-                regenerate = False
+        for old_feature, new_feature in rekey_features:
+            if old_feature in new_feature_set:
+                new_feature_set.remove(old_feature)
+                new_feature_set.add(new_feature)
+
+        if merge_with_latest:
+            new_feature_set = features_utils.min_compatible_featureset(
+                target_features, new_feature_set
+            )
+
+        regenerate = new_feature_set != original_feature_set
 
         if regenerate:
             num_regenerated += 1
@@ -820,9 +855,7 @@ def regenerate_fixtures(
                 print(f"Regenerating {file}")
                 # Apply minimum compatible features
                 if features is not None:
-                    features.features[:] = features_utils.min_compatible_featureset(
-                        target_features, feature_set
-                    )
+                    features.features[:] = new_feature_set
                 regenerated_fixture = create_fixture_from_context(
                     harness_ctx, fixture.input
                 )
@@ -838,10 +871,10 @@ def regenerate_fixtures(
 
 @app.command(
     help=f"""
-        Regenerate all fixtures in provided test-vectors folder
+        Regenerate features for fixtures in provided test-vectors folder.
     """
 )
-def regenerate_all_fixtures(
+def mass_regenerate_fixtures(
     test_vectors: Path = typer.Option(
         Path("corpus8"),
         "--input",
@@ -865,6 +898,30 @@ def regenerate_all_fixtures(
         "--stubbed-target",
         "-s",
         help="Stubbed shared object (.so) target file path to execute",
+    ),
+    add_features: List[str] = typer.Option(
+        [],
+        "--add-feature",
+        "-f",
+        help="List of feature pubkeys to force add to the fixtures.",
+    ),
+    remove_features: List[str] = typer.Option(
+        [],
+        "--remove-feature",
+        "-r",
+        help="List of feature pubkeys to force remove from the fixtures.",
+    ),
+    rekeyed_features: List[str] = typer.Option(
+        [],
+        "--rekey-feature",
+        "-k",
+        help="List of feature pubkeys to rekey in the fixtures, formatted 'old/new' (e.g. `--rekey-feature old/new`).",
+    ),
+    merge_with_latest: bool = typer.Option(
+        False,
+        "--merge-with-latest",
+        "-m",
+        help="Merge with the latest cleaned-up and supported featureset pulled from the target.",
     ),
 ):
     globals.output_dir = output_dir
@@ -918,7 +975,11 @@ def regenerate_all_fixtures(
                 shared_library=stubbed_shared_library,
                 output_dir=Path(output_folder),
                 dry_run=False,
-                all_fixtures=True,
+                add_features=add_features,
+                remove_features=remove_features,
+                rekeyed_features=rekeyed_features,
+                merge_with_latest=merge_with_latest,
+                log_level=5,
             )
         elif folder_harness_type in ["ElfLoaderHarness"]:
             shutil.copytree(source_folder, output_folder, dirs_exist_ok=True)
@@ -928,7 +989,11 @@ def regenerate_all_fixtures(
                 shared_library=shared_library,
                 output_dir=Path(output_folder),
                 dry_run=False,
-                all_fixtures=True,
+                add_features=add_features,
+                remove_features=remove_features,
+                rekeyed_features=rekeyed_features,
+                merge_with_latest=merge_with_latest,
+                log_level=5,
             )
 
     print(f"Regenerated fixtures from {test_vectors} to {output_dir}")

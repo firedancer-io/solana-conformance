@@ -1,5 +1,7 @@
 from ctypes import *
 from dataclasses import dataclass, field
+import struct
+import fd58
 
 
 @dataclass
@@ -100,3 +102,7 @@ def print_featureset_compatibility_report(
     else:
         print("Unsupported features:")
         print(context_features.difference(target.union_features))
+
+
+def feature_bytes_to_ulong(feature_pubkey: str) -> int:
+    return struct.unpack("<Q", fd58.dec32(feature_pubkey.encode())[:8])[0]
