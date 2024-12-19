@@ -24,8 +24,8 @@ $ solana-test-suite [OPTIONS] COMMAND [ARGS]...
 * `execute`: Execute Context or Fixture message(s) and...
 * `fix-to-ctx`: Extract Context messages from Fixtures.
 * `list-harness-types`: List harness types available for use.
-* `regenerate-all-fixtures`: Regenerate all fixtures in provided...
-* `regenerate-fixtures`: Regenerate Fixture messages by checking...
+* `mass-regenerate-fixtures`: Regenerate features for fixtures in...
+* `regenerate-fixtures`: Regenerate features in fixture messages.
 * `run-tests`: Run tests on a set of targets with a...
 
 ## `solana-test-suite create-env`
@@ -40,9 +40,9 @@ $ solana-test-suite create-env [OPTIONS]
 
 **Options**:
 
-* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: /data/mjain/repos/solfuzz-agave/target/release/libsolfuzz_agave.so]
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
-* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: impl/lib/libsolfuzz_firedancer.so]
+* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: /data/mjain/repos/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so]
 * `-o, --output-dir PATH`: Output directory for messages  [default: debug_mismatch]
 * `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
 * `-n, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
@@ -72,7 +72,7 @@ $ solana-test-suite create-fixtures [OPTIONS]
 
 * `-i, --input PATH`: Input protobuf file or directory of protobuf files  [default: corpus8]
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
-* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: /data/mjain/repos/solfuzz-agave/target/release/libsolfuzz_agave.so]
 * `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined
 * `-o, --output-dir PATH`: Output directory for fixtures  [default: test_fixtures]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
@@ -96,9 +96,9 @@ $ solana-test-suite debug-mismatches [OPTIONS]
 
 **Options**:
 
-* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: /data/mjain/repos/solfuzz-agave/target/release/libsolfuzz_agave.so]
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
-* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: impl/lib/libsolfuzz_firedancer.so]
+* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: /data/mjain/repos/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so]
 * `-o, --output-dir PATH`: Output directory for messages  [default: debug_mismatch]
 * `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
 * `-n, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
@@ -197,27 +197,31 @@ $ solana-test-suite list-harness-types [OPTIONS]
 
 * `--help`: Show this message and exit.
 
-## `solana-test-suite regenerate-all-fixtures`
+## `solana-test-suite mass-regenerate-fixtures`
 
-Regenerate all fixtures in provided test-vectors folder
+Regenerate features for fixtures in provided test-vectors folder.
 
 **Usage**:
 
 ```console
-$ solana-test-suite regenerate-all-fixtures [OPTIONS]
+$ solana-test-suite mass-regenerate-fixtures [OPTIONS]
 ```
 
 **Options**:
 
 * `-i, --input PATH`: Input test-vectors directory  [default: corpus8]
 * `-o, --output-dir PATH`: Output directory for regenerated fixtures  [default: /tmp/regenerated_fixtures]
-* `-t, --target PATH`: Shared object (.so) target file path to execute  [default: impl/lib/libsolfuzz_agave_v2.0.so]
-* `-s, --stubbed-target PATH`: Stubbed shared object (.so) target file path to execute  [default: impl/lib/libsolfuzz_firedancer.so]
+* `-t, --target PATH`: Shared object (.so) target file path to execute  [default: /data/mjain/repos/solfuzz-agave/target/release/libsolfuzz_agave.so]
+* `-s, --stubbed-target PATH`: Stubbed shared object (.so) target file path to execute  [default: /data/mjain/repos/solfuzz-agave/target/debug/libsolfuzz_agave_stubbed.so]
+* `-f, --add-feature TEXT`: List of feature pubkeys to force add to the fixtures.
+* `-r, --remove-feature TEXT`: List of feature pubkeys to force remove from the fixtures.
+* `-k, --rekey-feature TEXT`: List of feature pubkeys to rekey in the fixtures, formatted 'old/new' (e.g. `--rekey-feature old/new`).
+* `-m, --merge-with-latest`: Merge with the latest cleaned-up and supported featureset pulled from the target.
 * `--help`: Show this message and exit.
 
 ## `solana-test-suite regenerate-fixtures`
 
-Regenerate Fixture messages by checking FeatureSet compatibility with the target shared library. 
+Regenerate features in fixture messages.
 
 **Usage**:
 
@@ -228,10 +232,13 @@ $ solana-test-suite regenerate-fixtures [OPTIONS]
 **Options**:
 
 * `-i, --input PATH`: Either a file or directory containing messages  [default: corpus8]
-* `-t, --target PATH`: Shared object (.so) target file path to execute  [default: impl/lib/libsolfuzz_agave_v2.0.so]
+* `-t, --target PATH`: Shared object (.so) target file path to execute  [default: /data/mjain/repos/solfuzz-agave/target/release/libsolfuzz_agave.so]
 * `-o, --output-dir PATH`: Output directory for regenerated fixtures  [default: regenerated_fixtures]
 * `-d, --dry-run`: Only print the fixtures that would be regenerated
-* `-a, --all-fixtures`: Regenerate all fixtures, regardless of FeatureSet compatibility. Will apply minimum compatible features.
+* `-f, --add-feature TEXT`: List of feature pubkeys to force add to the fixtures.
+* `-r, --remove-feature TEXT`: List of feature pubkeys to force remove from the fixtures.
+* `-k, --rekey-feature TEXT`: List of feature pubkeys to rekey in the fixtures, formatted 'old/new' (e.g. `--rekey-feature old/new`).
+* `-m, --merge-with-latest`: Merge with the latest cleaned-up and supported featureset pulled from the target.
 * `-l, --log-level INTEGER`: FD logging level  [default: 5]
 * `--help`: Show this message and exit.
 
@@ -251,8 +258,8 @@ $ solana-test-suite run-tests [OPTIONS]
 
 * `-i, --input PATH`: Input protobuf file or directory of protobuf files  [default: corpus8]
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
-* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
-* `-t, --target PATH`: Shared object (.so) target file paths  [default: impl/lib/libsolfuzz_firedancer.so]
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: /data/mjain/repos/solfuzz-agave/target/release/libsolfuzz_agave.so]
+* `-t, --target PATH`: Shared object (.so) target file paths  [default: /data/mjain/repos/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so]
 * `-o, --output-dir PATH`: Output directory for test results  [default: test_results]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
