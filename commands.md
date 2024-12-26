@@ -217,6 +217,7 @@ $ solana-test-suite mass-regenerate-fixtures [OPTIONS]
 * `-r, --remove-feature TEXT`: List of feature pubkeys to force remove from the fixtures.
 * `-k, --rekey-feature TEXT`: List of feature pubkeys to rekey in the fixtures, formatted 'old/new' (e.g. `--rekey-feature old/new`).
 * `-m, --merge-with-latest`: Merge with the latest cleaned-up and supported featureset pulled from the target.
+* `-a, --regenerate-all`: Regenerate all fixtures, regardless of feature set changes
 * `--help`: Show this message and exit.
 
 ## `solana-test-suite regenerate-fixtures`
@@ -239,6 +240,7 @@ $ solana-test-suite regenerate-fixtures [OPTIONS]
 * `-r, --remove-feature TEXT`: List of feature pubkeys to force remove from the fixtures.
 * `-k, --rekey-feature TEXT`: List of feature pubkeys to rekey in the fixtures, formatted 'old/new' (e.g. `--rekey-feature old/new`).
 * `-m, --merge-with-latest`: Merge with the latest cleaned-up and supported featureset pulled from the target.
+* `-a, --regenerate-all`: Regenerate all fixtures, regardless of feature set changes
 * `-l, --log-level INTEGER`: FD logging level  [default: 5]
 * `--help`: Show this message and exit.
 

@@ -786,6 +786,12 @@ def regenerate_fixtures(
         "-m",
         help="Merge with the latest cleaned-up and supported featureset pulled from the target.",
     ),
+    regenerate_all: bool = typer.Option(
+        False,
+        "--regenerate-all",
+        "-a",
+        help="Regenerate all fixtures, regardless of feature set changes",
+    ),
     log_level: int = typer.Option(
         5,
         "--log-level",
@@ -845,7 +851,7 @@ def regenerate_fixtures(
                 target_features, new_feature_set
             )
 
-        regenerate = new_feature_set != original_feature_set
+        regenerate = regenerate_all or (new_feature_set != original_feature_set)
 
         if regenerate:
             num_regenerated += 1
@@ -923,6 +929,12 @@ def mass_regenerate_fixtures(
         "-m",
         help="Merge with the latest cleaned-up and supported featureset pulled from the target.",
     ),
+    regenerate_all: bool = typer.Option(
+        False,
+        "--regenerate-all",
+        "-a",
+        help="Regenerate all fixtures, regardless of feature set changes",
+    ),
 ):
     globals.output_dir = output_dir
 
@@ -993,6 +1005,7 @@ def mass_regenerate_fixtures(
                 remove_features=remove_features,
                 rekeyed_features=rekeyed_features,
                 merge_with_latest=merge_with_latest,
+                regenerate_all=regenerate_all,
                 log_level=5,
             )
 
