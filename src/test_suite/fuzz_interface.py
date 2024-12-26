@@ -79,6 +79,10 @@ def generic_human_decode(obj: message.Message) -> None:
     pass
 
 
+def generic_transform(obj: message.Message) -> None:
+    pass
+
+
 @dataclass
 class HarnessCtx:
     fuzz_fn_name: str
@@ -98,6 +102,7 @@ class HarnessCtx:
     context_human_decode_fn: Callable[[ContextType], None] = generic_human_decode
     effects_human_encode_fn: Callable[[EffectsType], None] = generic_human_encode
     effects_human_decode_fn: Callable[[EffectsType], None] = generic_human_decode
+    regenerate_transformation_fn: Callable[[FixtureType], None] = generic_transform
     fixture_type: Type[FixtureType] = field(init=False)
     context_type: Type[ContextType] = field(init=False)
     effects_type: Type[EffectsType] = field(init=False)
