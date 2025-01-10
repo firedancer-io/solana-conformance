@@ -28,19 +28,19 @@ def decode_input(txn_context: txn_pb.TxnContext):
             )
 
     # Account shared data
-    for i in range(len(txn_context.tx.message.account_shared_data)):
+    for i in range(len(txn_context.account_shared_data)):
         # Pubkey
-        if txn_context.tx.message.account_shared_data[i].address:
-            txn_context.tx.message.account_shared_data[i].address = fd58.dec32(
-                txn_context.tx.message.account_shared_data[i].address
+        if txn_context.account_shared_data[i].address:
+            txn_context.account_shared_data[i].address = fd58.dec32(
+                txn_context.account_shared_data[i].address
             )
 
         # Not encoding data because it's not super useful in inspection
 
         # Owner
-        if txn_context.tx.message.account_shared_data[i].owner:
-            txn_context.tx.message.account_shared_data[i].owner = fd58.dec32(
-                txn_context.tx.message.account_shared_data[i].owner
+        if txn_context.account_shared_data[i].owner:
+            txn_context.account_shared_data[i].owner = fd58.dec32(
+                txn_context.account_shared_data[i].owner
             )
 
     # Recent blockhash
@@ -86,19 +86,19 @@ def encode_input(txn_context: txn_pb.TxnContext):
             )
 
     # Account shared data
-    for i in range(len(txn_context.tx.message.account_shared_data)):
+    for i in range(len(txn_context.account_shared_data)):
         # Pubkey
-        if txn_context.tx.message.account_shared_data[i].address:
-            txn_context.tx.message.account_shared_data[i].address = fd58.enc32(
-                txn_context.tx.message.account_shared_data[i].address
+        if txn_context.account_shared_data[i].address:
+            txn_context.account_shared_data[i].address = fd58.enc32(
+                txn_context.account_shared_data[i].address
             )
 
         # Not encoding data because it's not super useful in inspection
 
         # Owner
-        if txn_context.tx.message.account_shared_data[i].owner:
-            txn_context.tx.message.account_shared_data[i].owner = fd58.enc32(
-                txn_context.tx.message.account_shared_data[i].owner
+        if txn_context.account_shared_data[i].owner:
+            txn_context.account_shared_data[i].owner = fd58.enc32(
+                txn_context.account_shared_data[i].owner
             )
 
     # Recent blockhash
