@@ -432,16 +432,21 @@ Note: Cannot be used with --consensus-mode.",
     # Process the test results in parallel
     print("Running tests...")
     test_case_results = []
-    with Pool(
-        processes=num_processes,
-        initializer=initialize_process_output_buffers,
-        initargs=(randomize_output_buffer,),
-    ) as pool:
-        for result in tqdm.tqdm(
-            pool.imap(run_test, test_cases),
-            total=num_test_cases,
-        ):
-            test_case_results.append(result)
+    if num_processes > 1:
+        with Pool(
+            processes=num_processes,
+            initializer=initialize_process_output_buffers,
+            initargs=(randomize_output_buffer,),
+        ) as pool:
+            for result in tqdm.tqdm(
+                pool.imap(run_test, test_cases),
+                total=num_test_cases,
+            ):
+                test_case_results.append(result)
+    else:
+        initialize_process_output_buffers(randomize_output_buffer)
+        for test_case in tqdm.tqdm(test_cases):
+            test_case_results.append(run_test(test_case))
 
     print("Logging results...")
     passed, failed, skipped, target_log_files, failed_tests, skipped_tests = (
@@ -684,16 +689,21 @@ def debug_mismatches(
     num_test_cases = len(custom_data_urls)
     print("Downloading tests...")
     results = []
-    with Pool(
-        processes=num_processes,
-        initializer=initialize_process_output_buffers,
-        initargs=(randomize_output_buffer,),
-    ) as pool:
-        for result in tqdm.tqdm(
-            pool.imap(download_and_process, custom_data_urls),
-            total=num_test_cases,
-        ):
-            results.append(result)
+    if num_processes > 1:
+        with Pool(
+            processes=num_processes,
+            initializer=initialize_process_output_buffers,
+            initargs=(randomize_output_buffer,),
+        ) as pool:
+            for result in tqdm.tqdm(
+                pool.imap(download_and_process, custom_data_urls),
+                total=num_test_cases,
+            ):
+                results.append(result)
+    else:
+        initialize_process_output_buffers(randomize_output_buffer)
+        for url in tqdm.tqdm(custom_data_urls):
+            results.append(download_and_process(url))
 
     if ld_preload is not None:
         os.environ["LD_PRELOAD"] = ld_preload
