@@ -17,6 +17,7 @@ import test_suite.elf_pb2 as elf_pb
 import test_suite.vm_pb2 as vm_pb
 
 import test_suite.syscall.codec_utils as syscall_codec
+import test_suite.syscall.transform_utils as syscall_transform
 
 
 ElfLoaderHarness = HarnessCtx(
@@ -42,6 +43,7 @@ SyscallHarness = HarnessCtx(
     context_human_encode_fn=syscall_codec.encode_input,
     effects_human_encode_fn=syscall_codec.encode_output,
     context_human_decode_fn=syscall_codec.decode_input,
+    regenerate_transformation_fn=syscall_transform.transform_fixture,
 )
 
 CpiHarness = HarnessCtx(
@@ -50,6 +52,7 @@ CpiHarness = HarnessCtx(
     context_human_encode_fn=syscall_codec.encode_input,
     effects_human_encode_fn=syscall_codec.encode_output,
     context_human_decode_fn=syscall_codec.decode_input,
+    regenerate_transformation_fn=syscall_transform.transform_fixture,
 )
 
 VmInterpHarness = HarnessCtx(
@@ -58,6 +61,7 @@ VmInterpHarness = HarnessCtx(
     context_human_encode_fn=syscall_codec.encode_input,
     effects_human_encode_fn=syscall_codec.encode_output,
     context_human_decode_fn=syscall_codec.decode_input,
+    regenerate_transformation_fn=syscall_transform.transform_fixture,
 )
 
 VmValidateHarness = HarnessCtx(
