@@ -16,6 +16,8 @@ import test_suite.elf_pb2 as elf_pb
 
 import test_suite.vm_pb2 as vm_pb
 
+import test_suite.pack_pb2 as pack_pb
+
 import test_suite.syscall.codec_utils as syscall_codec
 import test_suite.syscall.transform_utils as syscall_transform
 
@@ -78,6 +80,11 @@ TxnHarness = HarnessCtx(
     effects_human_encode_fn=txn_codec.encode_output,
     regenerate_transformation_fn=txn_transform.transform_fixture,
     consensus_diff_effect_fn=txn_diff.consensus_txn_diff_effects,
+)
+
+VmValidateHarness = HarnessCtx(
+    fuzz_fn_name="sol_compat_pack_compute_budget_v1",
+    fixture_desc=pack_pb.PackComputeBudgetFixture.DESCRIPTOR,
 )
 
 ENTRYPOINT_HARNESS_MAP = {
