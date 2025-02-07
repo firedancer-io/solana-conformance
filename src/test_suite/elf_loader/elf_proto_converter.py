@@ -1,5 +1,5 @@
 from enum import Enum
-import test_suite.invoke_pb2 as elf_pb
+import test_suite.elf_pb2 as elf_pb
 from argparse import ArgumentParser
 from pathlib import Path
 from typing import Callable
