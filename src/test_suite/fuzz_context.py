@@ -30,7 +30,7 @@ ElfLoaderHarness = HarnessCtx(
 InstrHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_instr_execute_v1",
     fixture_desc=invoke_pb.InstrFixture.DESCRIPTOR,
-    prune_effects_fn=instr_prune.prune_execution_result,
+    # prune_effects_fn=instr_prune.prune_execution_result,
     context_human_encode_fn=instr_codec.encode_input,
     context_human_decode_fn=instr_codec.decode_input,
     effects_human_encode_fn=instr_codec.encode_output,
@@ -82,7 +82,7 @@ TxnHarness = HarnessCtx(
     consensus_diff_effect_fn=txn_diff.consensus_txn_diff_effects,
 )
 
-VmValidateHarness = HarnessCtx(
+PackComputeBudgetHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_pack_compute_budget_v1",
     fixture_desc=pack_pb.PackComputeBudgetFixture.DESCRIPTOR,
 )
