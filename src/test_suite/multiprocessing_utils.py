@@ -12,6 +12,7 @@ import test_suite.globals as globals
 from google.protobuf import text_format, message
 from google.protobuf.internal.decoder import _DecodeVarint
 import os
+import re
 
 
 def process_target(
@@ -76,6 +77,17 @@ def extract_metadata(fixture_file: Path) -> str | None:
     Returns:
         - str | None: Metadata from the fixture file.
     """
+
+    if fixture_file.suffix == ".txt":
+        with open(fixture_file, "r") as f:
+            fixture_txt = f.read()
+            metadata_txt = re.search(r"metadata\s*\{(.*?)\}", fixture_txt, re.DOTALL)
+            if not metadata_txt:
+                raise ValueError("No 'metadata { ... }' block found!")
+            metadata_body = metadata_txt.group(1).strip()
+            fixture_metadata = metadata_pb2.FixtureMetadata()
+            text_format.Parse(metadata_body, fixture_metadata)
+            return fixture_metadata
 
     with open(fixture_file, "rb") as f:
         proto_bytes = f.read()
@@ -155,8 +167,16 @@ def read_fixture(fixture_file: Path) -> message.Message | None:
             fixture = harness_ctx.fixture_type()
             fixture.ParseFromString(f.read())
     except:
-        # Unable to read message, skip and continue
-        fixture = None
+        try:
+            # Maybe it's in human-readable Protobuf format?
+            fn_entrypoint = extract_metadata(fixture_file).fn_entrypoint
+            harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
+            with open(fixture_file) as f:
+                fixture = text_format.Parse(f.read(), harness_ctx.fixture_type())
+            harness_ctx.context_human_decode_fn(fixture.input)
+        except:
+            # Unable to read message, skip and continue
+            fixture = None
 
     if fixture is None:
         # Unreadable file, skip it
@@ -371,6 +391,10 @@ def run_test(test_file: Path) -> tuple[str, int, dict | None]:
     else:
         harness_ctx = globals.default_harness_ctx
         context = read_context(harness_ctx, test_file)
+        if context is None:
+            fn_entrypoint = extract_metadata(test_file).fn_entrypoint
+            harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
+            context = read_fixture(test_file).input
 
     results = process_single_test_case(harness_ctx, context)
     pruned_results = harness_ctx.prune_effects_fn(context, results)
