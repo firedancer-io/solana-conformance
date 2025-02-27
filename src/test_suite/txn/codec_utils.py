@@ -65,54 +65,7 @@ def decode_input(txn_context: txn_pb.TxnContext):
     Args:
         - txn_context (txn_pb.TxnContext): Transaction context (will be modified).
     """
-<<<<<<< HEAD
-    # Message hash
-    txn_context.tx.message_hash = fd58.dec32(
-        txn_context.tx.message_hash or bytes([0] * 32)
-    )
-
-    # Signatures
-    for i in range(len(txn_context.tx.signatures)):
-        if txn_context.tx.signatures[i]:
-            txn_context.tx.signatures[i] = fd58.dec64(txn_context.tx.signatures[i])
-
-    # Account keys
-    for i in range(len(txn_context.tx.message.account_keys)):
-        if txn_context.tx.message.account_keys[i]:
-            txn_context.tx.message.account_keys[i] = fd58.dec32(
-                txn_context.tx.message.account_keys[i]
-            )
-
-    # Account shared data
-    for i in range(len(txn_context.account_shared_data)):
-        # Pubkey
-        if txn_context.account_shared_data[i].address:
-            txn_context.account_shared_data[i].address = fd58.dec32(
-                txn_context.account_shared_data[i].address
-            )
-
-        # Not encoding data because it's not super useful in inspection
-
-        # Owner
-        if txn_context.account_shared_data[i].owner:
-            txn_context.account_shared_data[i].owner = fd58.dec32(
-                txn_context.account_shared_data[i].owner
-            )
-
-    # Recent blockhash
-    txn_context.tx.message.recent_blockhash = fd58.dec32(
-        txn_context.tx.message.recent_blockhash or bytes([0] * 32)
-    )
-
-    # Address table lookups
-    for i in range(len(txn_context.tx.message.address_table_lookups)):
-        if txn_context.tx.message.address_table_lookups[i].account_key:
-            txn_context.tx.message.address_table_lookups[i].account_key = fd58.dec32(
-                txn_context.tx.message.address_table_lookups[i].account_key
-            )
-=======
     decode_sanitized_tx(txn_context.tx)
->>>>>>> e52aa4d (WIP block fuzzing support)
 
     # Blockhash queue
     for i in range(len(txn_context.blockhash_queue)):
@@ -131,54 +84,7 @@ def encode_input(txn_context: txn_pb.TxnContext):
     Args:
         - txn_context (txn_pb.TxnContext): Transaction context (will be modified).
     """
-<<<<<<< HEAD
-    # Message hash
-    txn_context.tx.message_hash = fd58.enc32(
-        txn_context.tx.message_hash or bytes([0] * 32)
-    )
-
-    # Signatures
-    for i in range(len(txn_context.tx.signatures)):
-        if txn_context.tx.signatures[i]:
-            txn_context.tx.signatures[i] = fd58.enc64(txn_context.tx.signatures[i])
-
-    # Account keys
-    for i in range(len(txn_context.tx.message.account_keys)):
-        if txn_context.tx.message.account_keys[i]:
-            txn_context.tx.message.account_keys[i] = fd58.enc32(
-                txn_context.tx.message.account_keys[i]
-            )
-
-    # Account shared data
-    for i in range(len(txn_context.account_shared_data)):
-        # Pubkey
-        if txn_context.account_shared_data[i].address:
-            txn_context.account_shared_data[i].address = fd58.enc32(
-                txn_context.account_shared_data[i].address
-            )
-
-        # Not encoding data because it's not super useful in inspection
-
-        # Owner
-        if txn_context.account_shared_data[i].owner:
-            txn_context.account_shared_data[i].owner = fd58.enc32(
-                txn_context.account_shared_data[i].owner
-            )
-
-    # Recent blockhash
-    txn_context.tx.message.recent_blockhash = fd58.enc32(
-        txn_context.tx.message.recent_blockhash or bytes([0] * 32)
-    )
-
-    # Address table lookups
-    for i in range(len(txn_context.tx.message.address_table_lookups)):
-        if txn_context.tx.message.address_table_lookups[i].account_key:
-            txn_context.tx.message.address_table_lookups[i].account_key = fd58.enc32(
-                txn_context.tx.message.address_table_lookups[i].account_key
-            )
-=======
     encode_sanitized_tx(txn_context.tx)
->>>>>>> e52aa4d (WIP block fuzzing support)
 
     # Blockhash queue
     for i in range(len(txn_context.blockhash_queue)):
