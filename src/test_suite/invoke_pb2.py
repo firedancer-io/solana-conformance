@@ -1,9 +1,11 @@
-"""Generated protocol buffer code."""
+import sys
 
+_b = sys.version_info[0] < 3 and (lambda x: x) or (lambda x: x.encode("latin1"))
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
+from google.protobuf import descriptor_pb2
 
 _sym_db = _symbol_database.Default()
 from . import context_pb2 as context__pb2
@@ -13,9 +15,9 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     name="invoke.proto",
     package="org.solana.sealevel.v1",
     syntax="proto3",
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-    serialized_pb=b'\n\x0cinvoke.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\x0emetadata.proto"B\n\tInstrAcct\x12\r\n\x05index\x18\x01 \x01(\r\x12\x13\n\x0bis_writable\x18\x02 \x01(\x08\x12\x11\n\tis_signer\x18\x03 \x01(\x08"\xaa\x02\n\x0cInstrContext\x12\x12\n\nprogram_id\x18\x01 \x01(\x0c\x123\n\x08accounts\x18\x03 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x129\n\x0einstr_accounts\x18\x04 \x03(\x0b2!.org.solana.sealevel.v1.InstrAcct\x12\x0c\n\x04data\x18\x05 \x01(\x0c\x12\x10\n\x08cu_avail\x18\x06 \x01(\x04\x129\n\x0cslot_context\x18\x08 \x01(\x0b2#.org.solana.sealevel.v1.SlotContext\x12;\n\repoch_context\x18\t \x01(\x0b2$.org.solana.sealevel.v1.EpochContext"\x97\x01\n\x0cInstrEffects\x12\x0e\n\x06result\x18\x01 \x01(\x05\x12\x12\n\ncustom_err\x18\x02 \x01(\r\x12<\n\x11modified_accounts\x18\x03 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x12\x10\n\x08cu_avail\x18\x04 \x01(\x04\x12\x13\n\x0breturn_data\x18\x05 \x01(\x0c"\xb4\x01\n\x0cInstrFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x123\n\x05input\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.InstrContext\x124\n\x06output\x18\x03 \x01(\x0b2$.org.solana.sealevel.v1.InstrEffectsb\x06proto3',
+    serialized_pb=_b(
+        '\n\x0cinvoke.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\x0emetadata.proto"B\n\tInstrAcct\x12\r\n\x05index\x18\x01 \x01(\r\x12\x13\n\x0bis_writable\x18\x02 \x01(\x08\x12\x11\n\tis_signer\x18\x03 \x01(\x08"ª\x02\n\x0cInstrContext\x12\x12\n\nprogram_id\x18\x01 \x01(\x0c\x123\n\x08accounts\x18\x03 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x129\n\x0einstr_accounts\x18\x04 \x03(\x0b2!.org.solana.sealevel.v1.InstrAcct\x12\x0c\n\x04data\x18\x05 \x01(\x0c\x12\x10\n\x08cu_avail\x18\x06 \x01(\x04\x129\n\x0cslot_context\x18\x08 \x01(\x0b2#.org.solana.sealevel.v1.SlotContext\x12;\n\repoch_context\x18\t \x01(\x0b2$.org.solana.sealevel.v1.EpochContext"\x97\x01\n\x0cInstrEffects\x12\x0e\n\x06result\x18\x01 \x01(\x05\x12\x12\n\ncustom_err\x18\x02 \x01(\r\x12<\n\x11modified_accounts\x18\x03 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x12\x10\n\x08cu_avail\x18\x04 \x01(\x04\x12\x13\n\x0breturn_data\x18\x05 \x01(\x0c"´\x01\n\x0cInstrFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x123\n\x05input\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.InstrContext\x124\n\x06output\x18\x03 \x01(\x0b2$.org.solana.sealevel.v1.InstrEffectsb\x06proto3'
+    ),
     dependencies=[context__pb2.DESCRIPTOR, metadata__pb2.DESCRIPTOR],
 )
 _INSTRACCT = _descriptor.Descriptor(
@@ -24,7 +26,6 @@ _INSTRACCT = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
-    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="index",
@@ -41,9 +42,8 @@ _INSTRACCT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="is_writable",
@@ -60,9 +60,8 @@ _INSTRACCT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="is_signer",
@@ -79,15 +78,14 @@ _INSTRACCT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    serialized_options=None,
+    options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -101,7 +99,6 @@ _INSTRCONTEXT = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
-    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="program_id",
@@ -112,15 +109,14 @@ _INSTRCONTEXT = _descriptor.Descriptor(
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"",
+            default_value=_b(""),
             message_type=None,
             enum_type=None,
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="accounts",
@@ -137,9 +133,8 @@ _INSTRCONTEXT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="instr_accounts",
@@ -156,9 +151,8 @@ _INSTRCONTEXT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="data",
@@ -169,15 +163,14 @@ _INSTRCONTEXT = _descriptor.Descriptor(
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"",
+            default_value=_b(""),
             message_type=None,
             enum_type=None,
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="cu_avail",
@@ -194,9 +187,8 @@ _INSTRCONTEXT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="slot_context",
@@ -213,9 +205,8 @@ _INSTRCONTEXT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="epoch_context",
@@ -232,15 +223,14 @@ _INSTRCONTEXT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    serialized_options=None,
+    options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -254,7 +244,6 @@ _INSTREFFECTS = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
-    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="result",
@@ -271,9 +260,8 @@ _INSTREFFECTS = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="custom_err",
@@ -290,9 +278,8 @@ _INSTREFFECTS = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="modified_accounts",
@@ -309,9 +296,8 @@ _INSTREFFECTS = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="cu_avail",
@@ -328,9 +314,8 @@ _INSTREFFECTS = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="return_data",
@@ -341,21 +326,20 @@ _INSTREFFECTS = _descriptor.Descriptor(
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"",
+            default_value=_b(""),
             message_type=None,
             enum_type=None,
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    serialized_options=None,
+    options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -369,7 +353,6 @@ _INSTRFIXTURE = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
-    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="metadata",
@@ -386,9 +369,8 @@ _INSTRFIXTURE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="input",
@@ -405,9 +387,8 @@ _INSTRFIXTURE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="output",
@@ -424,15 +405,14 @@ _INSTRFIXTURE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    serialized_options=None,
+    options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -456,24 +436,24 @@ _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 InstrAcct = _reflection.GeneratedProtocolMessageType(
     "InstrAcct",
     (_message.Message,),
-    {"DESCRIPTOR": _INSTRACCT, "__module__": "invoke_pb2"},
+    dict(DESCRIPTOR=_INSTRACCT, __module__="invoke_pb2"),
 )
 _sym_db.RegisterMessage(InstrAcct)
 InstrContext = _reflection.GeneratedProtocolMessageType(
     "InstrContext",
     (_message.Message,),
-    {"DESCRIPTOR": _INSTRCONTEXT, "__module__": "invoke_pb2"},
+    dict(DESCRIPTOR=_INSTRCONTEXT, __module__="invoke_pb2"),
 )
 _sym_db.RegisterMessage(InstrContext)
 InstrEffects = _reflection.GeneratedProtocolMessageType(
     "InstrEffects",
     (_message.Message,),
-    {"DESCRIPTOR": _INSTREFFECTS, "__module__": "invoke_pb2"},
+    dict(DESCRIPTOR=_INSTREFFECTS, __module__="invoke_pb2"),
 )
 _sym_db.RegisterMessage(InstrEffects)
 InstrFixture = _reflection.GeneratedProtocolMessageType(
     "InstrFixture",
     (_message.Message,),
-    {"DESCRIPTOR": _INSTRFIXTURE, "__module__": "invoke_pb2"},
+    dict(DESCRIPTOR=_INSTRFIXTURE, __module__="invoke_pb2"),
 )
 _sym_db.RegisterMessage(InstrFixture)

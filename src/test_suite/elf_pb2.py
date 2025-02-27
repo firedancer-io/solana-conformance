@@ -1,9 +1,11 @@
-"""Generated protocol buffer code."""
+import sys
 
+_b = sys.version_info[0] < 3 and (lambda x: x) or (lambda x: x.encode("latin1"))
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
+from google.protobuf import descriptor_pb2
 
 _sym_db = _symbol_database.Default()
 from . import context_pb2 as context__pb2
@@ -13,9 +15,9 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     name="elf.proto",
     package="org.solana.sealevel.v1",
     syntax="proto3",
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-    serialized_pb=b'\n\telf.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\x0emetadata.proto"\x19\n\tELFBinary\x12\x0c\n\x04data\x18\x01 \x01(\x0c"\x9b\x01\n\x0cELFLoaderCtx\x12.\n\x03elf\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.ELFBinary\x124\n\x08features\x18\x02 \x01(\x0b2".org.solana.sealevel.v1.FeatureSet\x12\x0e\n\x06elf_sz\x18\x03 \x01(\x04\x12\x15\n\rdeploy_checks\x18\x04 \x01(\x08"~\n\x10ELFLoaderEffects\x12\x0e\n\x06rodata\x18\x01 \x01(\x0c\x12\x11\n\trodata_sz\x18\x02 \x01(\x04\x12\x10\n\x08text_cnt\x18\x04 \x01(\x04\x12\x10\n\x08text_off\x18\x05 \x01(\x04\x12\x10\n\x08entry_pc\x18\x06 \x01(\x04\x12\x11\n\tcalldests\x18\x07 \x03(\x04"\xbc\x01\n\x10ELFLoaderFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x123\n\x05input\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.ELFLoaderCtx\x128\n\x06output\x18\x03 \x01(\x0b2(.org.solana.sealevel.v1.ELFLoaderEffectsb\x06proto3',
+    serialized_pb=_b(
+        '\n\telf.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\x0emetadata.proto"\x19\n\tELFBinary\x12\x0c\n\x04data\x18\x01 \x01(\x0c"\x9b\x01\n\x0cELFLoaderCtx\x12.\n\x03elf\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.ELFBinary\x124\n\x08features\x18\x02 \x01(\x0b2".org.solana.sealevel.v1.FeatureSet\x12\x0e\n\x06elf_sz\x18\x03 \x01(\x04\x12\x15\n\rdeploy_checks\x18\x04 \x01(\x08"~\n\x10ELFLoaderEffects\x12\x0e\n\x06rodata\x18\x01 \x01(\x0c\x12\x11\n\trodata_sz\x18\x02 \x01(\x04\x12\x10\n\x08text_cnt\x18\x04 \x01(\x04\x12\x10\n\x08text_off\x18\x05 \x01(\x04\x12\x10\n\x08entry_pc\x18\x06 \x01(\x04\x12\x11\n\tcalldests\x18\x07 \x03(\x04"¼\x01\n\x10ELFLoaderFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x123\n\x05input\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.ELFLoaderCtx\x128\n\x06output\x18\x03 \x01(\x0b2(.org.solana.sealevel.v1.ELFLoaderEffectsb\x06proto3'
+    ),
     dependencies=[context__pb2.DESCRIPTOR, metadata__pb2.DESCRIPTOR],
 )
 _ELFBINARY = _descriptor.Descriptor(
@@ -24,7 +26,6 @@ _ELFBINARY = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
-    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="data",
@@ -35,21 +36,20 @@ _ELFBINARY = _descriptor.Descriptor(
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"",
+            default_value=_b(""),
             message_type=None,
             enum_type=None,
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         )
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    serialized_options=None,
+    options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -63,7 +63,6 @@ _ELFLOADERCTX = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
-    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="elf",
@@ -80,9 +79,8 @@ _ELFLOADERCTX = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="features",
@@ -99,9 +97,8 @@ _ELFLOADERCTX = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="elf_sz",
@@ -118,9 +115,8 @@ _ELFLOADERCTX = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="deploy_checks",
@@ -137,15 +133,14 @@ _ELFLOADERCTX = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    serialized_options=None,
+    options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -159,7 +154,6 @@ _ELFLOADEREFFECTS = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
-    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="rodata",
@@ -170,15 +164,14 @@ _ELFLOADEREFFECTS = _descriptor.Descriptor(
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"",
+            default_value=_b(""),
             message_type=None,
             enum_type=None,
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="rodata_sz",
@@ -195,9 +188,8 @@ _ELFLOADEREFFECTS = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="text_cnt",
@@ -214,9 +206,8 @@ _ELFLOADEREFFECTS = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="text_off",
@@ -233,9 +224,8 @@ _ELFLOADEREFFECTS = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="entry_pc",
@@ -252,9 +242,8 @@ _ELFLOADEREFFECTS = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="calldests",
@@ -271,15 +260,14 @@ _ELFLOADEREFFECTS = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    serialized_options=None,
+    options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -293,7 +281,6 @@ _ELFLOADERFIXTURE = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
-    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="metadata",
@@ -310,9 +297,8 @@ _ELFLOADERFIXTURE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="input",
@@ -329,9 +315,8 @@ _ELFLOADERFIXTURE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="output",
@@ -348,15 +333,14 @@ _ELFLOADERFIXTURE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    serialized_options=None,
+    options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -377,26 +361,24 @@ DESCRIPTOR.message_types_by_name["ELFLoaderEffects"] = _ELFLOADEREFFECTS
 DESCRIPTOR.message_types_by_name["ELFLoaderFixture"] = _ELFLOADERFIXTURE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 ELFBinary = _reflection.GeneratedProtocolMessageType(
-    "ELFBinary",
-    (_message.Message,),
-    {"DESCRIPTOR": _ELFBINARY, "__module__": "elf_pb2"},
+    "ELFBinary", (_message.Message,), dict(DESCRIPTOR=_ELFBINARY, __module__="elf_pb2")
 )
 _sym_db.RegisterMessage(ELFBinary)
 ELFLoaderCtx = _reflection.GeneratedProtocolMessageType(
     "ELFLoaderCtx",
     (_message.Message,),
-    {"DESCRIPTOR": _ELFLOADERCTX, "__module__": "elf_pb2"},
+    dict(DESCRIPTOR=_ELFLOADERCTX, __module__="elf_pb2"),
 )
 _sym_db.RegisterMessage(ELFLoaderCtx)
 ELFLoaderEffects = _reflection.GeneratedProtocolMessageType(
     "ELFLoaderEffects",
     (_message.Message,),
-    {"DESCRIPTOR": _ELFLOADEREFFECTS, "__module__": "elf_pb2"},
+    dict(DESCRIPTOR=_ELFLOADEREFFECTS, __module__="elf_pb2"),
 )
 _sym_db.RegisterMessage(ELFLoaderEffects)
 ELFLoaderFixture = _reflection.GeneratedProtocolMessageType(
     "ELFLoaderFixture",
     (_message.Message,),
-    {"DESCRIPTOR": _ELFLOADERFIXTURE, "__module__": "elf_pb2"},
+    dict(DESCRIPTOR=_ELFLOADERFIXTURE, __module__="elf_pb2"),
 )
 _sym_db.RegisterMessage(ELFLoaderFixture)

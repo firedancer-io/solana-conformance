@@ -1,18 +1,20 @@
-"""Generated protocol buffer code."""
+import sys
 
+_b = sys.version_info[0] < 3 and (lambda x: x) or (lambda x: x.encode("latin1"))
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
+from google.protobuf import descriptor_pb2
 
 _sym_db = _symbol_database.Default()
 DESCRIPTOR = _descriptor.FileDescriptor(
     name="serialize.proto",
     package="org.solana.sealevel.v1",
     syntax="proto3",
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-    serialized_pb=b'\n\x0fserialize.proto\x12\x16org.solana.sealevel.v1"D\n\x0bVmMemRegion\x12\x0f\n\x07vm_addr\x18\x01 \x01(\x04\x12\x0f\n\x07content\x18\x02 \x01(\x0c\x12\x13\n\x0bis_writable\x18\x03 \x01(\x08"\\\n\x14InstrSerializeResult\x12\x0e\n\x06result\x18\x01 \x01(\x05\x124\n\x07regions\x18\x02 \x03(\x0b2#.org.solana.sealevel.v1.VmMemRegionb\x06proto3',
+    serialized_pb=_b(
+        '\n\x0fserialize.proto\x12\x16org.solana.sealevel.v1"D\n\x0bVmMemRegion\x12\x0f\n\x07vm_addr\x18\x01 \x01(\x04\x12\x0f\n\x07content\x18\x02 \x01(\x0c\x12\x13\n\x0bis_writable\x18\x03 \x01(\x08"\\\n\x14InstrSerializeResult\x12\x0e\n\x06result\x18\x01 \x01(\x05\x124\n\x07regions\x18\x02 \x03(\x0b2#.org.solana.sealevel.v1.VmMemRegionb\x06proto3'
+    ),
 )
 _VMMEMREGION = _descriptor.Descriptor(
     name="VmMemRegion",
@@ -20,7 +22,6 @@ _VMMEMREGION = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
-    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="vm_addr",
@@ -37,9 +38,8 @@ _VMMEMREGION = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="content",
@@ -50,15 +50,14 @@ _VMMEMREGION = _descriptor.Descriptor(
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"",
+            default_value=_b(""),
             message_type=None,
             enum_type=None,
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="is_writable",
@@ -75,15 +74,14 @@ _VMMEMREGION = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    serialized_options=None,
+    options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -97,7 +95,6 @@ _INSTRSERIALIZERESULT = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
-    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="result",
@@ -114,9 +111,8 @@ _INSTRSERIALIZERESULT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="regions",
@@ -133,15 +129,14 @@ _INSTRSERIALIZERESULT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    serialized_options=None,
+    options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -156,12 +151,12 @@ _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 VmMemRegion = _reflection.GeneratedProtocolMessageType(
     "VmMemRegion",
     (_message.Message,),
-    {"DESCRIPTOR": _VMMEMREGION, "__module__": "serialize_pb2"},
+    dict(DESCRIPTOR=_VMMEMREGION, __module__="serialize_pb2"),
 )
 _sym_db.RegisterMessage(VmMemRegion)
 InstrSerializeResult = _reflection.GeneratedProtocolMessageType(
     "InstrSerializeResult",
     (_message.Message,),
-    {"DESCRIPTOR": _INSTRSERIALIZERESULT, "__module__": "serialize_pb2"},
+    dict(DESCRIPTOR=_INSTRSERIALIZERESULT, __module__="serialize_pb2"),
 )
 _sym_db.RegisterMessage(InstrSerializeResult)

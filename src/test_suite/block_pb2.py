@@ -1,9 +1,11 @@
-"""Generated protocol buffer code."""
+import sys
 
+_b = sys.version_info[0] < 3 and (lambda x: x) or (lambda x: x.encode("latin1"))
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
+from google.protobuf import descriptor_pb2
 
 _sym_db = _symbol_database.Default()
 from . import context_pb2 as context__pb2
@@ -14,9 +16,9 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     name="block.proto",
     package="org.solana.sealevel.v1",
     syntax="proto3",
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-    serialized_pb=b'\n\x0bblock.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\ttxn.proto\x1a\x0emetadata.proto"H\n\nMicroblock\x12:\n\x04txns\x18\x01 \x03(\x0b2,.org.solana.sealevel.v1.SanitizedTransaction"\x88\x02\n\x0cBlockContext\x127\n\x0bmicroblocks\x18\x01 \x03(\x0b2".org.solana.sealevel.v1.Microblock\x126\n\x0bacct_states\x18\x02 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x12\x17\n\x0fblockhash_queue\x18\x03 \x03(\x0c\x125\n\x08slot_ctx\x18\x04 \x01(\x0b2#.org.solana.sealevel.v1.SlotContext\x127\n\tepoch_ctx\x18\x05 \x01(\x0b2$.org.solana.sealevel.v1.EpochContext"\xb6\x01\n\x0cBlockEffects\x12\x11\n\thas_error\x18\x01 \x01(\x08\x126\n\x0bacct_states\x18\x02 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x12\x1b\n\x13slot_capitalization\x18\x03 \x01(\x04\x12\x11\n\tbank_hash\x18\x04 \x01(\x0c\x12\x0f\n\x07lt_hash\x18\x05 \x01(\x0c\x12\x1a\n\x12account_delta_hash\x18\x06 \x01(\x0c"\xb4\x01\n\x0cBlockFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x123\n\x05input\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.BlockContext\x124\n\x06output\x18\x03 \x01(\x0b2$.org.solana.sealevel.v1.BlockEffectsb\x06proto3',
+    serialized_pb=_b(
+        '\n\x0bblock.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\ttxn.proto\x1a\x0emetadata.proto"H\n\nMicroblock\x12:\n\x04txns\x18\x01 \x03(\x0b2,.org.solana.sealevel.v1.SanitizedTransaction"\x88\x02\n\x0cBlockContext\x127\n\x0bmicroblocks\x18\x01 \x03(\x0b2".org.solana.sealevel.v1.Microblock\x126\n\x0bacct_states\x18\x02 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x12\x17\n\x0fblockhash_queue\x18\x03 \x03(\x0c\x125\n\x08slot_ctx\x18\x04 \x01(\x0b2#.org.solana.sealevel.v1.SlotContext\x127\n\tepoch_ctx\x18\x05 \x01(\x0b2$.org.solana.sealevel.v1.EpochContext"¶\x01\n\x0cBlockEffects\x12\x11\n\thas_error\x18\x01 \x01(\x08\x126\n\x0bacct_states\x18\x02 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x12\x1b\n\x13slot_capitalization\x18\x03 \x01(\x04\x12\x11\n\tbank_hash\x18\x04 \x01(\x0c\x12\x0f\n\x07lt_hash\x18\x05 \x01(\x0c\x12\x1a\n\x12account_delta_hash\x18\x06 \x01(\x0c"´\x01\n\x0cBlockFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x123\n\x05input\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.BlockContext\x124\n\x06output\x18\x03 \x01(\x0b2$.org.solana.sealevel.v1.BlockEffectsb\x06proto3'
+    ),
     dependencies=[
         context__pb2.DESCRIPTOR,
         txn__pb2.DESCRIPTOR,
@@ -29,7 +31,6 @@ _MICROBLOCK = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
-    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="txns",
@@ -46,15 +47,14 @@ _MICROBLOCK = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         )
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    serialized_options=None,
+    options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -68,7 +68,6 @@ _BLOCKCONTEXT = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
-    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="microblocks",
@@ -85,9 +84,8 @@ _BLOCKCONTEXT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="acct_states",
@@ -104,9 +102,8 @@ _BLOCKCONTEXT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="blockhash_queue",
@@ -123,9 +120,8 @@ _BLOCKCONTEXT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="slot_ctx",
@@ -142,9 +138,8 @@ _BLOCKCONTEXT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="epoch_ctx",
@@ -161,15 +156,14 @@ _BLOCKCONTEXT = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    serialized_options=None,
+    options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -183,7 +177,6 @@ _BLOCKEFFECTS = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
-    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="has_error",
@@ -200,9 +193,8 @@ _BLOCKEFFECTS = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="acct_states",
@@ -219,9 +211,8 @@ _BLOCKEFFECTS = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="slot_capitalization",
@@ -238,9 +229,8 @@ _BLOCKEFFECTS = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="bank_hash",
@@ -251,15 +241,14 @@ _BLOCKEFFECTS = _descriptor.Descriptor(
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"",
+            default_value=_b(""),
             message_type=None,
             enum_type=None,
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="lt_hash",
@@ -270,15 +259,14 @@ _BLOCKEFFECTS = _descriptor.Descriptor(
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"",
+            default_value=_b(""),
             message_type=None,
             enum_type=None,
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="account_delta_hash",
@@ -289,21 +277,20 @@ _BLOCKEFFECTS = _descriptor.Descriptor(
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"",
+            default_value=_b(""),
             message_type=None,
             enum_type=None,
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    serialized_options=None,
+    options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -317,7 +304,6 @@ _BLOCKFIXTURE = _descriptor.Descriptor(
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
-    create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
             name="metadata",
@@ -334,9 +320,8 @@ _BLOCKFIXTURE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="input",
@@ -353,9 +338,8 @@ _BLOCKFIXTURE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
             name="output",
@@ -372,15 +356,14 @@ _BLOCKFIXTURE = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            serialized_options=None,
+            options=None,
             file=DESCRIPTOR,
-            create_key=_descriptor._internal_create_key,
         ),
     ],
     extensions=[],
     nested_types=[],
     enum_types=[],
-    serialized_options=None,
+    options=None,
     is_extendable=False,
     syntax="proto3",
     extension_ranges=[],
@@ -405,24 +388,24 @@ _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 Microblock = _reflection.GeneratedProtocolMessageType(
     "Microblock",
     (_message.Message,),
-    {"DESCRIPTOR": _MICROBLOCK, "__module__": "block_pb2"},
+    dict(DESCRIPTOR=_MICROBLOCK, __module__="block_pb2"),
 )
 _sym_db.RegisterMessage(Microblock)
 BlockContext = _reflection.GeneratedProtocolMessageType(
     "BlockContext",
     (_message.Message,),
-    {"DESCRIPTOR": _BLOCKCONTEXT, "__module__": "block_pb2"},
+    dict(DESCRIPTOR=_BLOCKCONTEXT, __module__="block_pb2"),
 )
 _sym_db.RegisterMessage(BlockContext)
 BlockEffects = _reflection.GeneratedProtocolMessageType(
     "BlockEffects",
     (_message.Message,),
-    {"DESCRIPTOR": _BLOCKEFFECTS, "__module__": "block_pb2"},
+    dict(DESCRIPTOR=_BLOCKEFFECTS, __module__="block_pb2"),
 )
 _sym_db.RegisterMessage(BlockEffects)
 BlockFixture = _reflection.GeneratedProtocolMessageType(
     "BlockFixture",
     (_message.Message,),
-    {"DESCRIPTOR": _BLOCKFIXTURE, "__module__": "block_pb2"},
+    dict(DESCRIPTOR=_BLOCKFIXTURE, __module__="block_pb2"),
 )
 _sym_db.RegisterMessage(BlockFixture)
