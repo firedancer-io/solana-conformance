@@ -1,4 +1,5 @@
 import fd58
+from test_suite.context.codec_utils import decode_acct_state, encode_acct_state
 import test_suite.invoke_pb2 as invoke_pb
 
 
@@ -14,14 +15,7 @@ def decode_input(instruction_context: invoke_pb.InstrContext):
         instruction_context.program_id = fd58.dec32(instruction_context.program_id)
 
     for i in range(len(instruction_context.accounts)):
-        if instruction_context.accounts[i].address:
-            instruction_context.accounts[i].address = fd58.dec32(
-                instruction_context.accounts[i].address
-            )
-        if instruction_context.accounts[i].owner:
-            instruction_context.accounts[i].owner = fd58.dec32(
-                instruction_context.accounts[i].owner
-            )
+        decode_acct_state(instruction_context.accounts[i])
 
 
 def encode_input(instruction_context: invoke_pb.InstrContext):
@@ -36,14 +30,7 @@ def encode_input(instruction_context: invoke_pb.InstrContext):
         instruction_context.program_id = fd58.enc32(instruction_context.program_id)
 
     for i in range(len(instruction_context.accounts)):
-        if instruction_context.accounts[i].address:
-            instruction_context.accounts[i].address = fd58.enc32(
-                instruction_context.accounts[i].address
-            )
-        if instruction_context.accounts[i].owner:
-            instruction_context.accounts[i].owner = fd58.enc32(
-                instruction_context.accounts[i].owner
-            )
+        encode_acct_state(instruction_context.accounts[i])
 
 
 def encode_output(instruction_effects: invoke_pb.InstrEffects):
@@ -55,11 +42,4 @@ def encode_output(instruction_effects: invoke_pb.InstrEffects):
         - instruction_effects (invoke_pb.InstrEffects): Instruction effects (will be modified).
     """
     for i in range(len(instruction_effects.modified_accounts)):
-        if instruction_effects.modified_accounts[i].address:
-            instruction_effects.modified_accounts[i].address = fd58.enc32(
-                instruction_effects.modified_accounts[i].address
-            )
-        if instruction_effects.modified_accounts[i].owner:
-            instruction_effects.modified_accounts[i].owner = fd58.enc32(
-                instruction_effects.modified_accounts[i].owner
-            )
+        encode_acct_state(instruction_effects.modified_accounts[i])
