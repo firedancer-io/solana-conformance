@@ -726,12 +726,36 @@ def debug_mismatches(
             ):
                 os.remove(files[j])
 
+    create_fixtures_dir = globals.output_dir / "create_fixtures"
+    if create_fixtures_dir.exists():
+        shutil.rmtree(create_fixtures_dir)
+    create_fixtures_dir.mkdir(parents=True, exist_ok=True)
+
+    run_tests_output = globals.output_dir / "test_results"
+
+    create_fixtures(
+        input=globals.inputs_dir,
+        default_harness_ctx=default_harness_ctx,
+        reference_shared_library=reference_shared_library,
+        shared_libraries=shared_libraries,
+        output_dir=create_fixtures_dir,
+        num_processes=num_processes,
+        readable=False,
+        only_keep_passing=False,
+        organize_fixture_dir=False,
+        log_level=log_level,
+    )
+
+    shutil.rmtree(globals.inputs_dir)
+    shutil.copytree(create_fixtures_dir, globals.inputs_dir)
+    shutil.rmtree(create_fixtures_dir)
+
     return run_tests(
         input=globals.inputs_dir,
         reference_shared_library=reference_shared_library,
         default_harness_ctx=default_harness_ctx,
         shared_libraries=shared_libraries,
-        output_dir=globals.output_dir / "test_results",
+        output_dir=run_tests_output,
         num_processes=num_processes,
         randomize_output_buffer=False,
         log_chunk_size=10000,
