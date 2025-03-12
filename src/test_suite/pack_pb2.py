@@ -9,15 +9,16 @@ from google.protobuf import descriptor_pb2
 
 _sym_db = _symbol_database.Default()
 from . import metadata_pb2 as metadata__pb2
+from . import context_pb2 as context__pb2
 
 DESCRIPTOR = _descriptor.FileDescriptor(
     name="pack.proto",
     package="org.solana.sealevel.v1",
     syntax="proto3",
     serialized_pb=_b(
-        '\n\npack.proto\x12\x16org.solana.sealevel.v1\x1a\x0emetadata.proto"/\n\x18PackComputeBudgetContext\x12\x13\n\x0binstr_datas\x18\x01 \x03(\x0c"\x87\x01\n\x18PackComputeBudgetEffects\x12\x1a\n\x12compute_unit_limit\x18\x01 \x01(\x04\x12\x0f\n\x07rewards\x18\x02 \x01(\x04\x12\x0f\n\x07heap_sz\x18\x03 \x01(\r\x12\x1b\n\x13loaded_acct_data_sz\x18\x04 \x01(\r\x12\x10\n\x08is_empty\x18\x05 \x01(\r"Ø\x01\n\x18PackComputeBudgetFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x12?\n\x05input\x18\x02 \x01(\x0b20.org.solana.sealevel.v1.PackComputeBudgetContext\x12@\n\x06output\x18\x03 \x01(\x0b20.org.solana.sealevel.v1.PackComputeBudgetEffectsb\x06proto3'
+        '\n\npack.proto\x12\x16org.solana.sealevel.v1\x1a\x0emetadata.proto\x1a\rcontext.proto"e\n\x18PackComputeBudgetContext\x12\x13\n\x0binstr_datas\x18\x01 \x03(\x0c\x124\n\x08features\x18\x02 \x01(\x0b2".org.solana.sealevel.v1.FeatureSet"\x87\x01\n\x18PackComputeBudgetEffects\x12\x1a\n\x12compute_unit_limit\x18\x01 \x01(\x04\x12\x0f\n\x07rewards\x18\x02 \x01(\x04\x12\x0f\n\x07heap_sz\x18\x03 \x01(\r\x12\x1b\n\x13loaded_acct_data_sz\x18\x04 \x01(\r\x12\x10\n\x08is_empty\x18\x05 \x01(\r"Ø\x01\n\x18PackComputeBudgetFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x12?\n\x05input\x18\x02 \x01(\x0b20.org.solana.sealevel.v1.PackComputeBudgetContext\x12@\n\x06output\x18\x03 \x01(\x0b20.org.solana.sealevel.v1.PackComputeBudgetEffectsb\x06proto3'
     ),
-    dependencies=[metadata__pb2.DESCRIPTOR],
+    dependencies=[metadata__pb2.DESCRIPTOR, context__pb2.DESCRIPTOR],
 )
 _PACKCOMPUTEBUDGETCONTEXT = _descriptor.Descriptor(
     name="PackComputeBudgetContext",
@@ -43,7 +44,25 @@ _PACKCOMPUTEBUDGETCONTEXT = _descriptor.Descriptor(
             extension_scope=None,
             options=None,
             file=DESCRIPTOR,
-        )
+        ),
+        _descriptor.FieldDescriptor(
+            name="features",
+            full_name="org.solana.sealevel.v1.PackComputeBudgetContext.features",
+            index=1,
+            number=2,
+            type=11,
+            cpp_type=10,
+            label=1,
+            has_default_value=False,
+            default_value=None,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
     ],
     extensions=[],
     nested_types=[],
@@ -53,8 +72,8 @@ _PACKCOMPUTEBUDGETCONTEXT = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=54,
-    serialized_end=101,
+    serialized_start=69,
+    serialized_end=170,
 )
 _PACKCOMPUTEBUDGETEFFECTS = _descriptor.Descriptor(
     name="PackComputeBudgetEffects",
@@ -162,8 +181,8 @@ _PACKCOMPUTEBUDGETEFFECTS = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=104,
-    serialized_end=239,
+    serialized_start=173,
+    serialized_end=308,
 )
 _PACKCOMPUTEBUDGETFIXTURE = _descriptor.Descriptor(
     name="PackComputeBudgetFixture",
@@ -235,8 +254,11 @@ _PACKCOMPUTEBUDGETFIXTURE = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=242,
-    serialized_end=458,
+    serialized_start=311,
+    serialized_end=527,
+)
+_PACKCOMPUTEBUDGETCONTEXT.fields_by_name["features"].message_type = (
+    context__pb2._FEATURESET
 )
 _PACKCOMPUTEBUDGETFIXTURE.fields_by_name["metadata"].message_type = (
     metadata__pb2._FIXTUREMETADATA
