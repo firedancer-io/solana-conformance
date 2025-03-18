@@ -1,3 +1,4 @@
+from test_suite.features_utils import TargetFeaturePool
 from test_suite.fuzz_interface import HarnessCtx
 
 # Global variables that can be accessed from processes.
@@ -38,3 +39,13 @@ consensus_mode: bool = False
 
 # Whether to run in core bpf mode
 core_bpf_mode: bool = False
+
+# For regenerating fixtures
+features_to_add: set[int] = set()
+features_to_remove: set[int] = set()
+rekey_features: list[tuple[int, ...]] = []
+target_features: TargetFeaturePool = None
+merge_with_latest: bool = False
+regenerate_all: bool = False
+regenerate_dry_run: bool = False
+regenerate_verbose: bool = False
