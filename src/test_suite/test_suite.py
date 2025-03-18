@@ -1,9 +1,7 @@
 import shutil
 from typing import List
 import typer
-from collections import defaultdict
 import ctypes
-import difflib
 import filecmp
 from glob import glob
 import itertools
@@ -13,9 +11,8 @@ import subprocess
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
 from test_suite.fixture_utils import (
     create_fixture,
-    create_fixture_from_context,
     extract_context_from_fixture,
-    write_fixture_to_disk,
+    regenerate_fixture,
 )
 from test_suite.log_utils import log_results
 from test_suite.multiprocessing_utils import (
@@ -39,8 +36,6 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 import time
 import test_suite.features_utils as features_utils
-import test_suite.context_pb2 as context_pb
-import test_suite.pb_utils as pb_utils
 
 """
 Harness options:
@@ -829,11 +824,20 @@ def regenerate_fixtures(
         "-a",
         help="Regenerate all fixtures, regardless of feature set changes",
     ),
+    num_processes: int = typer.Option(
+        4, "--num-processes", "-p", help="Number of processes to use"
+    ),
     log_level: int = typer.Option(
         5,
         "--log-level",
         "-l",
         help="FD logging level",
+    ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Verbose output: print filenames that will be regenerated",
     ),
 ):
     globals.output_dir = output_dir
@@ -851,69 +855,35 @@ def regenerate_fixtures(
     test_cases = list(input.iterdir()) if input.is_dir() else [input]
     num_regenerated = 0
 
-    features_to_add = set(map(features_utils.feature_bytes_to_ulong, add_features))
-    features_to_remove = set(
+    globals.features_to_add = set(
+        map(features_utils.feature_bytes_to_ulong, add_features)
+    )
+    globals.features_to_remove = set(
         map(features_utils.feature_bytes_to_ulong, remove_features)
     )
-
-    rekey_features = list(
+    globals.target_features = features_utils.get_sol_compat_features_t(lib)
+    globals.rekey_features = list(
         tuple(map(features_utils.feature_bytes_to_ulong, feature.split("/")))
         for feature in rekeyed_features
     )
 
-    for file in test_cases:
-        fixture = read_fixture(file)
-        harness_ctx = ENTRYPOINT_HARNESS_MAP[fixture.metadata.fn_entrypoint]
+    globals.merge_with_latest = merge_with_latest
+    globals.regenerate_all = regenerate_all
+    globals.regenerate_dry_run = dry_run
+    globals.regenerate_verbose = verbose
 
-        target_features = features_utils.get_sol_compat_features_t(lib)
-        features_path = pb_utils.find_field_with_type(
-            harness_ctx.context_type.DESCRIPTOR, context_pb.FeatureSet.DESCRIPTOR
-        )
-
-        # TODO: support multiple FeatureSet fields
-        assert len(features_path) == 1, "Only one FeatureSet field is supported"
-        features_path = features_path[0]
-
-        features = pb_utils.access_nested_field_safe(fixture.input, features_path)
-        original_feature_set = set(features.features) if features else set()
-        new_feature_set = (original_feature_set | features_to_add) - features_to_remove
-
-        for old_feature, new_feature in rekey_features:
-            if old_feature in new_feature_set:
-                new_feature_set.remove(old_feature)
-                new_feature_set.add(new_feature)
-
-        if merge_with_latest:
-            new_feature_set = features_utils.min_compatible_featureset(
-                target_features, new_feature_set
-            )
-
-        regenerate = regenerate_all or (new_feature_set != original_feature_set)
-
-        if regenerate:
-            num_regenerated += 1
-            if dry_run:
-                print(f"Would regenerate {file}")
-            else:
-                print(f"Regenerating {file}")
-                # Apply minimum compatible features
-                if features is not None:
-                    features.features[:] = new_feature_set
-
-                # Apply any custom transformations to the data
-                harness_ctx.regenerate_transformation_fn(fixture)
-
-                regenerated_fixture = create_fixture_from_context(
-                    harness_ctx, fixture.input
-                )
-                write_fixture_to_disk(
-                    harness_ctx,
-                    file.stem,
-                    regenerated_fixture.SerializeToString(),
-                )
+    with Pool(
+        processes=num_processes,
+        initializer=initialize_process_output_buffers,
+    ) as pool:
+        for result in tqdm.tqdm(
+            pool.imap(regenerate_fixture, test_cases),
+            total=len(test_cases),
+        ):
+            num_regenerated += result
 
     lib.sol_compat_fini()
-    print(f"Regenerated {num_regenerated} fixtures")
+    print(f"Regenerated {num_regenerated} / {len(test_cases)} fixtures")
 
 
 @app.command(
@@ -976,6 +946,21 @@ def mass_regenerate_fixtures(
         "-a",
         help="Regenerate all fixtures, regardless of feature set changes",
     ),
+    num_processes: int = typer.Option(
+        4, "--num-processes", "-p", help="Number of processes to use"
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        "-d",
+        help="Only print the fixtures that would be regenerated",
+    ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Verbose output: print filenames that will be regenerated",
+    ),
 ):
     globals.output_dir = output_dir
 
@@ -1027,11 +1012,13 @@ def mass_regenerate_fixtures(
                 input=Path(source_folder),
                 shared_library=stubbed_shared_library,
                 output_dir=Path(output_folder),
-                dry_run=False,
+                dry_run=dry_run,
                 add_features=add_features,
                 remove_features=remove_features,
                 rekeyed_features=rekeyed_features,
                 merge_with_latest=merge_with_latest,
+                num_processes=num_processes,
+                verbose=verbose,
                 log_level=5,
             )
         elif folder_harness_type in ["ElfLoaderHarness"]:
@@ -1041,12 +1028,14 @@ def mass_regenerate_fixtures(
                 input=Path(source_folder),
                 shared_library=shared_library,
                 output_dir=Path(output_folder),
-                dry_run=False,
+                dry_run=dry_run,
                 add_features=add_features,
                 remove_features=remove_features,
                 rekeyed_features=rekeyed_features,
                 merge_with_latest=merge_with_latest,
                 regenerate_all=regenerate_all,
+                num_processes=num_processes,
+                verbose=verbose,
                 log_level=5,
             )
 

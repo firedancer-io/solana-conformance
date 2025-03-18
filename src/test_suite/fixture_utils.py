@@ -1,5 +1,6 @@
 import fd58
 import inspect
+from test_suite import features_utils, pb_utils
 from test_suite.constants import NATIVE_PROGRAM_MAPPING
 from test_suite.fuzz_context import ENTRYPOINT_HARNESS_MAP, HarnessCtx, HARNESS_MAP
 from test_suite.multiprocessing_utils import (
@@ -10,6 +11,7 @@ from test_suite.multiprocessing_utils import (
     process_single_test_case,
 )
 import test_suite.globals as globals
+import test_suite.context_pb2 as context_pb
 import test_suite.invoke_pb2 as invoke_pb
 import test_suite.metadata_pb2 as metadata_pb
 from google.protobuf import text_format
@@ -194,3 +196,61 @@ def get_program_type(instr_fixture: invoke_pb.InstrFixture) -> str:
             return program_type
 
     return "unknown"
+
+
+def regenerate_fixture(test_file: Path) -> int:
+    fixture = read_fixture(test_file)
+    harness_ctx = ENTRYPOINT_HARNESS_MAP[fixture.metadata.fn_entrypoint]
+
+    features_path = pb_utils.find_field_with_type(
+        harness_ctx.context_type.DESCRIPTOR, context_pb.FeatureSet.DESCRIPTOR
+    )
+
+    # TODO: support multiple FeatureSet fields
+    assert len(features_path) == 1, "Only one FeatureSet field is supported"
+    features_path = features_path[0]
+
+    features = pb_utils.access_nested_field_safe(fixture.input, features_path)
+    original_feature_set = set(features.features) if features else set()
+    new_feature_set = (
+        original_feature_set | globals.features_to_add
+    ) - globals.features_to_remove
+
+    for old_feature, new_feature in globals.rekey_features:
+        if old_feature in new_feature_set:
+            new_feature_set.remove(old_feature)
+            new_feature_set.add(new_feature)
+
+    if globals.merge_with_latest:
+        new_feature_set = features_utils.min_compatible_featureset(
+            globals.target_features, new_feature_set
+        )
+
+    regenerate = globals.regenerate_all or (new_feature_set != original_feature_set)
+
+    if regenerate:
+        if globals.regenerate_dry_run:
+            if globals.regenerate_verbose:
+                print(f"Would regenerate {test_file}")
+        else:
+            if globals.regenerate_verbose:
+                print(f"Regenerating {test_file}")
+
+            # Apply minimum compatible features
+            if features is not None:
+                features.features[:] = new_feature_set
+
+            # Apply any custom transformations to the data
+            harness_ctx.regenerate_transformation_fn(fixture)
+
+            regenerated_fixture = create_fixture_from_context(
+                harness_ctx, fixture.input
+            )
+            write_fixture_to_disk(
+                harness_ctx,
+                test_file.stem,
+                regenerated_fixture.SerializeToString(),
+            )
+        return 1
+
+    return 0
