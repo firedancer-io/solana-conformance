@@ -41,6 +41,7 @@ import test_suite.features_utils as features_utils
 Harness options:
 - InstrHarness
 - TxnHarness
+- BlockHarness
 - SyscallHarness
 - ValidateVM
 - ElfHarness
