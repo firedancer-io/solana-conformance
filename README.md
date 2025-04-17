@@ -40,6 +40,7 @@ Available harness types:
 - VmInterpHarness
 - VmValidateHarness
 - TxnHarness
+- TypeHarness
 ```
 
 ## Protobuf
@@ -55,6 +56,7 @@ Function Entrypoints:
 - VmInterpHarness: sol_compat_vm_interp_v1
 - VmValidateHarness: sol_compat_vm_validate_v1
 - TxnHarness: sol_compat_txn_execute_v1
+- TypeHarness: sol_compat_type_execute_v1
 ```
 
 ### Updating definitions
