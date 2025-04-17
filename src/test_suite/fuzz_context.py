@@ -11,6 +11,7 @@ import test_suite.elf_pb2 as elf_pb
 import test_suite.vm_pb2 as vm_pb
 import test_suite.block_pb2 as block_pb
 import test_suite.pack_pb2 as pack_pb
+import test_suite.type_pb2 as type_pb
 
 import test_suite.block.codec_utils as block_codec
 
@@ -99,6 +100,11 @@ BlockHarness = HarnessCtx(
     context_human_decode_fn=block_codec.decode_input,
     effects_human_encode_fn=block_codec.encode_output,
     # TODO: Fill in other fields...
+)
+
+TypeHarness = HarnessCtx(
+    fuzz_fn_name="sol_compat_type_execute_v1",
+    fixture_desc=type_pb.TypeFixture.DESCRIPTOR,
 )
 
 ENTRYPOINT_HARNESS_MAP = {
