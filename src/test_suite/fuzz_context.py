@@ -41,6 +41,7 @@ InstrHarness = HarnessCtx(
     effects_human_encode_fn=instr_codec.encode_output,
     consensus_diff_effect_fn=instr_diff.consensus_instr_diff_effects,
     core_bpf_diff_effect_fn=instr_diff.core_bpf_instr_diff_effects,
+    ignore_compute_units_diff_effect_fn=instr_diff.ignore_compute_units_instr_diff_effects,
     regenerate_transformation_fn=instr_transform.transform_fixture,
 )
 

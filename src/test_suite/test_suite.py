@@ -353,7 +353,7 @@ def run_tests(
         "--consensus-mode",
         "-c",
         help="Only fail on consensus failures. One such effect is to normalize error codes when comparing results. \
-Note: Cannot be used with --core-bpf-mode.",
+Note: Cannot be used with --core-bpf-mode or --ignore-compute-units-mode.",
     ),
     core_bpf_mode: bool = typer.Option(
         False,
@@ -362,7 +362,14 @@ Note: Cannot be used with --core-bpf-mode.",
         help="Deliberately skip known mismatches between BPF programs and builtins, only failing on genuine mimatches. \
 For example, builtin programs may throw errors on readonly account state violations sooner than BPF programs, \
 compute unit usage will be different, etc. This feature is primarily used to test a BPF program against a builtin. \
-Note: Cannot be used with --consensus-mode.",
+Note: Cannot be used with --consensus-mode or --ignore-compute-units-mode.",
+    ),
+    ignore_compute_units_mode: bool = typer.Option(
+        False,
+        "--ignore-compute-units",
+        help="Skip mismatches on only compute units. Good for testing two versions of a BPF program, where one is \
+expected to use different amounts of compute units than the other. Note: Cannot be used with --consensus-mode or \
+--core-bpf-mode.",
     ),
     failures_only: bool = typer.Option(
         False,
@@ -398,9 +405,9 @@ Note: Cannot be used with --consensus-mode.",
     globals.default_harness_ctx = HARNESS_MAP[default_harness_ctx]
 
     # Set diff mode if specified
-    if consensus_mode and core_bpf_mode:
+    if sum([consensus_mode, core_bpf_mode, ignore_compute_units_mode]) > 1:
         typer.echo(
-            "Error: --consensus-mode and --core-bpf-mode cannot be used together.",
+            "Error: --consensus-mode, --core-bpf-mode, and --ignore-compute-units-mode cannot be used together.",
             err=True,
         )
         raise typer.Exit(code=1)
@@ -408,6 +415,8 @@ Note: Cannot be used with --consensus-mode.",
     globals.consensus_mode = consensus_mode
     # Set diff mode to core_bpf if specified
     globals.core_bpf_mode = core_bpf_mode
+    # Set diff mode to ignore_compute_units if specified
+    globals.ignore_compute_units_mode = ignore_compute_units_mode
 
     # Create the output directory, if necessary
     if globals.output_dir.exists():
@@ -758,6 +767,7 @@ def debug_mismatches(
         verbose=True,
         consensus_mode=False,
         core_bpf_mode=False,
+        ignore_compute_units_mode=False,
         failures_only=False,
         save_failures=True,
         save_successes=True,
