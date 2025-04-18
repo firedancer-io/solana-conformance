@@ -102,6 +102,9 @@ class HarnessCtx:
     core_bpf_diff_effect_fn: Callable[[EffectsType, EffectsType], bool] = (
         generic_effects_diff
     )
+    ignore_compute_units_diff_effect_fn: Callable[[EffectsType, EffectsType], bool] = (
+        generic_effects_diff
+    )
     prune_effects_fn: Callable[
         [ContextType | None, dict[str, str | None]], dict[str, str | None] | None
     ] = generic_effects_prune
