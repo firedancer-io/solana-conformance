@@ -77,6 +77,7 @@ def create_fixture_from_context(
 
     if effects_serialized is None:
         return None
+
     # Create instruction fixture
     effects = harness_ctx.effects_type()
     effects.ParseFromString(effects_serialized)

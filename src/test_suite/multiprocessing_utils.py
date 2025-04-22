@@ -3,6 +3,7 @@ from test_suite.constants import OUTPUT_BUFFER_SIZE
 from test_suite.fuzz_context import ENTRYPOINT_HARNESS_MAP, HarnessCtx
 from test_suite.fuzz_interface import ContextType, EffectsType
 import test_suite.invoke_pb2 as invoke_pb
+import test_suite.type_pb2 as type_pb
 import test_suite.metadata_pb2 as metadata_pb2
 import ctypes
 from ctypes import c_uint64, c_int, POINTER
@@ -260,7 +261,6 @@ def process_single_test_case(
             else None
         )
         results[target] = result
-
     return results
 
 
@@ -333,6 +333,10 @@ def build_test_results(
             # Turn bytes into human readable fields
             effects = harness_ctx.effects_type()
             effects.ParseFromString(result)
+
+            # We want to ignore the yaml field for the types harness
+            if isinstance(harness_ctx.effects_type(), type_pb.TypeEffects):
+                effects.ClearField("yaml")
 
             if globals.consensus_mode:
                 harness_ctx.diff_effect_fn = harness_ctx.consensus_diff_effect_fn
