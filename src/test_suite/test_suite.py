@@ -268,7 +268,7 @@ def create_fixtures(
     globals.default_harness_ctx = HARNESS_MAP[default_harness_ctx]
 
     # Generate the test cases in parallel from files on disk
-    print("Creating fixtures...")
+    print(f"Creating fixtures...")
     write_results = []
     with Pool(
         processes=num_processes, initializer=initialize_process_output_buffers
