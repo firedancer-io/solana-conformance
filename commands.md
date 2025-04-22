@@ -272,8 +272,9 @@ $ solana-test-suite run-tests [OPTIONS]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
 * `-c, --chunk-size INTEGER`: Number of test results per file  [default: 10000]
 * `-v, --verbose`: Verbose output: log failed test cases
-* `-c, --consensus-mode`: Only fail on consensus failures. One such effect is to normalize error codes when comparing results. Note: Cannot be used with --core-bpf-mode.
-* `-cb, --core-bpf-mode`: Deliberately skip known mismatches between BPF programs and builtins, only failing on genuine mimatches. For example, builtin programs may throw errors on readonly account state violations sooner than BPF programs, compute unit usage will be different, etc. This feature is primarily used to test a BPF program against a builtin. Note: Cannot be used with --consensus-mode.
+* `-c, --consensus-mode`: Only fail on consensus failures. One such effect is to normalize error codes when comparing results. Note: Cannot be used with --core-bpf-mode or --ignore-compute-units-mode.
+* `-cb, --core-bpf-mode`: Deliberately skip known mismatches between BPF programs and builtins, only failing on genuine mimatches. For example, builtin programs may throw errors on readonly account state violations sooner than BPF programs, compute unit usage will be different, etc. This feature is primarily used to test a BPF program against a builtin. Note: Cannot be used with --consensus-mode or --ignore-compute-units-mode.
+* `--ignore-compute-units`: Skip mismatches on only compute units. Good for testing two versions of a BPF program, where one is expected to use different amounts of compute units than the other. Note: Cannot be used with --consensus-mode or --core-bpf-mode.
 * `-f, --failures-only`: Only log failed test cases
 * `-sf, --save-failures`: Saves failed test cases to results directory
 * `-ss, --save-successes`: Saves successful test cases to results directory

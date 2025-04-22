@@ -40,6 +40,9 @@ consensus_mode: bool = False
 # Whether to run in core bpf mode
 core_bpf_mode: bool = False
 
+# Whether to run in "ignore compute units" mode
+ignore_compute_units_mode: bool = False
+
 # For regenerating fixtures
 features_to_add: set[int] = set()
 features_to_remove: set[int] = set()
