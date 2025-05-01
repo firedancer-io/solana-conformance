@@ -921,12 +921,6 @@ def mass_regenerate_fixtures(
         "-t",
         help="Shared object (.so) target file path to execute",
     ),
-    stubbed_shared_library: Path = typer.Option(
-        Path(os.getenv("SOLFUZZ_STUBBED_TARGET", "impl/lib/libsolfuzz_firedancer.so")),
-        "--stubbed-target",
-        "-s",
-        help="Stubbed shared object (.so) target file path to execute",
-    ),
     add_features: List[str] = typer.Option(
         [],
         "--add-feature",

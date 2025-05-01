@@ -212,7 +212,6 @@ $ solana-test-suite mass-regenerate-fixtures [OPTIONS]
 * `-i, --input PATH`: Input test-vectors directory  [default: corpus8]
 * `-o, --output-dir PATH`: Output directory for regenerated fixtures  [default: /tmp/regenerated_fixtures]
 * `-t, --target PATH`: Shared object (.so) target file path to execute  [default: /data/mjain/repos/solfuzz-agave/target/release/libsolfuzz_agave.so]
-* `-s, --stubbed-target PATH`: Stubbed shared object (.so) target file path to execute  [default: /data/mjain/repos/solfuzz-agave/target/release/libsolfuzz_agave_stubbed.so]
 * `-f, --add-feature TEXT`: List of feature pubkeys to force add to the fixtures.
 * `-r, --remove-feature TEXT`: List of feature pubkeys to force remove from the fixtures.
 * `-k, --rekey-feature TEXT`: List of feature pubkeys to rekey in the fixtures, formatted 'old/new' (e.g. `--rekey-feature old/new`).
