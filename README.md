@@ -36,10 +36,10 @@ Available harness types:
 - ElfLoaderHarness
 - InstrHarness
 - SyscallHarness
-- CpiHarness
 - VmInterpHarness
 - VmValidateHarness
 - TxnHarness
+- BlockHarness
 - TypeHarness
 ```
 
@@ -52,10 +52,10 @@ Function Entrypoints:
 - ElfLoaderHarness: sol_compat_elf_loader_v1
 - InstrHarness: sol_compat_instr_execute_v1
 - SyscallHarness: sol_compat_vm_syscall_execute_v1
-- CpiHarness: sol_compat_vm_cpi_syscall_v1
 - VmInterpHarness: sol_compat_vm_interp_v1
 - VmValidateHarness: sol_compat_vm_validate_v1
 - TxnHarness: sol_compat_txn_execute_v1
+- BlockHarness: sol_compat_block_execute_v1
 - TypeHarness: sol_compat_type_execute_v1
 ```
 

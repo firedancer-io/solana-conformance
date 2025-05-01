@@ -55,15 +55,6 @@ SyscallHarness = HarnessCtx(
     regenerate_transformation_fn=syscall_transform.transform_fixture,
 )
 
-CpiHarness = HarnessCtx(
-    fuzz_fn_name="sol_compat_vm_cpi_syscall_v1",
-    fixture_desc=vm_pb.SyscallFixture.DESCRIPTOR,
-    context_human_encode_fn=syscall_codec.encode_input,
-    effects_human_encode_fn=syscall_codec.encode_output,
-    context_human_decode_fn=syscall_codec.decode_input,
-    regenerate_transformation_fn=syscall_transform.transform_fixture,
-)
-
 VmInterpHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_vm_interp_v1",
     fixture_desc=vm_pb.SyscallFixture.DESCRIPTOR,
@@ -109,9 +100,7 @@ TypeHarness = HarnessCtx(
 )
 
 ENTRYPOINT_HARNESS_MAP = {
-    obj.fuzz_fn_name: obj
-    for name, obj in globals().items()
-    if isinstance(obj, HarnessCtx)
+    obj.fuzz_fn_name: obj for obj in globals().values() if isinstance(obj, HarnessCtx)
 }
 HARNESS_MAP = {
     name: obj for name, obj in globals().items() if isinstance(obj, HarnessCtx)
