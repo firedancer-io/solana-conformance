@@ -16,6 +16,7 @@ dependencies = [
   "tqdm~=4.66.0",
   "protoletariat~=3.2.0",
   "bs4~=0.0.2",
+  "click<8.2.0"
 ]
 
 [project.scripts]
