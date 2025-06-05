@@ -87,31 +87,6 @@ def encode_input(context: block_pb.BlockContext):
     # Parent bank hash
     context.slot_ctx.parent_bank_hash = fd58.enc32(context.slot_ctx.parent_bank_hash)
 
-    # New stake accounts
-    for i in range(len(context.epoch_ctx.new_stake_accounts)):
-        context.epoch_ctx.new_stake_accounts[i] = fd58.enc32(
-            context.epoch_ctx.new_stake_accounts[i]
-        )
-
-    # Stake accounts
-    for i in range(len(context.epoch_ctx.stake_accounts)):
-        context.epoch_ctx.stake_accounts[i].stake_account_pubkey = fd58.enc32(
-            context.epoch_ctx.stake_accounts[i].stake_account_pubkey
-        )
-        context.epoch_ctx.stake_accounts[i].voter_pubkey = fd58.enc32(
-            context.epoch_ctx.stake_accounts[i].voter_pubkey
-        )
-
-    # New vote accounts
-    for i in range(len(context.epoch_ctx.new_vote_accounts)):
-        context.epoch_ctx.new_vote_accounts[i] = fd58.enc32(
-            context.epoch_ctx.new_vote_accounts[i]
-        )
-
-    # Vote accounts
-    for i in range(len(context.epoch_ctx.vote_accounts_t)):
-        encode_acct_state(context.epoch_ctx.vote_accounts_t[i].vote_account)
-
     # T-1 Vote accounts
     for i in range(len(context.epoch_ctx.vote_accounts_t_1)):
         encode_acct_state(context.epoch_ctx.vote_accounts_t_1[i].vote_account)
@@ -133,9 +108,4 @@ def encode_output(effects: block_pb.BlockEffects):
     Args:
         - effects (block_pb.BlockEffects): Instruction effects (will be modified).
     """
-    for i in range(len(effects.acct_states)):
-        encode_acct_state(effects.acct_states[i])
-
     effects.bank_hash = fd58.enc32(effects.bank_hash)
-    effects.lt_hash = fd58.enc32(effects.lt_hash)
-    effects.account_delta_hash = fd58.enc32(effects.account_delta_hash)
