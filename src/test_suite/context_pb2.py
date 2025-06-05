@@ -13,7 +13,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     package="org.solana.sealevel.v1",
     syntax="proto3",
     serialized_pb=_b(
-        '\n\rcontext.proto\x12\x16org.solana.sealevel.v1"\x1e\n\nFeatureSet\x12\x10\n\x08features\x18\x01 \x03(\x06"8\n\x0bSeedAddress\x12\x0c\n\x04base\x18\x01 \x01(\x0c\x12\x0c\n\x04seed\x18\x02 \x01(\x0c\x12\r\n\x05owner\x18\x03 \x01(\x0c"«\x01\n\tAcctState\x12\x0f\n\x07address\x18\x01 \x01(\x0c\x12\x10\n\x08lamports\x18\x02 \x01(\x04\x12\x0c\n\x04data\x18\x03 \x01(\x0c\x12\x12\n\nexecutable\x18\x04 \x01(\x08\x12\x12\n\nrent_epoch\x18\x05 \x01(\x04\x12\r\n\x05owner\x18\x06 \x01(\x0c\x126\n\tseed_addr\x18\x07 \x01(\x0b2#.org.solana.sealevel.v1.SeedAddress"U\n\x0bVoteAccount\x127\n\x0cvote_account\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.AcctState\x12\r\n\x05stake\x18\x02 \x01(\x04"¥\x01\n\x0cStakeAccount\x12\x1c\n\x14stake_account_pubkey\x18\x01 \x01(\x0c\x12\x14\n\x0cvoter_pubkey\x18\x02 \x01(\x0c\x12\r\n\x05stake\x18\x03 \x01(\x04\x12\x18\n\x10activation_epoch\x18\x04 \x01(\x04\x12\x1a\n\x12deactivation_epoch\x18\x05 \x01(\x04\x12\x1c\n\x14warmup_cooldown_rate\x18\x06 \x01(\x01"j\n\tInflation\x12\x0f\n\x07initial\x18\x01 \x01(\x01\x12\x10\n\x08terminal\x18\x02 \x01(\x01\x12\r\n\x05taper\x18\x03 \x01(\x01\x12\x12\n\nfoundation\x18\x04 \x01(\x01\x12\x17\n\x0ffoundation_term\x18\x05 \x01(\x01"\x95\x04\n\x0cEpochContext\x124\n\x08features\x18\x01 \x01(\x0b2".org.solana.sealevel.v1.FeatureSet\x12\x17\n\x0fhashes_per_tick\x18\x02 \x01(\x04\x12\x16\n\x0eticks_per_slot\x18\x03 \x01(\x04\x12\x16\n\x0eslots_per_year\x18\x04 \x01(\x01\x124\n\tinflation\x18\x05 \x01(\x0b2!.org.solana.sealevel.v1.Inflation\x12\x1d\n\x15genesis_creation_time\x18\x06 \x01(\x04\x12\x1a\n\x12new_stake_accounts\x18\x07 \x03(\x0c\x12<\n\x0estake_accounts\x18\x08 \x03(\x0b2$.org.solana.sealevel.v1.StakeAccount\x12\x19\n\x11new_vote_accounts\x18\t \x03(\x0c\x12<\n\x0fvote_accounts_t\x18\n \x03(\x0b2#.org.solana.sealevel.v1.VoteAccount\x12>\n\x11vote_accounts_t_1\x18\x0b \x03(\x0b2#.org.solana.sealevel.v1.VoteAccount\x12>\n\x11vote_accounts_t_2\x18\x0c \x03(\x0b2#.org.solana.sealevel.v1.VoteAccount"¸\x01\n\x0bSlotContext\x12\x0c\n\x04slot\x18\x01 \x01(\x06\x12\x14\n\x0cblock_height\x18\x02 \x01(\x06\x12\x0b\n\x03poh\x18\x03 \x01(\x0c\x12\x18\n\x10parent_bank_hash\x18\x04 \x01(\x0c\x12\x16\n\x0eparent_lt_hash\x18\x05 \x01(\x0c\x12\x11\n\tprev_slot\x18\x06 \x01(\x06\x12\x10\n\x08prev_lps\x18\x07 \x01(\x04\x12!\n\x19prev_epoch_capitalization\x18\x08 \x01(\x04b\x06proto3'
+        '\n\rcontext.proto\x12\x16org.solana.sealevel.v1"\x1e\n\nFeatureSet\x12\x10\n\x08features\x18\x01 \x03(\x06"8\n\x0bSeedAddress\x12\x0c\n\x04base\x18\x01 \x01(\x0c\x12\x0c\n\x04seed\x18\x02 \x01(\x0c\x12\r\n\x05owner\x18\x03 \x01(\x0c"«\x01\n\tAcctState\x12\x0f\n\x07address\x18\x01 \x01(\x0c\x12\x10\n\x08lamports\x18\x02 \x01(\x04\x12\x0c\n\x04data\x18\x03 \x01(\x0c\x12\x12\n\nexecutable\x18\x04 \x01(\x08\x12\x12\n\nrent_epoch\x18\x05 \x01(\x04\x12\r\n\x05owner\x18\x06 \x01(\x0c\x126\n\tseed_addr\x18\x07 \x01(\x0b2#.org.solana.sealevel.v1.SeedAddress"U\n\x0bVoteAccount\x127\n\x0cvote_account\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.AcctState\x12\r\n\x05stake\x18\x02 \x01(\x04"¥\x01\n\x0cStakeAccount\x12\x1c\n\x14stake_account_pubkey\x18\x01 \x01(\x0c\x12\x14\n\x0cvoter_pubkey\x18\x02 \x01(\x0c\x12\r\n\x05stake\x18\x03 \x01(\x04\x12\x18\n\x10activation_epoch\x18\x04 \x01(\x04\x12\x1a\n\x12deactivation_epoch\x18\x05 \x01(\x04\x12\x1c\n\x14warmup_cooldown_rate\x18\x06 \x01(\x01"j\n\tInflation\x12\x0f\n\x07initial\x18\x01 \x01(\x01\x12\x10\n\x08terminal\x18\x02 \x01(\x01\x12\r\n\x05taper\x18\x03 \x01(\x01\x12\x12\n\nfoundation\x18\x04 \x01(\x01\x12\x17\n\x0ffoundation_term\x18\x05 \x01(\x01"â\x02\n\x0cEpochContext\x124\n\x08features\x18\x01 \x01(\x0b2".org.solana.sealevel.v1.FeatureSet\x12\x17\n\x0fhashes_per_tick\x18\x02 \x01(\x04\x12\x16\n\x0eticks_per_slot\x18\x03 \x01(\x04\x12\x16\n\x0eslots_per_year\x18\x04 \x01(\x01\x124\n\tinflation\x18\x05 \x01(\x0b2!.org.solana.sealevel.v1.Inflation\x12\x1d\n\x15genesis_creation_time\x18\x06 \x01(\x04\x12>\n\x11vote_accounts_t_1\x18\x0b \x03(\x0b2#.org.solana.sealevel.v1.VoteAccount\x12>\n\x11vote_accounts_t_2\x18\x0c \x03(\x0b2#.org.solana.sealevel.v1.VoteAccount"¸\x01\n\x0bSlotContext\x12\x0c\n\x04slot\x18\x01 \x01(\x06\x12\x14\n\x0cblock_height\x18\x02 \x01(\x06\x12\x0b\n\x03poh\x18\x03 \x01(\x0c\x12\x18\n\x10parent_bank_hash\x18\x04 \x01(\x0c\x12\x16\n\x0eparent_lt_hash\x18\x05 \x01(\x0c\x12\x11\n\tprev_slot\x18\x06 \x01(\x06\x12\x10\n\x08prev_lps\x18\x07 \x01(\x04\x12!\n\x19prev_epoch_capitalization\x18\x08 \x01(\x04b\x06proto3'
     ),
 )
 _FEATURESET = _descriptor.Descriptor(
@@ -678,81 +678,9 @@ _EPOCHCONTEXT = _descriptor.Descriptor(
             file=DESCRIPTOR,
         ),
         _descriptor.FieldDescriptor(
-            name="new_stake_accounts",
-            full_name="org.solana.sealevel.v1.EpochContext.new_stake_accounts",
-            index=6,
-            number=7,
-            type=12,
-            cpp_type=9,
-            label=3,
-            has_default_value=False,
-            default_value=[],
-            message_type=None,
-            enum_type=None,
-            containing_type=None,
-            is_extension=False,
-            extension_scope=None,
-            options=None,
-            file=DESCRIPTOR,
-        ),
-        _descriptor.FieldDescriptor(
-            name="stake_accounts",
-            full_name="org.solana.sealevel.v1.EpochContext.stake_accounts",
-            index=7,
-            number=8,
-            type=11,
-            cpp_type=10,
-            label=3,
-            has_default_value=False,
-            default_value=[],
-            message_type=None,
-            enum_type=None,
-            containing_type=None,
-            is_extension=False,
-            extension_scope=None,
-            options=None,
-            file=DESCRIPTOR,
-        ),
-        _descriptor.FieldDescriptor(
-            name="new_vote_accounts",
-            full_name="org.solana.sealevel.v1.EpochContext.new_vote_accounts",
-            index=8,
-            number=9,
-            type=12,
-            cpp_type=9,
-            label=3,
-            has_default_value=False,
-            default_value=[],
-            message_type=None,
-            enum_type=None,
-            containing_type=None,
-            is_extension=False,
-            extension_scope=None,
-            options=None,
-            file=DESCRIPTOR,
-        ),
-        _descriptor.FieldDescriptor(
-            name="vote_accounts_t",
-            full_name="org.solana.sealevel.v1.EpochContext.vote_accounts_t",
-            index=9,
-            number=10,
-            type=11,
-            cpp_type=10,
-            label=3,
-            has_default_value=False,
-            default_value=[],
-            message_type=None,
-            enum_type=None,
-            containing_type=None,
-            is_extension=False,
-            extension_scope=None,
-            options=None,
-            file=DESCRIPTOR,
-        ),
-        _descriptor.FieldDescriptor(
             name="vote_accounts_t_1",
             full_name="org.solana.sealevel.v1.EpochContext.vote_accounts_t_1",
-            index=10,
+            index=6,
             number=11,
             type=11,
             cpp_type=10,
@@ -770,7 +698,7 @@ _EPOCHCONTEXT = _descriptor.Descriptor(
         _descriptor.FieldDescriptor(
             name="vote_accounts_t_2",
             full_name="org.solana.sealevel.v1.EpochContext.vote_accounts_t_2",
-            index=11,
+            index=7,
             number=12,
             type=11,
             cpp_type=10,
@@ -795,7 +723,7 @@ _EPOCHCONTEXT = _descriptor.Descriptor(
     extension_ranges=[],
     oneofs=[],
     serialized_start=669,
-    serialized_end=1202,
+    serialized_end=1023,
 )
 _SLOTCONTEXT = _descriptor.Descriptor(
     name="SlotContext",
@@ -957,15 +885,13 @@ _SLOTCONTEXT = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=1205,
-    serialized_end=1389,
+    serialized_start=1026,
+    serialized_end=1210,
 )
 _ACCTSTATE.fields_by_name["seed_addr"].message_type = _SEEDADDRESS
 _VOTEACCOUNT.fields_by_name["vote_account"].message_type = _ACCTSTATE
 _EPOCHCONTEXT.fields_by_name["features"].message_type = _FEATURESET
 _EPOCHCONTEXT.fields_by_name["inflation"].message_type = _INFLATION
-_EPOCHCONTEXT.fields_by_name["stake_accounts"].message_type = _STAKEACCOUNT
-_EPOCHCONTEXT.fields_by_name["vote_accounts_t"].message_type = _VOTEACCOUNT
 _EPOCHCONTEXT.fields_by_name["vote_accounts_t_1"].message_type = _VOTEACCOUNT
 _EPOCHCONTEXT.fields_by_name["vote_accounts_t_2"].message_type = _VOTEACCOUNT
 DESCRIPTOR.message_types_by_name["FeatureSet"] = _FEATURESET
