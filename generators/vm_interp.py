@@ -10,9 +10,10 @@ CU_BASE_LOG = 100
 CU_PER_BYTE = 1  # this is actually every 2 bytes...
 CU_MEM_OP = 10
 
+
 # fmt: off
 INVALID_IXS = [
-    0x00, 0x01, 0x02, 0x03, 0x06, 0x08, 0x09, 0x0a, 0x0b, 0x0d, 0x0e, 
+    0x00, 0x01, 0x02, 0x03, 0x06, 0x08, 0x09, 0x0a, 0x0b, 0x0d, 0x0e,
     0x10, 0x11, 0x12, 0x13, 0x16, 0x18, 0x19, 0x1a, 0x1b,       0x1e,
     0x20, 0x21, 0x22, 0x23, 0x26, 0x28, 0x29, 0x2a, 0x2b,       0x2e,
     0x30, 0x31, 0x32, 0x33,       0x38, 0x39, 0x3a, 0x3b,
@@ -27,7 +28,7 @@ INVALID_IXS = [
     0xc0, 0xc1, 0xc2, 0xc3,       0xc8, 0xc9, 0xca, 0xcb,
     0xd0, 0xd1, 0xd2, 0xd3, 0xd7, 0xd8, 0xd9, 0xda, 0xdb,       0xdf,
     0xe0, 0xe1, 0xe2, 0xe3, 0xe4, 0xe5, 0xe7, 0xe8, 0xe9, 0xea, 0xeb, 0xec, 0xed, 0xef,
-    0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xff, 
+    0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xff,
 ]
 
 LOAD_STORE_IXS = [
@@ -35,10 +36,19 @@ LOAD_STORE_IXS = [
     0x61, 0x62, 0x63, 0x69, 0x6a, 0x6b,
     0x71, 0x72, 0x73, 0x79, 0x7a, 0x7b,
     # v2
-    # 0x27, 0x2c, 0x2f,
-    # 0x37, 0x3c, 0x3f,
-    # 0x87, 0x8c, 0x8f,
-    # 0x97, 0x9c, 0x9f,
+    0x27, 0x2c, 0x2f,
+    0x37, 0x3c, 0x3f,
+    0x87, 0x8c, 0x8f,
+    0x97, 0x9c, 0x9f,
+]
+
+JMP_IXS = [
+    0x05,       0x15, 0x1d,
+    0x25, 0x2d, 0x35, 0x3d,
+    0x45, 0x4d, 0x55, 0x5d,
+    0x65, 0x6d, 0x75, 0x7d,
+    0xa5, 0xad, 0xb5, 0xbd,
+    0xc5, 0xcd, 0xd5, 0xdd,
 ]
 # fmt: on
 
@@ -65,6 +75,7 @@ def exact_cu_cost(data_vec):
 # fmt: off
 test_vectors_all_ix = []
 for op in range(0xFF):
+# for op in [0x07]:
     def validate():
         for sreg in [0, 2, 6, 9, 10, 11]:
             for dreg in [0, 9, 10, 11]:
@@ -169,11 +180,32 @@ for op in range(0xFF):
             0x71e3cf81, # magic - always SIGSTACK (ignore call_whitelist)
             0x12345678, # invalid
             0x0b00c380, # inverse of magic - just invalid
+            0x3770fb22, # syscall: sol_memset_
+            1,          # success without relocation. works in v3+
+            0,
+            2,
+            3,
+            4,
+            7,
+            0xffffffff, # overflow ok because of negative offsets
         ]:
             test_vectors_all_ix.append({
                 "op": f"{op:02x}",
                 "cu_avail": 100,
-                # hashmap containing vaild pc: 0, 1, 2 (higher are trimmed)
+                # hashmap containing valid function
+                "call_whitelist": [0x04],
+                "rodata":
+                    bytes([op, ((sreg << 4) + dreg) % 0xFF, 0, 0]) + imm.to_bytes(4, "little") + \
+                    bytes([0x95, 0, 0, 0, 0, 0, 0, 0]) + \
+                    bytes([0x95, 0, 0, 0, 0, 0, 0, 0])
+            })
+            # the following generates invalid functions to test validate()
+            # it's ok in v0-v2, it should return -2 in v3+
+            test_vectors_all_ix.append({
+                "op": f"{op:02x}",
+                "cu_avail": 100,
+                # hashmap containing valid pc: 0, 1, 2 (higher are trimmed)
+                # these are invalid fn in v3+
                 "call_whitelist": [0xff],
                 "rodata":
                     bytes([op, ((sreg << 4) + dreg) % 0xFF, 0, 0]) + imm.to_bytes(4, "little") + \
@@ -197,6 +229,7 @@ for op in range(0xFF):
         dreg = 0
         imm = 3
         for r3 in [
+            # tests for v0
             0x100000000, # SIGSTACK
             0x100000008, # working
             0x100000010, # target_pc=2 > 1
@@ -207,13 +240,60 @@ for op in range(0xFF):
             0x200000010, # target_pc=2 > 1 && region=2 != 1
             0x200000011, # target_pc=2 > 1 && region=2 != 1 && !aligned
             0xfffffffffffffff8, # overflow
+            # tests analogous to call
+            0x53075d44,  # pchash(1) - success
+            0x63852afc,  # pchash(0) - SIGSTACK
+            0xc61fa2f4,  # pchash(2) - fail
+            0xa33b57b3,  # pchash(3) - illegal ix (not in call_whitelist)
+            0xd0220d26,  # pchash(4) - illegal ix (not in call_whitelist)
+            0x71e3cf81,  # magic - always SIGSTACK (ignore call_whitelist)
+            0x12345678,  # invalid
+            0x0b00c380,  # inverse of magic - just invalid
+            0x3770fb22,  # syscall: sol_memset_
+            # tests for v3, analogous to call but with absolute vs relative addr
+            16,          # success without relocation. works in v3+.
+            17,          # success as above, alignment is enfoced but not checked
+            0,
+            1,
+            8,
+            32,
+            56,
+            0xffffffff, # overflow ok because of negative offsets
         ]:
             test_vectors_all_ix.append({
                 "op": f"{op:02x}",
                 "cu_avail": 100,
                 "r3": r3,
+                # hashmap containing valid function
+                "call_whitelist": [0x04],
                 "rodata":
                     bytes([op, ((sreg << 4) + dreg) % 0xFF, 0, 0]) + imm.to_bytes(4, "little") + \
+                    bytes([0x95, 0, 0, 0, 0, 0, 0, 0]) + \
+                    bytes([0x95, 0, 0, 0, 0, 0, 0, 0])
+            })
+            # the following generates invalid functions to test validate()
+            # it's ok in v0-v2, it should return -2 in v3+
+            test_vectors_all_ix.append({
+                "op": f"{op:02x}",
+                "cu_avail": 100,
+                "r3": r3,
+                # hashmap containing valid pc: 0, 1, 2 (higher are trimmed)
+                # these are invalid fn in v3+
+                "call_whitelist": [0xff],
+                "rodata":
+                    bytes([op, ((sreg << 4) + dreg) % 0xFF, 0, 0]) + imm.to_bytes(4, "little") + \
+                    bytes([0x95, 0, 0, 0, 0, 0, 0, 0]) + \
+                    bytes([0x95, 0, 0, 0, 0, 0, 0, 0])
+            })
+            test_vectors_all_ix.append({
+                "op": f"{op:02x}",
+                "cu_avail": 100,
+                "r3": r3,
+                # no hashmap
+                # "call_whitelist": [0x00],
+                "rodata":
+                    bytes([op, ((sreg << 4) + dreg) % 0xFF, 0, 0]) + imm.to_bytes(4, "little") + \
+                    bytes([0x95, 0, 0, 0, 0, 0, 0, 0]) + \
                     bytes([0x95, 0, 0, 0, 0, 0, 0, 0])
             })
 
@@ -228,8 +308,8 @@ for op in range(0xFF):
             0x2FFFFFFFF,
             0x300000000,
             0x3FFFFFFFF,
-            0x400000000,
-            0x4FFFFFFFF,
+            # 0x400000000,
+            # 0x4FFFFFFFF,
             0xffffffffffffffff,
         ]:
             for offset in [0x0000, 0x0001, 0x0008, 0x00FF, 0x01FF, 0xFFF8, 0xFFFF]:
@@ -243,11 +323,45 @@ for op in range(0xFF):
                     "r3": reg,
                     "stack_prefix": [1, 2, 3, 4, 5, 6, 7, 8]*4,
                     "heap_prefix": [1, 2, 3, 4, 5, 6, 7, 8]*4,
-                    "input_data_region": [1, 2, 3, 4, 5, 6, 7, 8]*4,
                     "rodata":
                         bytes([op, ((sreg << 4) + dreg) % 0xFF]) + offset.to_bytes(2, "little") + imm.to_bytes(4, "little") + \
                         bytes([0x95, 0, 0, 0, 0, 0, 0, 0])
                 })
+
+    if op in [0xc6, 0xce, 0xd6, 0xde, 0xe6, 0xee, 0xf6, 0xfe]:
+        sreg = 2
+        dreg = 3
+        for imm in [0x0, 0xffffffffffffffff]:
+            for r3 in [
+                0x80000000,         # not INT_MIN / LONG_MIN
+                0xffffffff80000000, # INT_MIN
+                0x8000000000000000, # LONG_MIN
+            ]:
+                test_vectors_all_ix.append({
+                    "op": f"{op:02x}",
+                    "cu_avail": 100,
+                    "r2": imm,
+                    "r3": r3,
+                    "rodata":
+                        bytes([op, ((sreg << 4) + dreg) % 0xFF, 0, 0]) + (imm & 0xFFFFFFFF).to_bytes(4, "little") + \
+                        bytes([0x95, 0, 0, 0, 0, 0, 0, 0])
+                })
+
+    # syscall (v3)
+    if op == 0x95:
+        sreg = 0
+        dreg = 0
+        for imm in [
+            0x3770fb22,  # sol_memset_
+            100,         # invalid
+        ]:
+            test_vectors_all_ix.append({
+                "op": f"{op:02x}",
+                "cu_avail": 100,
+                "rodata":
+                    bytes([  op, 0, 0, 0]) + imm.to_bytes(4, "little") + \
+                    bytes([0x9d, 0, 0, 0, 0, 0, 0, 0])
+            })
 # fmt: on
 
 
@@ -318,6 +432,18 @@ if __name__ == "__main__":
         syscall_ctx.vm_ctx.sbpf_version = 2
         serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
         with open(f"{OUTPUT_DIR}/{testname}/v2/{filename}.bin", "wb") as f:
+            f.write(serialized_instr)
+
+        syscall_ctx.vm_ctx.sbpf_version = 3
+        # exit=0x95 becomes return=0x9d (0x95 is now syscall)
+        # since all tests end with and exit, we have to transform them to end with return.
+        # the exception are tests for the syscall op, they don't need any change.
+        if test.get("op") != "95":
+            syscall_ctx.vm_ctx.rodata = bytes(
+                [x if x != 0x95 else 0x9D for x in syscall_ctx.vm_ctx.rodata]
+            )
+        serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
+        with open(f"{OUTPUT_DIR}/{testname}/v3/{filename}.bin", "wb") as f:
             f.write(serialized_instr)
 
     print("done!")
