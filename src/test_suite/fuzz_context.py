@@ -27,6 +27,8 @@ import test_suite.instr.diff_utils as instr_diff
 import test_suite.syscall.codec_utils as syscall_codec
 import test_suite.syscall.transform_utils as syscall_transform
 
+import test_suite.type.diff_utils as type_diff
+
 
 ElfLoaderHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_elf_loader_v1",
@@ -97,6 +99,7 @@ BlockHarness = HarnessCtx(
 TypeHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_type_execute_v1",
     fixture_desc=type_pb.TypeFixture.DESCRIPTOR,
+    diff_effect_fn=type_diff.diff_type_effects,
 )
 
 ENTRYPOINT_HARNESS_MAP = {

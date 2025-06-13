@@ -334,10 +334,6 @@ def build_test_results(
             effects = harness_ctx.effects_type()
             effects.ParseFromString(result)
 
-            # We want to ignore the yaml field for the types harness
-            if isinstance(harness_ctx.effects_type(), type_pb.TypeEffects):
-                effects.ClearField("yaml")
-
             if globals.consensus_mode:
                 harness_ctx.diff_effect_fn = harness_ctx.consensus_diff_effect_fn
             if globals.core_bpf_mode:
