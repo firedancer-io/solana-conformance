@@ -18,7 +18,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     package="org.solana.sealevel.v1",
     syntax="proto3",
     serialized_pb=_b(
-        '\n\x08vm.proto\x12\x16org.solana.sealevel.v1\x1a\x0cinvoke.proto\x1a\rcontext.proto\x1a\x0emetadata.proto"G\n\x0fInputDataRegion\x12\x0e\n\x06offset\x18\x01 \x01(\x04\x12\x0f\n\x07content\x18\x02 \x01(\x0c\x12\x13\n\x0bis_writable\x18\x03 \x01(\x08"Â\x03\n\tVmContext\x12\x10\n\x08heap_max\x18\x01 \x01(\x04\x12\x0e\n\x06rodata\x18\x02 \x01(\x0c\x12"\n\x1arodata_text_section_offset\x18\x03 \x01(\x04\x12"\n\x1arodata_text_section_length\x18\x04 \x01(\x04\x12\n\n\x02r0\x18\x06 \x01(\x04\x12\n\n\x02r1\x18\x07 \x01(\x04\x12\n\n\x02r2\x18\x08 \x01(\x04\x12\n\n\x02r3\x18\t \x01(\x04\x12\n\n\x02r4\x18\n \x01(\x04\x12\n\n\x02r5\x18\x0b \x01(\x04\x12\n\n\x02r6\x18\x0c \x01(\x04\x12\n\n\x02r7\x18\r \x01(\x04\x12\n\n\x02r8\x18\x0e \x01(\x04\x12\n\n\x02r9\x18\x0f \x01(\x04\x12\x0b\n\x03r10\x18\x10 \x01(\x04\x12\x0b\n\x03r11\x18\x11 \x01(\x04\x12\x13\n\x0bcheck_align\x18\x12 \x01(\x08\x12\x12\n\ncheck_size\x18\x13 \x01(\x08\x12\x10\n\x08entry_pc\x18\x14 \x01(\x04\x12\x16\n\x0ecall_whitelist\x18\x15 \x01(\x0c\x12\x17\n\x0ftracing_enabled\x18\x16 \x01(\x08\x127\n\x0breturn_data\x18\x17 \x01(\x0b2".org.solana.sealevel.v1.ReturnData\x12\x14\n\x0csbpf_version\x18\x18 \x01(\r"U\n\x11SyscallInvocation\x12\x15\n\rfunction_name\x18\x01 \x01(\x0c\x12\x13\n\x0bheap_prefix\x18\x02 \x01(\x0c\x12\x14\n\x0cstack_prefix\x18\x03 \x01(\x0c"Ã\x01\n\x0eSyscallContext\x121\n\x06vm_ctx\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.VmContext\x127\n\tinstr_ctx\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.InstrContext\x12E\n\x12syscall_invocation\x18\x03 \x01(\x0b2).org.solana.sealevel.v1.SyscallInvocation"\x9e\x03\n\x0eSyscallEffects\x12\r\n\x05error\x18\x01 \x01(\x03\x123\n\nerror_kind\x18\x0c \x01(\x0e2\x1f.org.solana.sealevel.v1.ErrKind\x12\n\n\x02r0\x18\x02 \x01(\x04\x12\x10\n\x08cu_avail\x18\x03 \x01(\x04\x12\x0c\n\x04heap\x18\x04 \x01(\x0c\x12\r\n\x05stack\x18\x05 \x01(\x0c\x12\x11\n\tinputdata\x18\x06 \x01(\x0c\x12C\n\x12input_data_regions\x18\x0b \x03(\x0b2\'.org.solana.sealevel.v1.InputDataRegion\x12\x13\n\x0bframe_count\x18\x07 \x01(\x04\x12\x0b\n\x03log\x18\x08 \x01(\x0c\x12\x0e\n\x06rodata\x18\t \x01(\x0c\x12\n\n\x02pc\x18\n \x01(\x04\x12\n\n\x02r1\x18k \x01(\x04\x12\n\n\x02r2\x18l \x01(\x04\x12\n\n\x02r3\x18m \x01(\x04\x12\n\n\x02r4\x18n \x01(\x04\x12\n\n\x02r5\x18o \x01(\x04\x12\n\n\x02r6\x18p \x01(\x04\x12\n\n\x02r7\x18q \x01(\x04\x12\n\n\x02r8\x18r \x01(\x04\x12\n\n\x02r9\x18s \x01(\x04\x12\x0b\n\x03r10\x18t \x01(\x04"º\x01\n\x0eSyscallFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x125\n\x05input\x18\x02 \x01(\x0b2&.org.solana.sealevel.v1.SyscallContext\x126\n\x06output\x18\x03 \x01(\x0b2&.org.solana.sealevel.v1.SyscallEffects"x\n\rFullVmContext\x121\n\x06vm_ctx\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.VmContext\x124\n\x08features\x18\x03 \x01(\x0b2".org.solana.sealevel.v1.FeatureSet"4\n\x11ValidateVmEffects\x12\x0e\n\x06result\x18\x01 \x01(\x05\x12\x0f\n\x07success\x18\x02 \x01(\x08"¿\x01\n\x11ValidateVmFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x124\n\x05input\x18\x02 \x01(\x0b2%.org.solana.sealevel.v1.FullVmContext\x129\n\x06output\x18\x03 \x01(\x0b2).org.solana.sealevel.v1.ValidateVmEffects".\n\nReturnData\x12\x12\n\nprogram_id\x18\x01 \x01(\x0c\x12\x0c\n\x04data\x18\x02 \x01(\x0c*B\n\x07ErrKind\x12\x0f\n\x0bUNSPECIFIED\x10\x00\x12\x08\n\x04EBPF\x10\x01\x12\x0b\n\x07SYSCALL\x10\x02\x12\x0f\n\x0bINSTRUCTION\x10\x03b\x06proto3'
+        '\n\x08vm.proto\x12\x16org.solana.sealevel.v1\x1a\x0cinvoke.proto\x1a\rcontext.proto\x1a\x0emetadata.proto"G\n\x0fInputDataRegion\x12\x0e\n\x06offset\x18\x01 \x01(\x04\x12\x0f\n\x07content\x18\x02 \x01(\x0c\x12\x13\n\x0bis_writable\x18\x03 \x01(\x08"\x99\x03\n\tVmContext\x12\x10\n\x08heap_max\x18\x01 \x01(\x04\x12\x0e\n\x06rodata\x18\x02 \x01(\x0c\x12"\n\x1arodata_text_section_offset\x18\x03 \x01(\x04\x12"\n\x1arodata_text_section_length\x18\x04 \x01(\x04\x12\n\n\x02r0\x18\x06 \x01(\x04\x12\n\n\x02r1\x18\x07 \x01(\x04\x12\n\n\x02r2\x18\x08 \x01(\x04\x12\n\n\x02r3\x18\t \x01(\x04\x12\n\n\x02r4\x18\n \x01(\x04\x12\n\n\x02r5\x18\x0b \x01(\x04\x12\n\n\x02r6\x18\x0c \x01(\x04\x12\n\n\x02r7\x18\r \x01(\x04\x12\n\n\x02r8\x18\x0e \x01(\x04\x12\n\n\x02r9\x18\x0f \x01(\x04\x12\x0b\n\x03r10\x18\x10 \x01(\x04\x12\x0b\n\x03r11\x18\x11 \x01(\x04\x12\x10\n\x08entry_pc\x18\x14 \x01(\x04\x12\x16\n\x0ecall_whitelist\x18\x15 \x01(\x0c\x12\x17\n\x0ftracing_enabled\x18\x16 \x01(\x08\x127\n\x0breturn_data\x18\x17 \x01(\x0b2".org.solana.sealevel.v1.ReturnData\x12\x14\n\x0csbpf_version\x18\x18 \x01(\r"U\n\x11SyscallInvocation\x12\x15\n\rfunction_name\x18\x01 \x01(\x0c\x12\x13\n\x0bheap_prefix\x18\x02 \x01(\x0c\x12\x14\n\x0cstack_prefix\x18\x03 \x01(\x0c"Ã\x01\n\x0eSyscallContext\x121\n\x06vm_ctx\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.VmContext\x127\n\tinstr_ctx\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.InstrContext\x12E\n\x12syscall_invocation\x18\x03 \x01(\x0b2).org.solana.sealevel.v1.SyscallInvocation"\x9e\x03\n\x0eSyscallEffects\x12\r\n\x05error\x18\x01 \x01(\x03\x123\n\nerror_kind\x18\x0c \x01(\x0e2\x1f.org.solana.sealevel.v1.ErrKind\x12\n\n\x02r0\x18\x02 \x01(\x04\x12\x10\n\x08cu_avail\x18\x03 \x01(\x04\x12\x0c\n\x04heap\x18\x04 \x01(\x0c\x12\r\n\x05stack\x18\x05 \x01(\x0c\x12\x11\n\tinputdata\x18\x06 \x01(\x0c\x12C\n\x12input_data_regions\x18\x0b \x03(\x0b2\'.org.solana.sealevel.v1.InputDataRegion\x12\x13\n\x0bframe_count\x18\x07 \x01(\x04\x12\x0b\n\x03log\x18\x08 \x01(\x0c\x12\x0e\n\x06rodata\x18\t \x01(\x0c\x12\n\n\x02pc\x18\n \x01(\x04\x12\n\n\x02r1\x18k \x01(\x04\x12\n\n\x02r2\x18l \x01(\x04\x12\n\n\x02r3\x18m \x01(\x04\x12\n\n\x02r4\x18n \x01(\x04\x12\n\n\x02r5\x18o \x01(\x04\x12\n\n\x02r6\x18p \x01(\x04\x12\n\n\x02r7\x18q \x01(\x04\x12\n\n\x02r8\x18r \x01(\x04\x12\n\n\x02r9\x18s \x01(\x04\x12\x0b\n\x03r10\x18t \x01(\x04"º\x01\n\x0eSyscallFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x125\n\x05input\x18\x02 \x01(\x0b2&.org.solana.sealevel.v1.SyscallContext\x126\n\x06output\x18\x03 \x01(\x0b2&.org.solana.sealevel.v1.SyscallEffects"x\n\rFullVmContext\x121\n\x06vm_ctx\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.VmContext\x124\n\x08features\x18\x03 \x01(\x0b2".org.solana.sealevel.v1.FeatureSet"4\n\x11ValidateVmEffects\x12\x0e\n\x06result\x18\x01 \x01(\x05\x12\x0f\n\x07success\x18\x02 \x01(\x08"¿\x01\n\x11ValidateVmFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x124\n\x05input\x18\x02 \x01(\x0b2%.org.solana.sealevel.v1.FullVmContext\x129\n\x06output\x18\x03 \x01(\x0b2).org.solana.sealevel.v1.ValidateVmEffects".\n\nReturnData\x12\x12\n\nprogram_id\x18\x01 \x01(\x0c\x12\x0c\n\x04data\x18\x02 \x01(\x0c*B\n\x07ErrKind\x12\x0f\n\x0bUNSPECIFIED\x10\x00\x12\x08\n\x04EBPF\x10\x01\x12\x0b\n\x07SYSCALL\x10\x02\x12\x0f\n\x0bINSTRUCTION\x10\x03b\x06proto3'
     ),
     dependencies=[
         invoke__pb2.DESCRIPTOR,
@@ -47,8 +47,8 @@ _ERRKIND = _descriptor.EnumDescriptor(
     ],
     containing_type=None,
     options=None,
-    serialized_start=1916,
-    serialized_end=1982,
+    serialized_start=1875,
+    serialized_end=1941,
 )
 _sym_db.RegisterEnumDescriptor(_ERRKIND)
 ErrKind = enum_type_wrapper.EnumTypeWrapper(_ERRKIND)
@@ -425,45 +425,9 @@ _VMCONTEXT = _descriptor.Descriptor(
             file=DESCRIPTOR,
         ),
         _descriptor.FieldDescriptor(
-            name="check_align",
-            full_name="org.solana.sealevel.v1.VmContext.check_align",
-            index=16,
-            number=18,
-            type=8,
-            cpp_type=7,
-            label=1,
-            has_default_value=False,
-            default_value=False,
-            message_type=None,
-            enum_type=None,
-            containing_type=None,
-            is_extension=False,
-            extension_scope=None,
-            options=None,
-            file=DESCRIPTOR,
-        ),
-        _descriptor.FieldDescriptor(
-            name="check_size",
-            full_name="org.solana.sealevel.v1.VmContext.check_size",
-            index=17,
-            number=19,
-            type=8,
-            cpp_type=7,
-            label=1,
-            has_default_value=False,
-            default_value=False,
-            message_type=None,
-            enum_type=None,
-            containing_type=None,
-            is_extension=False,
-            extension_scope=None,
-            options=None,
-            file=DESCRIPTOR,
-        ),
-        _descriptor.FieldDescriptor(
             name="entry_pc",
             full_name="org.solana.sealevel.v1.VmContext.entry_pc",
-            index=18,
+            index=16,
             number=20,
             type=4,
             cpp_type=4,
@@ -481,7 +445,7 @@ _VMCONTEXT = _descriptor.Descriptor(
         _descriptor.FieldDescriptor(
             name="call_whitelist",
             full_name="org.solana.sealevel.v1.VmContext.call_whitelist",
-            index=19,
+            index=17,
             number=21,
             type=12,
             cpp_type=9,
@@ -499,7 +463,7 @@ _VMCONTEXT = _descriptor.Descriptor(
         _descriptor.FieldDescriptor(
             name="tracing_enabled",
             full_name="org.solana.sealevel.v1.VmContext.tracing_enabled",
-            index=20,
+            index=18,
             number=22,
             type=8,
             cpp_type=7,
@@ -517,7 +481,7 @@ _VMCONTEXT = _descriptor.Descriptor(
         _descriptor.FieldDescriptor(
             name="return_data",
             full_name="org.solana.sealevel.v1.VmContext.return_data",
-            index=21,
+            index=19,
             number=23,
             type=11,
             cpp_type=10,
@@ -535,7 +499,7 @@ _VMCONTEXT = _descriptor.Descriptor(
         _descriptor.FieldDescriptor(
             name="sbpf_version",
             full_name="org.solana.sealevel.v1.VmContext.sbpf_version",
-            index=22,
+            index=20,
             number=24,
             type=13,
             cpp_type=3,
@@ -560,7 +524,7 @@ _VMCONTEXT = _descriptor.Descriptor(
     extension_ranges=[],
     oneofs=[],
     serialized_start=155,
-    serialized_end=605,
+    serialized_end=564,
 )
 _SYSCALLINVOCATION = _descriptor.Descriptor(
     name="SyscallInvocation",
@@ -632,8 +596,8 @@ _SYSCALLINVOCATION = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=607,
-    serialized_end=692,
+    serialized_start=566,
+    serialized_end=651,
 )
 _SYSCALLCONTEXT = _descriptor.Descriptor(
     name="SyscallContext",
@@ -705,8 +669,8 @@ _SYSCALLCONTEXT = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=695,
-    serialized_end=890,
+    serialized_start=654,
+    serialized_end=849,
 )
 _SYSCALLEFFECTS = _descriptor.Descriptor(
     name="SyscallEffects",
@@ -1120,8 +1084,8 @@ _SYSCALLEFFECTS = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=893,
-    serialized_end=1307,
+    serialized_start=852,
+    serialized_end=1266,
 )
 _SYSCALLFIXTURE = _descriptor.Descriptor(
     name="SyscallFixture",
@@ -1193,8 +1157,8 @@ _SYSCALLFIXTURE = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=1310,
-    serialized_end=1496,
+    serialized_start=1269,
+    serialized_end=1455,
 )
 _FULLVMCONTEXT = _descriptor.Descriptor(
     name="FullVmContext",
@@ -1248,8 +1212,8 @@ _FULLVMCONTEXT = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=1498,
-    serialized_end=1618,
+    serialized_start=1457,
+    serialized_end=1577,
 )
 _VALIDATEVMEFFECTS = _descriptor.Descriptor(
     name="ValidateVmEffects",
@@ -1303,8 +1267,8 @@ _VALIDATEVMEFFECTS = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=1620,
-    serialized_end=1672,
+    serialized_start=1579,
+    serialized_end=1631,
 )
 _VALIDATEVMFIXTURE = _descriptor.Descriptor(
     name="ValidateVmFixture",
@@ -1376,8 +1340,8 @@ _VALIDATEVMFIXTURE = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=1675,
-    serialized_end=1866,
+    serialized_start=1634,
+    serialized_end=1825,
 )
 _RETURNDATA = _descriptor.Descriptor(
     name="ReturnData",
@@ -1431,8 +1395,8 @@ _RETURNDATA = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=1868,
-    serialized_end=1914,
+    serialized_start=1827,
+    serialized_end=1873,
 )
 _VMCONTEXT.fields_by_name["return_data"].message_type = _RETURNDATA
 _SYSCALLCONTEXT.fields_by_name["vm_ctx"].message_type = _VMCONTEXT

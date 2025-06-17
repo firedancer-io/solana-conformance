@@ -17,50 +17,13 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     package="org.solana.sealevel.v1",
     syntax="proto3",
     serialized_pb=_b(
-        '\n\x0bblock.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\ttxn.proto\x1a\x0emetadata.proto"H\n\nMicroblock\x12:\n\x04txns\x18\x01 \x03(\x0b2,.org.solana.sealevel.v1.SanitizedTransaction"\x88\x02\n\x0cBlockContext\x127\n\x0bmicroblocks\x18\x01 \x03(\x0b2".org.solana.sealevel.v1.Microblock\x126\n\x0bacct_states\x18\x02 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x12\x17\n\x0fblockhash_queue\x18\x03 \x03(\x0c\x125\n\x08slot_ctx\x18\x04 \x01(\x0b2#.org.solana.sealevel.v1.SlotContext\x127\n\tepoch_ctx\x18\x05 \x01(\x0b2$.org.solana.sealevel.v1.EpochContext"Q\n\x0cBlockEffects\x12\x11\n\thas_error\x18\x01 \x01(\x08\x12\x1b\n\x13slot_capitalization\x18\x02 \x01(\x04\x12\x11\n\tbank_hash\x18\x03 \x01(\x0c"´\x01\n\x0cBlockFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x123\n\x05input\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.BlockContext\x124\n\x06output\x18\x03 \x01(\x0b2$.org.solana.sealevel.v1.BlockEffectsb\x06proto3'
+        '\n\x0bblock.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\ttxn.proto\x1a\x0emetadata.proto"\x8b\x02\n\x0cBlockContext\x12:\n\x04txns\x18\x01 \x03(\x0b2,.org.solana.sealevel.v1.SanitizedTransaction\x126\n\x0bacct_states\x18\x02 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x12\x17\n\x0fblockhash_queue\x18\x03 \x03(\x0c\x125\n\x08slot_ctx\x18\x04 \x01(\x0b2#.org.solana.sealevel.v1.SlotContext\x127\n\tepoch_ctx\x18\x05 \x01(\x0b2$.org.solana.sealevel.v1.EpochContext"Q\n\x0cBlockEffects\x12\x11\n\thas_error\x18\x01 \x01(\x08\x12\x1b\n\x13slot_capitalization\x18\x02 \x01(\x04\x12\x11\n\tbank_hash\x18\x03 \x01(\x0c"´\x01\n\x0cBlockFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x123\n\x05input\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.BlockContext\x124\n\x06output\x18\x03 \x01(\x0b2$.org.solana.sealevel.v1.BlockEffectsb\x06proto3'
     ),
     dependencies=[
         context__pb2.DESCRIPTOR,
         txn__pb2.DESCRIPTOR,
         metadata__pb2.DESCRIPTOR,
     ],
-)
-_MICROBLOCK = _descriptor.Descriptor(
-    name="Microblock",
-    full_name="org.solana.sealevel.v1.Microblock",
-    filename=None,
-    file=DESCRIPTOR,
-    containing_type=None,
-    fields=[
-        _descriptor.FieldDescriptor(
-            name="txns",
-            full_name="org.solana.sealevel.v1.Microblock.txns",
-            index=0,
-            number=1,
-            type=11,
-            cpp_type=10,
-            label=3,
-            has_default_value=False,
-            default_value=[],
-            message_type=None,
-            enum_type=None,
-            containing_type=None,
-            is_extension=False,
-            extension_scope=None,
-            options=None,
-            file=DESCRIPTOR,
-        )
-    ],
-    extensions=[],
-    nested_types=[],
-    enum_types=[],
-    options=None,
-    is_extendable=False,
-    syntax="proto3",
-    extension_ranges=[],
-    oneofs=[],
-    serialized_start=81,
-    serialized_end=153,
 )
 _BLOCKCONTEXT = _descriptor.Descriptor(
     name="BlockContext",
@@ -70,8 +33,8 @@ _BLOCKCONTEXT = _descriptor.Descriptor(
     containing_type=None,
     fields=[
         _descriptor.FieldDescriptor(
-            name="microblocks",
-            full_name="org.solana.sealevel.v1.BlockContext.microblocks",
+            name="txns",
+            full_name="org.solana.sealevel.v1.BlockContext.txns",
             index=0,
             number=1,
             type=11,
@@ -168,8 +131,8 @@ _BLOCKCONTEXT = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=156,
-    serialized_end=420,
+    serialized_start=82,
+    serialized_end=349,
 )
 _BLOCKEFFECTS = _descriptor.Descriptor(
     name="BlockEffects",
@@ -241,8 +204,8 @@ _BLOCKEFFECTS = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=422,
-    serialized_end=503,
+    serialized_start=351,
+    serialized_end=432,
 )
 _BLOCKFIXTURE = _descriptor.Descriptor(
     name="BlockFixture",
@@ -314,28 +277,20 @@ _BLOCKFIXTURE = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=506,
-    serialized_end=686,
+    serialized_start=435,
+    serialized_end=615,
 )
-_MICROBLOCK.fields_by_name["txns"].message_type = txn__pb2._SANITIZEDTRANSACTION
-_BLOCKCONTEXT.fields_by_name["microblocks"].message_type = _MICROBLOCK
+_BLOCKCONTEXT.fields_by_name["txns"].message_type = txn__pb2._SANITIZEDTRANSACTION
 _BLOCKCONTEXT.fields_by_name["acct_states"].message_type = context__pb2._ACCTSTATE
 _BLOCKCONTEXT.fields_by_name["slot_ctx"].message_type = context__pb2._SLOTCONTEXT
 _BLOCKCONTEXT.fields_by_name["epoch_ctx"].message_type = context__pb2._EPOCHCONTEXT
 _BLOCKFIXTURE.fields_by_name["metadata"].message_type = metadata__pb2._FIXTUREMETADATA
 _BLOCKFIXTURE.fields_by_name["input"].message_type = _BLOCKCONTEXT
 _BLOCKFIXTURE.fields_by_name["output"].message_type = _BLOCKEFFECTS
-DESCRIPTOR.message_types_by_name["Microblock"] = _MICROBLOCK
 DESCRIPTOR.message_types_by_name["BlockContext"] = _BLOCKCONTEXT
 DESCRIPTOR.message_types_by_name["BlockEffects"] = _BLOCKEFFECTS
 DESCRIPTOR.message_types_by_name["BlockFixture"] = _BLOCKFIXTURE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
-Microblock = _reflection.GeneratedProtocolMessageType(
-    "Microblock",
-    (_message.Message,),
-    dict(DESCRIPTOR=_MICROBLOCK, __module__="block_pb2"),
-)
-_sym_db.RegisterMessage(Microblock)
 BlockContext = _reflection.GeneratedProtocolMessageType(
     "BlockContext",
     (_message.Message,),
