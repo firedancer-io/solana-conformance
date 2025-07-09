@@ -82,6 +82,12 @@ def execute(
         "-l",
         help="FD logging level",
     ),
+    no_print_effects: bool = typer.Option(
+        False,
+        "--no-print-effects",
+        "-n",
+        help="Do not print effects to stdout",
+    ),
 ):
     # Initialize output buffers and shared library
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
@@ -133,7 +139,8 @@ def execute(
         if parsed_instruction_effects:
             harness_ctx.effects_human_encode_fn(parsed_instruction_effects)
 
-        print(parsed_instruction_effects)
+        if not no_print_effects:
+            print(parsed_instruction_effects)
 
     lib.sol_compat_fini()
 
