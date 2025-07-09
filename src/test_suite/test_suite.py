@@ -441,7 +441,16 @@ expected to use different amounts of compute units than the other. Note: Cannot 
         log_dir = globals.output_dir / target.stem
         log_dir.mkdir(parents=True, exist_ok=True)
 
-    test_cases = list(input.iterdir()) if input.is_dir() else [input]
+    # Collect test cases - recursively search by default
+    if input.is_file():
+        test_cases = [input]
+    else:
+        # Recursively find all files in the directory
+        test_cases = []
+        for file_path in input.rglob("*"):
+            if file_path.is_file():
+                test_cases.append(file_path)
+
     num_test_cases = len(test_cases)
 
     # Process the test results in parallel
