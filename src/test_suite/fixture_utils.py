@@ -247,6 +247,10 @@ def regenerate_fixture(test_file: Path) -> int:
             regenerated_fixture = create_fixture_from_context(
                 harness_ctx, fixture.input
             )
+
+            if regenerated_fixture is None:
+                return 0
+
             write_fixture_to_disk(
                 harness_ctx,
                 test_file.stem,
