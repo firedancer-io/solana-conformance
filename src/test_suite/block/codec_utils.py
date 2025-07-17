@@ -15,9 +15,8 @@ def decode_input(context: block_pb.BlockContext):
     if context.program_id:
         context.program_id = fd58.dec32(context.program_id)
 
-    for i in range(len(context.microblocks)):
-        for j in range(len(context.microblocks[i].txns)):
-            decode_sanitized_tx(context.microblocks[i].txns[j])
+    for i in range(len(context.txns)):
+        decode_sanitized_tx(context.txns[i])
 
     for i in range(len(context.acct_states)):
         decode_acct_state(context.acct_states[i])
@@ -74,9 +73,8 @@ def encode_input(context: block_pb.BlockContext):
     Args:
         - context (block_pb.BlockContext): Instruction context (will be modified).
     """
-    for i in range(len(context.microblocks)):
-        for j in range(len(context.microblocks[i].txns)):
-            encode_sanitized_tx(context.microblocks[i].txns[j])
+    for i in range(len(context.txns)):
+        encode_sanitized_tx(context.txns[i])
 
     for i in range(len(context.acct_states)):
         encode_acct_state(context.acct_states[i])
