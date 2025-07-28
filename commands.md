@@ -40,9 +40,9 @@ $ solana-test-suite create-env [OPTIONS]
 
 **Options**:
 
-* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: /data/mjain/repos/solfuzz-agave/target/release/libsolfuzz_agave.so]
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
-* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: /data/mjain/repos/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so]
+* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: impl/lib/libsolfuzz_firedancer.so]
 * `-o, --output-dir PATH`: Output directory for messages  [default: debug_mismatch]
 * `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
 * `-n, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
@@ -72,7 +72,7 @@ $ solana-test-suite create-fixtures [OPTIONS]
 
 * `-i, --input PATH`: Input protobuf file or directory of protobuf files  [default: corpus8]
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
-* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: /data/mjain/repos/solfuzz-agave/target/release/libsolfuzz_agave.so]
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
 * `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined
 * `-o, --output-dir PATH`: Output directory for fixtures  [default: test_fixtures]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
@@ -96,9 +96,9 @@ $ solana-test-suite debug-mismatches [OPTIONS]
 
 **Options**:
 
-* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: /data/mjain/repos/solfuzz-agave/target/release/libsolfuzz_agave.so]
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
-* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: /data/mjain/repos/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so]
+* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: impl/lib/libsolfuzz_firedancer.so]
 * `-o, --output-dir PATH`: Output directory for messages  [default: debug_mismatch]
 * `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
 * `-n, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
@@ -212,7 +212,7 @@ $ solana-test-suite mass-regenerate-fixtures [OPTIONS]
 
 * `-i, --input PATH`: Input test-vectors directory  [default: corpus8]
 * `-o, --output-dir PATH`: Output directory for regenerated fixtures  [default: /tmp/regenerated_fixtures]
-* `-t, --target PATH`: Shared object (.so) target file path to execute  [default: /data/mjain/repos/solfuzz-agave/target/release/libsolfuzz_agave.so]
+* `-t, --target PATH`: Shared object (.so) target file path to execute  [default: impl/lib/libsolfuzz_agave_v2.0.so]
 * `-f, --add-feature TEXT`: List of feature pubkeys to force add to the fixtures.
 * `-r, --remove-feature TEXT`: List of feature pubkeys to force remove from the fixtures.
 * `-k, --rekey-feature TEXT`: List of feature pubkeys to rekey in the fixtures, formatted 'old/new' (e.g. `--rekey-feature old/new`).
@@ -236,7 +236,7 @@ $ solana-test-suite regenerate-fixtures [OPTIONS]
 **Options**:
 
 * `-i, --input PATH`: Either a file or directory containing messages  [default: corpus8]
-* `-t, --target PATH`: Shared object (.so) target file path to execute  [default: /data/mjain/repos/solfuzz-agave/target/release/libsolfuzz_agave.so]
+* `-t, --target PATH`: Shared object (.so) target file path to execute  [default: impl/lib/libsolfuzz_agave_v2.0.so]
 * `-o, --output-dir PATH`: Output directory for regenerated fixtures  [default: regenerated_fixtures]
 * `-d, --dry-run`: Only print the fixtures that would be regenerated
 * `-f, --add-feature TEXT`: List of feature pubkeys to force add to the fixtures.
@@ -265,12 +265,12 @@ $ solana-test-suite run-tests [OPTIONS]
 
 * `-i, --input PATH`: Input protobuf file or directory of protobuf files  [default: corpus8]
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
-* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: /data/mjain/repos/solfuzz-agave/target/release/libsolfuzz_agave.so]
-* `-t, --target PATH`: Shared object (.so) target file paths  [default: /data/mjain/repos/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so]
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
+* `-t, --target PATH`: Shared object (.so) target file paths  [default: impl/lib/libsolfuzz_firedancer.so]
 * `-o, --output-dir PATH`: Output directory for test results  [default: test_results]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
-* `-c, --chunk-size INTEGER`: Number of test results per file  [default: 10000]
+* `-ch, --chunk-size INTEGER`: Number of test results per file  [default: 10000]
 * `-v, --verbose`: Verbose output: log failed test cases
 * `-c, --consensus-mode`: Only fail on consensus failures. One such effect is to normalize error codes when comparing results. Note: Cannot be used with --core-bpf-mode or --ignore-compute-units-mode.
 * `-cb, --core-bpf-mode`: Deliberately skip known mismatches between BPF programs and builtins, only failing on genuine mimatches. For example, builtin programs may throw errors on readonly account state violations sooner than BPF programs, compute unit usage will be different, etc. This feature is primarily used to test a BPF program against a builtin. Note: Cannot be used with --consensus-mode or --ignore-compute-units-mode.
