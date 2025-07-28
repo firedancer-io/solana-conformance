@@ -347,7 +347,7 @@ def run_tests(
         help="Randomizes bytes in output buffer before shared library execution",
     ),
     log_chunk_size: int = typer.Option(
-        10000, "--chunk-size", "-c", help="Number of test results per file"
+        10000, "--chunk-size", "-ch", help="Number of test results per file"
     ),
     verbose: bool = typer.Option(
         False,
