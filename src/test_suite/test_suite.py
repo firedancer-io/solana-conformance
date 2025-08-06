@@ -53,7 +53,7 @@ app = typer.Typer(help=f"Validate effects from clients using Protobuf messages."
 @app.command(help=f"Execute Context or Fixture message(s) and print the Effects.")
 def execute(
     input: Path = typer.Option(
-        None,
+        ...,
         "--input",
         "-i",
         help=f"Input protobuf file or directory of protobuf files",
@@ -65,7 +65,7 @@ def execute(
         help=f"Harness type to use for Context protobufs",
     ),
     shared_library: Path = typer.Option(
-        None,
+        ...,
         "--target",
         "-t",
         help="Shared object (.so) target file path to execute",
@@ -148,13 +148,13 @@ def execute(
 @app.command(help=f"Extract Context messages from Fixtures.")
 def fix_to_ctx(
     input: Path = typer.Option(
-        None,
+        ...,
         "--input",
         "-i",
         help=f"Input Fixture file or directory of Fixture files",
     ),
     output_dir: Path = typer.Option(
-        None,
+        ...,
         "--output-dir",
         "-o",
         help=f"Output directory for messages",
@@ -198,7 +198,7 @@ def fix_to_ctx(
 )
 def create_fixtures(
     input: Path = typer.Option(
-        None,
+        ...,
         "--input",
         "-i",
         help=f"Input protobuf file or directory of protobuf files",
@@ -223,7 +223,7 @@ def create_fixtures(
         f" Targets must have required function entrypoints defined",
     ),
     output_dir: Path = typer.Option(
-        None,
+        ...,
         "--output-dir",
         "-o",
         help="Output directory for fixtures",
@@ -308,7 +308,7 @@ def create_fixtures(
 )
 def run_tests(
     input: Path = typer.Option(
-        None,
+        ...,
         "--input",
         "-i",
         help=f"Input protobuf file or directory of protobuf files",
@@ -518,13 +518,13 @@ expected to use different amounts of compute units than the other. Note: Cannot 
 @app.command(help=f"Convert Context and/or Fixture messages to human-readable format.")
 def decode_protobufs(
     input: Path = typer.Option(
-        None,
+        ...,
         "--input",
         "-i",
         help=f"Input protobuf file or directory of protobuf files",
     ),
     output_dir: Path = typer.Option(
-        None,
+        ...,
         "--output-dir",
         "-o",
         help=f"Output directory for base58-encoded, Context and/or Fixture human-readable messages",
@@ -599,7 +599,7 @@ def debug_mismatches(
         f" Targets must have required function entrypoints defined",
     ),
     output_dir: Path = typer.Option(
-        None,
+        ...,
         "--output-dir",
         "-o",
         help=f"Output directory for messages",
@@ -798,7 +798,7 @@ def debug_mismatches(
 )
 def regenerate_fixtures(
     input: Path = typer.Option(
-        None,
+        ...,
         "--input",
         "-i",
         help=f"Either a file or directory containing messages",
@@ -810,7 +810,7 @@ def regenerate_fixtures(
         help="Shared object (.so) target file path to execute",
     ),
     output_dir: Path = typer.Option(
-        None,
+        ...,
         "--output-dir",
         "-o",
         help="Output directory for regenerated fixtures",
@@ -920,13 +920,13 @@ def regenerate_fixtures(
 )
 def mass_regenerate_fixtures(
     test_vectors: Path = typer.Option(
-        None,
+        ...,
         "--input",
         "-i",
         help=f"Input test-vectors directory",
     ),
     output_dir: Path = typer.Option(
-        None,
+        ...,
         "--output-dir",
         "-o",
         help="Output directory for regenerated fixtures",
@@ -1056,19 +1056,19 @@ def mass_regenerate_fixtures(
 )
 def exec_fixtures(
     input: Path = typer.Option(
-        None,
+        ...,
         "--input",
         "-i",
         help=f"Input protobuf file or directory of protobuf files",
     ),
     shared_library: Path = typer.Option(
-        None,
+        ...,
         "--target",
         "-t",
         help="Shared object (.so) target file path to execute",
     ),
     output_dir: Path = typer.Option(
-        None,
+        ...,
         "--output-dir",
         "-o",
         help="Output directory for test results",
@@ -1176,7 +1176,7 @@ def create_env(
         f" Targets must have required function entrypoints defined",
     ),
     output_dir: Path = typer.Option(
-        None,
+        ...,
         "--output-dir",
         "-o",
         help=f"Output directory for messages",
