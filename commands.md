@@ -40,10 +40,10 @@ $ solana-test-suite create-env [OPTIONS]
 
 **Options**:
 
-* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: .]
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
-* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: impl/lib/libsolfuzz_firedancer.so]
-* `-o, --output-dir PATH`: Output directory for messages  [default: debug_mismatch]
+* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: .]
+* `-o, --output-dir PATH`: Output directory for messages
 * `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
 * `-n, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
 * `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
@@ -70,11 +70,11 @@ $ solana-test-suite create-fixtures [OPTIONS]
 
 **Options**:
 
-* `-i, --input PATH`: Input protobuf file or directory of protobuf files  [default: corpus8]
+* `-i, --input PATH`: Input protobuf file or directory of protobuf files
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
-* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: .]
 * `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined
-* `-o, --output-dir PATH`: Output directory for fixtures  [default: test_fixtures]
+* `-o, --output-dir PATH`: Output directory for fixtures
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-r, --readable`: Output fixtures in human-readable format
 * `-k, --keep-passing`: Only keep passing test cases
@@ -96,10 +96,10 @@ $ solana-test-suite debug-mismatches [OPTIONS]
 
 **Options**:
 
-* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: .]
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
-* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: impl/lib/libsolfuzz_firedancer.so]
-* `-o, --output-dir PATH`: Output directory for messages  [default: debug_mismatch]
+* `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: .]
+* `-o, --output-dir PATH`: Output directory for messages
 * `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
 * `-n, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
 * `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
@@ -121,8 +121,8 @@ $ solana-test-suite decode-protobufs [OPTIONS]
 
 **Options**:
 
-* `-i, --input PATH`: Input protobuf file or directory of protobuf files  [default: raw_context]
-* `-o, --output-dir PATH`: Output directory for base58-encoded, Context and/or Fixture human-readable messages  [default: readable_context]
+* `-i, --input PATH`: Input protobuf file or directory of protobuf files
+* `-o, --output-dir PATH`: Output directory for base58-encoded, Context and/or Fixture human-readable messages
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
 * `--help`: Show this message and exit.
@@ -140,8 +140,8 @@ $ solana-test-suite exec-fixtures [OPTIONS]
 **Options**:
 
 * `-i, --input PATH`: Input protobuf file or directory of protobuf files
-* `-t, --target PATH`: Shared object (.so) target file path to execute  [default: impl/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so]
-* `-o, --output-dir PATH`: Output directory for test results  [default: test_results]
+* `-t, --target PATH`: Shared object (.so) target file path to execute
+* `-o, --output-dir PATH`: Output directory for test results
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
 * `-l, --log-level INTEGER`: FD logging level  [default: 2]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
@@ -161,7 +161,7 @@ $ solana-test-suite execute [OPTIONS]
 
 * `-i, --input PATH`: Input protobuf file or directory of protobuf files
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
-* `-t, --target PATH`: Shared object (.so) target file path to execute  [default: impl/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so]
+* `-t, --target PATH`: Shared object (.so) target file path to execute
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
 * `-l, --log-level INTEGER`: FD logging level  [default: 2]
 * `-n, --no-print-effects`: Do not print effects to stdout
@@ -179,8 +179,8 @@ $ solana-test-suite fix-to-ctx [OPTIONS]
 
 **Options**:
 
-* `-i, --input PATH`: Input Fixture file or directory of Fixture files  [default: fixtures]
-* `-o, --output-dir PATH`: Output directory for messages  [default: instr]
+* `-i, --input PATH`: Input Fixture file or directory of Fixture files
+* `-o, --output-dir PATH`: Output directory for messages
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `--help`: Show this message and exit.
 
@@ -210,9 +210,9 @@ $ solana-test-suite mass-regenerate-fixtures [OPTIONS]
 
 **Options**:
 
-* `-i, --input PATH`: Input test-vectors directory  [default: corpus8]
-* `-o, --output-dir PATH`: Output directory for regenerated fixtures  [default: /tmp/regenerated_fixtures]
-* `-t, --target PATH`: Shared object (.so) target file path to execute  [default: impl/lib/libsolfuzz_agave_v2.0.so]
+* `-i, --input PATH`: Input test-vectors directory
+* `-o, --output-dir PATH`: Output directory for regenerated fixtures
+* `-t, --target PATH`: Shared object (.so) target file path to execute  [default: .]
 * `-f, --add-feature TEXT`: List of feature pubkeys to force add to the fixtures.
 * `-r, --remove-feature TEXT`: List of feature pubkeys to force remove from the fixtures.
 * `-k, --rekey-feature TEXT`: List of feature pubkeys to rekey in the fixtures, formatted 'old/new' (e.g. `--rekey-feature old/new`).
@@ -235,9 +235,9 @@ $ solana-test-suite regenerate-fixtures [OPTIONS]
 
 **Options**:
 
-* `-i, --input PATH`: Either a file or directory containing messages  [default: corpus8]
-* `-t, --target PATH`: Shared object (.so) target file path to execute  [default: impl/lib/libsolfuzz_agave_v2.0.so]
-* `-o, --output-dir PATH`: Output directory for regenerated fixtures  [default: regenerated_fixtures]
+* `-i, --input PATH`: Either a file or directory containing messages
+* `-t, --target PATH`: Shared object (.so) target file path to execute  [default: .]
+* `-o, --output-dir PATH`: Output directory for regenerated fixtures
 * `-d, --dry-run`: Only print the fixtures that would be regenerated
 * `-f, --add-feature TEXT`: List of feature pubkeys to force add to the fixtures.
 * `-r, --remove-feature TEXT`: List of feature pubkeys to force remove from the fixtures.
@@ -263,10 +263,10 @@ $ solana-test-suite run-tests [OPTIONS]
 
 **Options**:
 
-* `-i, --input PATH`: Input protobuf file or directory of protobuf files  [default: corpus8]
+* `-i, --input PATH`: Input protobuf file or directory of protobuf files
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
-* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: impl/lib/libsolfuzz_agave_v2.0.so]
-* `-t, --target PATH`: Shared object (.so) target file paths  [default: impl/lib/libsolfuzz_firedancer.so]
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: .]
+* `-t, --target PATH`: Shared object (.so) target file paths  [default: .]
 * `-o, --output-dir PATH`: Output directory for test results  [default: test_results]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
