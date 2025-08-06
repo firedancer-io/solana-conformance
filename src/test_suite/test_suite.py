@@ -65,7 +65,7 @@ def execute(
         help=f"Harness type to use for Context protobufs",
     ),
     shared_library: Path = typer.Option(
-        Path("impl/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so"),
+        None,
         "--target",
         "-t",
         help="Shared object (.so) target file path to execute",
@@ -148,13 +148,13 @@ def execute(
 @app.command(help=f"Extract Context messages from Fixtures.")
 def fix_to_ctx(
     input: Path = typer.Option(
-        Path("fixtures"),
+        None,
         "--input",
         "-i",
         help=f"Input Fixture file or directory of Fixture files",
     ),
     output_dir: Path = typer.Option(
-        Path("instr"),
+        None,
         "--output-dir",
         "-o",
         help=f"Output directory for messages",
@@ -198,7 +198,7 @@ def fix_to_ctx(
 )
 def create_fixtures(
     input: Path = typer.Option(
-        Path("corpus8"),
+        None,
         "--input",
         "-i",
         help=f"Input protobuf file or directory of protobuf files",
@@ -210,7 +210,7 @@ def create_fixtures(
         help=f"Harness type to use for Context protobufs",
     ),
     reference_shared_library: Path = typer.Option(
-        Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
+        Path(os.getenv("SOLFUZZ_TARGET", "")),
         "--solana-target",
         "-s",
         help="Solana (or ground truth) shared object (.so) target file path",
@@ -223,7 +223,7 @@ def create_fixtures(
         f" Targets must have required function entrypoints defined",
     ),
     output_dir: Path = typer.Option(
-        Path("test_fixtures"),
+        None,
         "--output-dir",
         "-o",
         help="Output directory for fixtures",
@@ -308,7 +308,7 @@ def create_fixtures(
 )
 def run_tests(
     input: Path = typer.Option(
-        Path("corpus8"),
+        None,
         "--input",
         "-i",
         help=f"Input protobuf file or directory of protobuf files",
@@ -320,13 +320,13 @@ def run_tests(
         help=f"Harness type to use for Context protobufs",
     ),
     reference_shared_library: Path = typer.Option(
-        Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
+        Path(os.getenv("SOLFUZZ_TARGET", "")),
         "--solana-target",
         "-s",
         help="Solana (or ground truth) shared object (.so) target file path",
     ),
     shared_libraries: List[Path] = typer.Option(
-        [Path(os.getenv("FIREDANCER_TARGET", "impl/lib/libsolfuzz_firedancer.so"))],
+        [Path(os.getenv("FIREDANCER_TARGET", ""))],
         "--target",
         "-t",
         help="Shared object (.so) target file paths",
@@ -518,13 +518,13 @@ expected to use different amounts of compute units than the other. Note: Cannot 
 @app.command(help=f"Convert Context and/or Fixture messages to human-readable format.")
 def decode_protobufs(
     input: Path = typer.Option(
-        Path("raw_context"),
+        None,
         "--input",
         "-i",
         help=f"Input protobuf file or directory of protobuf files",
     ),
     output_dir: Path = typer.Option(
-        Path("readable_context"),
+        None,
         "--output-dir",
         "-o",
         help=f"Output directory for base58-encoded, Context and/or Fixture human-readable messages",
@@ -580,7 +580,7 @@ def list_harness_types():
 )
 def debug_mismatches(
     reference_shared_library: Path = typer.Option(
-        Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
+        Path(os.getenv("SOLFUZZ_TARGET", "")),
         "--solana-target",
         "-s",
         help="Solana (or ground truth) shared object (.so) target file path",
@@ -592,14 +592,14 @@ def debug_mismatches(
         help=f"Harness type to use for Context protobufs",
     ),
     shared_libraries: List[Path] = typer.Option(
-        [Path(os.getenv("FIREDANCER_TARGET", "impl/lib/libsolfuzz_firedancer.so"))],
+        [Path(os.getenv("FIREDANCER_TARGET", ""))],
         "--target",
         "-t",
         help="Shared object (.so) target file paths (pairs with --keep-passing)."
         f" Targets must have required function entrypoints defined",
     ),
     output_dir: Path = typer.Option(
-        Path("debug_mismatch"),
+        None,
         "--output-dir",
         "-o",
         help=f"Output directory for messages",
@@ -798,19 +798,19 @@ def debug_mismatches(
 )
 def regenerate_fixtures(
     input: Path = typer.Option(
-        Path("corpus8"),
+        None,
         "--input",
         "-i",
         help=f"Either a file or directory containing messages",
     ),
     shared_library: Path = typer.Option(
-        Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
+        Path(os.getenv("SOLFUZZ_TARGET", "")),
         "--target",
         "-t",
         help="Shared object (.so) target file path to execute",
     ),
     output_dir: Path = typer.Option(
-        Path("regenerated_fixtures"),
+        None,
         "--output-dir",
         "-o",
         help="Output directory for regenerated fixtures",
@@ -920,19 +920,19 @@ def regenerate_fixtures(
 )
 def mass_regenerate_fixtures(
     test_vectors: Path = typer.Option(
-        Path("corpus8"),
+        None,
         "--input",
         "-i",
         help=f"Input test-vectors directory",
     ),
     output_dir: Path = typer.Option(
-        Path("/tmp/regenerated_fixtures"),
+        None,
         "--output-dir",
         "-o",
         help="Output directory for regenerated fixtures",
     ),
     shared_library: Path = typer.Option(
-        Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
+        Path(os.getenv("SOLFUZZ_TARGET", "")),
         "--target",
         "-t",
         help="Shared object (.so) target file path to execute",
@@ -1062,13 +1062,13 @@ def exec_fixtures(
         help=f"Input protobuf file or directory of protobuf files",
     ),
     shared_library: Path = typer.Option(
-        Path("impl/firedancer/build/native/clang/lib/libfd_exec_sol_compat.so"),
+        None,
         "--target",
         "-t",
         help="Shared object (.so) target file path to execute",
     ),
     output_dir: Path = typer.Option(
-        Path("test_results"),
+        None,
         "--output-dir",
         "-o",
         help="Output directory for test results",
@@ -1157,7 +1157,7 @@ def exec_fixtures(
 )
 def create_env(
     reference_shared_library: Path = typer.Option(
-        Path(os.getenv("SOLFUZZ_TARGET", "impl/lib/libsolfuzz_agave_v2.0.so")),
+        Path(os.getenv("SOLFUZZ_TARGET", "")),
         "--solana-target",
         "-s",
         help="Solana (or ground truth) shared object (.so) target file path",
@@ -1169,14 +1169,14 @@ def create_env(
         help=f"Harness type to use for Context protobufs",
     ),
     shared_libraries: List[Path] = typer.Option(
-        [Path(os.getenv("FIREDANCER_TARGET", "impl/lib/libsolfuzz_firedancer.so"))],
+        [Path(os.getenv("FIREDANCER_TARGET", ""))],
         "--target",
         "-t",
         help="Shared object (.so) target file paths (pairs with --keep-passing)."
         f" Targets must have required function entrypoints defined",
     ),
     output_dir: Path = typer.Option(
-        Path("debug_mismatch"),
+        None,
         "--output-dir",
         "-o",
         help=f"Output directory for messages",
