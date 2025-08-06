@@ -1088,6 +1088,24 @@ def exec_fixtures(
     num_processes: int = typer.Option(
         4, "--num-processes", "-p", help="Number of processes to use"
     ),
+    failures_only: bool = typer.Option(
+        False,
+        "--failures-only",
+        "-f",
+        help="Only log failed test cases",
+    ),
+    save_failures: bool = typer.Option(
+        False,
+        "--save-failures",
+        "-sf",
+        help="Saves failed test cases to results directory",
+    ),
+    save_successes: bool = typer.Option(
+        False,
+        "--save-successes",
+        "-ss",
+        help="Saves successful test cases to results directory",
+    ),
 ):
     # Specify globals
     globals.output_dir = output_dir
@@ -1127,16 +1145,15 @@ def exec_fixtures(
             test_case_results.append(result)
 
     print("Logging results...")
-    # TODO: add CLI options for last four arguments
     passed, failed, skipped, target_log_files, failed_tests, skipped_tests = (
         log_results(
             input,
             test_case_results,
             [globals.reference_shared_library, Path("actual")],
             10000,
-            1,
-            0,
-            0,
+            failures_only,
+            save_failures,
+            save_successes,
         )
     )
 
