@@ -1,5 +1,6 @@
 import fd58
 from test_suite.context.codec_utils import decode_acct_state, encode_acct_state
+from test_suite.fuzz_interface import decode_hex_compact, encode_hex_compact
 import test_suite.txn_pb2 as txn_pb
 
 
@@ -21,6 +22,13 @@ def decode_sanitized_tx(tx: txn_pb.SanitizedTransaction):
     tx.message.recent_blockhash = fd58.dec32(
         tx.message.recent_blockhash or bytes([0] * 32)
     )
+
+    # Instructions
+    for i in range(len(tx.message.instructions)):
+        if tx.message.instructions[i].data:
+            tx.message.instructions[i].data = decode_hex_compact(
+                tx.message.instructions[i].data
+            )
 
     # Address table lookups
     for i in range(len(tx.message.address_table_lookups)):
@@ -48,6 +56,13 @@ def encode_sanitized_tx(tx: txn_pb.SanitizedTransaction):
     tx.message.recent_blockhash = fd58.enc32(
         tx.message.recent_blockhash or bytes([0] * 32)
     )
+
+    # Instructions
+    for i in range(len(tx.message.instructions)):
+        if tx.message.instructions[i].data:
+            tx.message.instructions[i].data = encode_hex_compact(
+                tx.message.instructions[i].data
+            )
 
     # Address table lookups
     for i in range(len(tx.message.address_table_lookups)):
