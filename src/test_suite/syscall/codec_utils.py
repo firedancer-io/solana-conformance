@@ -1,7 +1,7 @@
 import base64
+from test_suite.context.codec_utils import encode_hex_compact
 import test_suite.invoke_pb2 as invoke_pb
 import test_suite.vm_pb2 as vm_pb
-from test_suite.fuzz_interface import encode_hex_compact
 from test_suite.instr.codec_utils import encode_input as instr_encode_input
 from test_suite.instr.codec_utils import decode_input as instr_decode_input
 
