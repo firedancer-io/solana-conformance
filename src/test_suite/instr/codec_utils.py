@@ -1,6 +1,10 @@
 import fd58
-from test_suite.context.codec_utils import decode_acct_state, encode_acct_state
-from test_suite.fuzz_interface import decode_hex_compact, encode_hex_compact
+from test_suite.context.codec_utils import (
+    decode_acct_state,
+    decode_hex_compact,
+    encode_acct_state,
+    encode_hex_compact,
+)
 import test_suite.invoke_pb2 as invoke_pb
 
 
