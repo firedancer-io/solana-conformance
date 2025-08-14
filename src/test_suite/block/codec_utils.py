@@ -12,9 +12,6 @@ def decode_input(context: block_pb.BlockContext):
     Args:
         - context (block_pb.BlockContext): Instruction context (will be modified).
     """
-    if context.program_id:
-        context.program_id = fd58.dec32(context.program_id)
-
     for i in range(len(context.txns)):
         decode_sanitized_tx(context.txns[i])
 
@@ -26,31 +23,6 @@ def decode_input(context: block_pb.BlockContext):
 
     # Parent bank hash
     context.slot_ctx.parent_bank_hash = fd58.dec32(context.slot_ctx.parent_bank_hash)
-
-    # New stake accounts
-    for i in range(len(context.epoch_ctx.new_stake_accounts)):
-        context.epoch_ctx.new_stake_accounts[i] = fd58.dec32(
-            context.epoch_ctx.new_stake_accounts[i]
-        )
-
-    # Stake accounts
-    for i in range(len(context.epoch_ctx.stake_accounts)):
-        context.epoch_ctx.stake_accounts[i].stake_account_pubkey = fd58.dec32(
-            context.epoch_ctx.stake_accounts[i].stake_account_pubkey
-        )
-        context.epoch_ctx.stake_accounts[i].voter_pubkey = fd58.dec32(
-            context.epoch_ctx.stake_accounts[i].voter_pubkey
-        )
-
-    # New vote accounts
-    for i in range(len(context.epoch_ctx.new_vote_accounts)):
-        context.epoch_ctx.new_vote_accounts[i] = fd58.dec32(
-            context.epoch_ctx.new_vote_accounts[i]
-        )
-
-    # Vote accounts
-    for i in range(len(context.epoch_ctx.vote_accounts_t)):
-        decode_acct_state(context.epoch_ctx.vote_accounts_t[i].vote_account)
 
     # T-1 Vote accounts
     for i in range(len(context.epoch_ctx.vote_accounts_t_1)):
@@ -107,3 +79,11 @@ def encode_output(effects: block_pb.BlockEffects):
         - effects (block_pb.BlockEffects): Instruction effects (will be modified).
     """
     effects.bank_hash = fd58.enc32(effects.bank_hash)
+
+
+def decode_output(effects: block_pb.BlockEffects):
+    """
+    Decode BlockEffects fields in-place into human-readable format.
+    Addresses are decoded from base58, data from base64.
+    """
+    effects.bank_hash = fd58.dec32(effects.bank_hash)
