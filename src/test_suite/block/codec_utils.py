@@ -78,7 +78,8 @@ def encode_output(effects: block_pb.BlockEffects):
     Args:
         - effects (block_pb.BlockEffects): Instruction effects (will be modified).
     """
-    effects.bank_hash = fd58.enc32(effects.bank_hash)
+    if effects.bank_hash:
+        effects.bank_hash = fd58.enc32(effects.bank_hash)
 
 
 def decode_output(effects: block_pb.BlockEffects):
@@ -86,4 +87,5 @@ def decode_output(effects: block_pb.BlockEffects):
     Decode BlockEffects fields in-place into human-readable format.
     Addresses are decoded from base58, data from base64.
     """
-    effects.bank_hash = fd58.dec32(effects.bank_hash)
+    if effects.bank_hash:
+        effects.bank_hash = fd58.dec32(effects.bank_hash)
