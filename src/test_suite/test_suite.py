@@ -88,9 +88,18 @@ def execute(
         "-n",
         help="Do not print effects to stdout",
     ),
+    enable_vm_tracing: bool = typer.Option(
+        False,
+        "--enable-vm-tracing",
+        "-evm",
+        help="Enable FD VM tracing",
+    ),
 ):
     # Initialize output buffers and shared library
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
+    if enable_vm_tracing:
+        os.environ["ENABLE_VM_TRACING"] = "1"
+
     try:
         lib = ctypes.CDLL(shared_library)
         lib.sol_compat_init(log_level)
