@@ -15,7 +15,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     package="org.solana.sealevel.v1",
     syntax="proto3",
     serialized_pb=_b(
-        '\n\ntype.proto\x12\x16org.solana.sealevel.v1\x1a\x0emetadata.proto"\x1e\n\x0bTypeContext\x12\x0f\n\x07content\x18\x01 \x01(\x0c"C\n\x0bTypeEffects\x12\x0e\n\x06result\x18\x01 \x01(\x04\x12\x16\n\x0erepresentation\x18\x02 \x01(\x0c\x12\x0c\n\x04yaml\x18\x03 \x01(\x0c"±\x01\n\x0bTypeFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x122\n\x05input\x18\x02 \x01(\x0b2#.org.solana.sealevel.v1.TypeContext\x123\n\x06output\x18\x03 \x01(\x0b2#.org.solana.sealevel.v1.TypeEffectsb\x06proto3'
+        '\n\ntype.proto\x12\x16org.solana.sealevel.v1\x1a\x0emetadata.proto"0\n\x0bTypeContext\x12\x0f\n\x07content\x18\x01 \x01(\x0c\x12\x10\n\x08typename\x18\x02 \x01(\t"C\n\x0bTypeEffects\x12\x0e\n\x06result\x18\x01 \x01(\x04\x12\x16\n\x0erepresentation\x18\x02 \x01(\x0c\x12\x0c\n\x04yaml\x18\x03 \x01(\x0c"±\x01\n\x0bTypeFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x122\n\x05input\x18\x02 \x01(\x0b2#.org.solana.sealevel.v1.TypeContext\x123\n\x06output\x18\x03 \x01(\x0b2#.org.solana.sealevel.v1.TypeEffectsb\x06proto3'
     ),
     dependencies=[metadata__pb2.DESCRIPTOR],
 )
@@ -43,7 +43,25 @@ _TYPECONTEXT = _descriptor.Descriptor(
             extension_scope=None,
             options=None,
             file=DESCRIPTOR,
-        )
+        ),
+        _descriptor.FieldDescriptor(
+            name="typename",
+            full_name="org.solana.sealevel.v1.TypeContext.typename",
+            index=1,
+            number=2,
+            type=9,
+            cpp_type=9,
+            label=1,
+            has_default_value=False,
+            default_value=_b("").decode("utf-8"),
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
     ],
     extensions=[],
     nested_types=[],
@@ -54,7 +72,7 @@ _TYPECONTEXT = _descriptor.Descriptor(
     extension_ranges=[],
     oneofs=[],
     serialized_start=54,
-    serialized_end=84,
+    serialized_end=102,
 )
 _TYPEEFFECTS = _descriptor.Descriptor(
     name="TypeEffects",
@@ -126,8 +144,8 @@ _TYPEEFFECTS = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=86,
-    serialized_end=153,
+    serialized_start=104,
+    serialized_end=171,
 )
 _TYPEFIXTURE = _descriptor.Descriptor(
     name="TypeFixture",
@@ -199,8 +217,8 @@ _TYPEFIXTURE = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=156,
-    serialized_end=333,
+    serialized_start=174,
+    serialized_end=351,
 )
 _TYPEFIXTURE.fields_by_name["metadata"].message_type = metadata__pb2._FIXTUREMETADATA
 _TYPEFIXTURE.fields_by_name["input"].message_type = _TYPECONTEXT
