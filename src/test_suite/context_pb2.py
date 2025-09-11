@@ -13,7 +13,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     package="org.solana.sealevel.v1",
     syntax="proto3",
     serialized_pb=_b(
-        '\n\rcontext.proto\x12\x16org.solana.sealevel.v1"\x1e\n\nFeatureSet\x12\x10\n\x08features\x18\x01 \x03(\x06"8\n\x0bSeedAddress\x12\x0c\n\x04base\x18\x01 \x01(\x0c\x12\x0c\n\x04seed\x18\x02 \x01(\x0c\x12\r\n\x05owner\x18\x03 \x01(\x0c"«\x01\n\tAcctState\x12\x0f\n\x07address\x18\x01 \x01(\x0c\x12\x10\n\x08lamports\x18\x02 \x01(\x04\x12\x0c\n\x04data\x18\x03 \x01(\x0c\x12\x12\n\nexecutable\x18\x04 \x01(\x08\x12\x12\n\nrent_epoch\x18\x05 \x01(\x04\x12\r\n\x05owner\x18\x06 \x01(\x0c\x126\n\tseed_addr\x18\x07 \x01(\x0b2#.org.solana.sealevel.v1.SeedAddress"U\n\x0bVoteAccount\x127\n\x0cvote_account\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.AcctState\x12\r\n\x05stake\x18\x02 \x01(\x04"j\n\tInflation\x12\x0f\n\x07initial\x18\x01 \x01(\x01\x12\x10\n\x08terminal\x18\x02 \x01(\x01\x12\r\n\x05taper\x18\x03 \x01(\x01\x12\x12\n\nfoundation\x18\x04 \x01(\x01\x12\x17\n\x0ffoundation_term\x18\x05 \x01(\x01"â\x02\n\x0cEpochContext\x124\n\x08features\x18\x01 \x01(\x0b2".org.solana.sealevel.v1.FeatureSet\x12\x17\n\x0fhashes_per_tick\x18\x02 \x01(\x04\x12\x16\n\x0eticks_per_slot\x18\x03 \x01(\x04\x12\x16\n\x0eslots_per_year\x18\x04 \x01(\x01\x124\n\tinflation\x18\x05 \x01(\x0b2!.org.solana.sealevel.v1.Inflation\x12\x1d\n\x15genesis_creation_time\x18\x06 \x01(\x04\x12>\n\x11vote_accounts_t_1\x18\x0b \x03(\x0b2#.org.solana.sealevel.v1.VoteAccount\x12>\n\x11vote_accounts_t_2\x18\x0c \x03(\x0b2#.org.solana.sealevel.v1.VoteAccount"\xa0\x01\n\x0bSlotContext\x12\x0c\n\x04slot\x18\x01 \x01(\x06\x12\x14\n\x0cblock_height\x18\x02 \x01(\x06\x12\x0b\n\x03poh\x18\x03 \x01(\x0c\x12\x18\n\x10parent_bank_hash\x18\x04 \x01(\x0c\x12\x11\n\tprev_slot\x18\x06 \x01(\x06\x12\x10\n\x08prev_lps\x18\x07 \x01(\x04\x12!\n\x19prev_epoch_capitalization\x18\x08 \x01(\x04b\x06proto3'
+        '\n\rcontext.proto\x12\x16org.solana.sealevel.v1"\x1e\n\nFeatureSet\x12\x10\n\x08features\x18\x01 \x03(\x06"8\n\x0bSeedAddress\x12\x0c\n\x04base\x18\x01 \x01(\x0c\x12\x0c\n\x04seed\x18\x02 \x01(\x0c\x12\r\n\x05owner\x18\x03 \x01(\x0c"\x9d\x01\n\tAcctState\x12\x0f\n\x07address\x18\x01 \x01(\x0c\x12\x10\n\x08lamports\x18\x02 \x01(\x04\x12\x0c\n\x04data\x18\x03 \x01(\x0c\x12\x12\n\nexecutable\x18\x04 \x01(\x08\x12\r\n\x05owner\x18\x06 \x01(\x0c\x126\n\tseed_addr\x18\x07 \x01(\x0b2#.org.solana.sealevel.v1.SeedAddressJ\x04\x08\x05\x10\x06"U\n\x0bVoteAccount\x127\n\x0cvote_account\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.AcctState\x12\r\n\x05stake\x18\x02 \x01(\x04"j\n\tInflation\x12\x0f\n\x07initial\x18\x01 \x01(\x01\x12\x10\n\x08terminal\x18\x02 \x01(\x01\x12\r\n\x05taper\x18\x03 \x01(\x01\x12\x12\n\nfoundation\x18\x04 \x01(\x01\x12\x17\n\x0ffoundation_term\x18\x05 \x01(\x01"º\x01\n\x0fFeeRateGovernor\x12%\n\x1dtarget_lamports_per_signature\x18\x01 \x01(\x04\x12"\n\x1atarget_signatures_per_slot\x18\x02 \x01(\x04\x12"\n\x1amin_lamports_per_signature\x18\x03 \x01(\x04\x12"\n\x1amax_lamports_per_signature\x18\x04 \x01(\x04\x12\x14\n\x0cburn_percent\x18\x05 \x01(\r"â\x02\n\x0cEpochContext\x124\n\x08features\x18\x01 \x01(\x0b2".org.solana.sealevel.v1.FeatureSet\x12\x17\n\x0fhashes_per_tick\x18\x02 \x01(\x04\x12\x16\n\x0eticks_per_slot\x18\x03 \x01(\x04\x12\x16\n\x0eslots_per_year\x18\x04 \x01(\x01\x124\n\tinflation\x18\x05 \x01(\x0b2!.org.solana.sealevel.v1.Inflation\x12\x1d\n\x15genesis_creation_time\x18\x06 \x01(\x04\x12>\n\x11vote_accounts_t_1\x18\x0b \x03(\x0b2#.org.solana.sealevel.v1.VoteAccount\x12>\n\x11vote_accounts_t_2\x18\x0c \x03(\x0b2#.org.solana.sealevel.v1.VoteAccount"\x84\x02\n\x0bSlotContext\x12\x0c\n\x04slot\x18\x01 \x01(\x06\x12\x14\n\x0cblock_height\x18\x02 \x01(\x06\x12\x0b\n\x03poh\x18\x03 \x01(\x0c\x12\x18\n\x10parent_bank_hash\x18\x04 \x01(\x0c\x12\x11\n\tprev_slot\x18\x06 \x01(\x06\x12\x10\n\x08prev_lps\x18\x07 \x01(\x04\x12!\n\x19prev_epoch_capitalization\x18\x08 \x01(\x04\x12B\n\x11fee_rate_governor\x18\t \x01(\x0b2\'.org.solana.sealevel.v1.FeeRateGovernor\x12\x1e\n\x16parent_signature_count\x18\n \x01(\x04b\x06proto3'
     ),
 )
 _FEATURESET = _descriptor.Descriptor(
@@ -206,27 +206,9 @@ _ACCTSTATE = _descriptor.Descriptor(
             file=DESCRIPTOR,
         ),
         _descriptor.FieldDescriptor(
-            name="rent_epoch",
-            full_name="org.solana.sealevel.v1.AcctState.rent_epoch",
-            index=4,
-            number=5,
-            type=4,
-            cpp_type=4,
-            label=1,
-            has_default_value=False,
-            default_value=0,
-            message_type=None,
-            enum_type=None,
-            containing_type=None,
-            is_extension=False,
-            extension_scope=None,
-            options=None,
-            file=DESCRIPTOR,
-        ),
-        _descriptor.FieldDescriptor(
             name="owner",
             full_name="org.solana.sealevel.v1.AcctState.owner",
-            index=5,
+            index=4,
             number=6,
             type=12,
             cpp_type=9,
@@ -244,7 +226,7 @@ _ACCTSTATE = _descriptor.Descriptor(
         _descriptor.FieldDescriptor(
             name="seed_addr",
             full_name="org.solana.sealevel.v1.AcctState.seed_addr",
-            index=6,
+            index=5,
             number=7,
             type=11,
             cpp_type=10,
@@ -269,7 +251,7 @@ _ACCTSTATE = _descriptor.Descriptor(
     extension_ranges=[],
     oneofs=[],
     serialized_start=132,
-    serialized_end=303,
+    serialized_end=289,
 )
 _VOTEACCOUNT = _descriptor.Descriptor(
     name="VoteAccount",
@@ -323,8 +305,8 @@ _VOTEACCOUNT = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=305,
-    serialized_end=390,
+    serialized_start=291,
+    serialized_end=376,
 )
 _INFLATION = _descriptor.Descriptor(
     name="Inflation",
@@ -432,8 +414,117 @@ _INFLATION = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=392,
-    serialized_end=498,
+    serialized_start=378,
+    serialized_end=484,
+)
+_FEERATEGOVERNOR = _descriptor.Descriptor(
+    name="FeeRateGovernor",
+    full_name="org.solana.sealevel.v1.FeeRateGovernor",
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name="target_lamports_per_signature",
+            full_name="org.solana.sealevel.v1.FeeRateGovernor.target_lamports_per_signature",
+            index=0,
+            number=1,
+            type=4,
+            cpp_type=4,
+            label=1,
+            has_default_value=False,
+            default_value=0,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+        _descriptor.FieldDescriptor(
+            name="target_signatures_per_slot",
+            full_name="org.solana.sealevel.v1.FeeRateGovernor.target_signatures_per_slot",
+            index=1,
+            number=2,
+            type=4,
+            cpp_type=4,
+            label=1,
+            has_default_value=False,
+            default_value=0,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+        _descriptor.FieldDescriptor(
+            name="min_lamports_per_signature",
+            full_name="org.solana.sealevel.v1.FeeRateGovernor.min_lamports_per_signature",
+            index=2,
+            number=3,
+            type=4,
+            cpp_type=4,
+            label=1,
+            has_default_value=False,
+            default_value=0,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+        _descriptor.FieldDescriptor(
+            name="max_lamports_per_signature",
+            full_name="org.solana.sealevel.v1.FeeRateGovernor.max_lamports_per_signature",
+            index=3,
+            number=4,
+            type=4,
+            cpp_type=4,
+            label=1,
+            has_default_value=False,
+            default_value=0,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+        _descriptor.FieldDescriptor(
+            name="burn_percent",
+            full_name="org.solana.sealevel.v1.FeeRateGovernor.burn_percent",
+            index=4,
+            number=5,
+            type=13,
+            cpp_type=3,
+            label=1,
+            has_default_value=False,
+            default_value=0,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    options=None,
+    is_extendable=False,
+    syntax="proto3",
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=487,
+    serialized_end=673,
 )
 _EPOCHCONTEXT = _descriptor.Descriptor(
     name="EpochContext",
@@ -595,8 +686,8 @@ _EPOCHCONTEXT = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=501,
-    serialized_end=855,
+    serialized_start=676,
+    serialized_end=1030,
 )
 _SLOTCONTEXT = _descriptor.Descriptor(
     name="SlotContext",
@@ -731,6 +822,42 @@ _SLOTCONTEXT = _descriptor.Descriptor(
             options=None,
             file=DESCRIPTOR,
         ),
+        _descriptor.FieldDescriptor(
+            name="fee_rate_governor",
+            full_name="org.solana.sealevel.v1.SlotContext.fee_rate_governor",
+            index=7,
+            number=9,
+            type=11,
+            cpp_type=10,
+            label=1,
+            has_default_value=False,
+            default_value=None,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+        _descriptor.FieldDescriptor(
+            name="parent_signature_count",
+            full_name="org.solana.sealevel.v1.SlotContext.parent_signature_count",
+            index=8,
+            number=10,
+            type=4,
+            cpp_type=4,
+            label=1,
+            has_default_value=False,
+            default_value=0,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
     ],
     extensions=[],
     nested_types=[],
@@ -740,8 +867,8 @@ _SLOTCONTEXT = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=858,
-    serialized_end=1018,
+    serialized_start=1033,
+    serialized_end=1293,
 )
 _ACCTSTATE.fields_by_name["seed_addr"].message_type = _SEEDADDRESS
 _VOTEACCOUNT.fields_by_name["vote_account"].message_type = _ACCTSTATE
@@ -749,11 +876,13 @@ _EPOCHCONTEXT.fields_by_name["features"].message_type = _FEATURESET
 _EPOCHCONTEXT.fields_by_name["inflation"].message_type = _INFLATION
 _EPOCHCONTEXT.fields_by_name["vote_accounts_t_1"].message_type = _VOTEACCOUNT
 _EPOCHCONTEXT.fields_by_name["vote_accounts_t_2"].message_type = _VOTEACCOUNT
+_SLOTCONTEXT.fields_by_name["fee_rate_governor"].message_type = _FEERATEGOVERNOR
 DESCRIPTOR.message_types_by_name["FeatureSet"] = _FEATURESET
 DESCRIPTOR.message_types_by_name["SeedAddress"] = _SEEDADDRESS
 DESCRIPTOR.message_types_by_name["AcctState"] = _ACCTSTATE
 DESCRIPTOR.message_types_by_name["VoteAccount"] = _VOTEACCOUNT
 DESCRIPTOR.message_types_by_name["Inflation"] = _INFLATION
+DESCRIPTOR.message_types_by_name["FeeRateGovernor"] = _FEERATEGOVERNOR
 DESCRIPTOR.message_types_by_name["EpochContext"] = _EPOCHCONTEXT
 DESCRIPTOR.message_types_by_name["SlotContext"] = _SLOTCONTEXT
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -787,6 +916,12 @@ Inflation = _reflection.GeneratedProtocolMessageType(
     dict(DESCRIPTOR=_INFLATION, __module__="context_pb2"),
 )
 _sym_db.RegisterMessage(Inflation)
+FeeRateGovernor = _reflection.GeneratedProtocolMessageType(
+    "FeeRateGovernor",
+    (_message.Message,),
+    dict(DESCRIPTOR=_FEERATEGOVERNOR, __module__="context_pb2"),
+)
+_sym_db.RegisterMessage(FeeRateGovernor)
 EpochContext = _reflection.GeneratedProtocolMessageType(
     "EpochContext",
     (_message.Message,),
