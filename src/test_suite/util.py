@@ -5,10 +5,14 @@ import sys
 
 def set_ld_preload_asan():
     # Run ldconfig -p and capture output
-    ldconfig_output = subprocess.check_output(["ldconfig", "-p"], text=True)
+    ldconfig_output = subprocess.check_output(["sudo", "ldconfig", "-p"], text=True)
 
-    # Filter lines containing "asan"
-    asan_libs = [line for line in ldconfig_output.split("\n") if "asan" in line]
+    # Filter lines containing "asan", excluding HWASAN
+    asan_libs = [
+        line
+        for line in ldconfig_output.split("\n")
+        if "asan" in line and "hwasan" not in line
+    ]
 
     # Extract the first library path if available
     if asan_libs:
