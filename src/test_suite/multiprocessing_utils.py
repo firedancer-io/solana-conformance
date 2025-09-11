@@ -422,7 +422,9 @@ def execute_fixture(test_file: Path) -> tuple[str, int, dict | None]:
 
     results = {
         globals.reference_shared_library: output.SerializeToString(deterministic=True),
-        Path("actual"): effects.SerializeToString(deterministic=True),
+        Path("actual"): (
+            effects.SerializeToString(deterministic=True) if effects else None
+        ),
     }
     prune_results = harness_ctx.prune_effects_fn(context, results)
 
