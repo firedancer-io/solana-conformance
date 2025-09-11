@@ -274,9 +274,12 @@ def create_fixtures(
     # Initialize shared library
     for target in shared_libraries:
         # Load in and initialize shared libraries
-        lib = ctypes.CDLL(target)
-        lib.sol_compat_init(log_level)
-        globals.target_libraries[target] = lib
+        try:
+            lib = ctypes.CDLL(target)
+            lib.sol_compat_init(log_level)
+            globals.target_libraries[target] = lib
+        except:
+            set_ld_preload_asan()
 
     test_cases = [input] if input.is_file() else list(input.iterdir())
     num_test_cases = len(test_cases)
@@ -442,9 +445,12 @@ expected to use different amounts of compute units than the other. Note: Cannot 
     # Initialize shared libraries
     for target in shared_libraries:
         # Load in and initialize shared libraries
-        lib = ctypes.CDLL(target)
-        lib.sol_compat_init(log_level)
-        globals.target_libraries[target] = lib
+        try:
+            lib = ctypes.CDLL(target)
+            lib.sol_compat_init(log_level)
+            globals.target_libraries[target] = lib
+        except:
+            set_ld_preload_asan()
 
         # Make log output directories for each shared library
         log_dir = globals.output_dir / target.stem
@@ -882,10 +888,13 @@ def regenerate_fixtures(
     if globals.output_dir.exists():
         shutil.rmtree(globals.output_dir)
     globals.output_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        lib: ctypes.CDLL = ctypes.CDLL(shared_library)
+        lib.sol_compat_init(log_level)
+        globals.target_libraries[shared_library] = lib
+    except:
+        set_ld_preload_asan()
 
-    lib: ctypes.CDLL = ctypes.CDLL(shared_library)
-    lib.sol_compat_init(log_level)
-    globals.target_libraries[shared_library] = lib
     initialize_process_output_buffers()
 
     test_cases = list(input.iterdir()) if input.is_dir() else [input]
