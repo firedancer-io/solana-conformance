@@ -17,13 +17,68 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     package="org.solana.sealevel.v1",
     syntax="proto3",
     serialized_pb=_b(
-        '\n\x0bblock.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\ttxn.proto\x1a\x0emetadata.proto"\x8b\x02\n\x0cBlockContext\x12:\n\x04txns\x18\x01 \x03(\x0b2,.org.solana.sealevel.v1.SanitizedTransaction\x126\n\x0bacct_states\x18\x02 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x12\x17\n\x0fblockhash_queue\x18\x03 \x03(\x0c\x125\n\x08slot_ctx\x18\x04 \x01(\x0b2#.org.solana.sealevel.v1.SlotContext\x127\n\tepoch_ctx\x18\x05 \x01(\x0b2$.org.solana.sealevel.v1.EpochContext"Q\n\x0cBlockEffects\x12\x11\n\thas_error\x18\x01 \x01(\x08\x12\x1b\n\x13slot_capitalization\x18\x02 \x01(\x04\x12\x11\n\tbank_hash\x18\x03 \x01(\x0c"´\x01\n\x0cBlockFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x123\n\x05input\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.BlockContext\x124\n\x06output\x18\x03 \x01(\x0b2$.org.solana.sealevel.v1.BlockEffectsb\x06proto3'
+        '\n\x0bblock.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\ttxn.proto\x1a\x0emetadata.proto"4\n\x0bCostTracker\x12\x12\n\nblock_cost\x18\x01 \x01(\x04\x12\x11\n\tvote_cost\x18\x02 \x01(\x04"\x8b\x02\n\x0cBlockContext\x12:\n\x04txns\x18\x01 \x03(\x0b2,.org.solana.sealevel.v1.SanitizedTransaction\x126\n\x0bacct_states\x18\x02 \x03(\x0b2!.org.solana.sealevel.v1.AcctState\x12\x17\n\x0fblockhash_queue\x18\x03 \x03(\x0c\x125\n\x08slot_ctx\x18\x04 \x01(\x0b2#.org.solana.sealevel.v1.SlotContext\x127\n\tepoch_ctx\x18\x05 \x01(\x0b2$.org.solana.sealevel.v1.EpochContext"\x8c\x01\n\x0cBlockEffects\x12\x11\n\thas_error\x18\x01 \x01(\x08\x12\x1b\n\x13slot_capitalization\x18\x02 \x01(\x04\x12\x11\n\tbank_hash\x18\x03 \x01(\x0c\x129\n\x0ccost_tracker\x18\x04 \x01(\x0b2#.org.solana.sealevel.v1.CostTracker"´\x01\n\x0cBlockFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x123\n\x05input\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.BlockContext\x124\n\x06output\x18\x03 \x01(\x0b2$.org.solana.sealevel.v1.BlockEffectsb\x06proto3'
     ),
     dependencies=[
         context__pb2.DESCRIPTOR,
         txn__pb2.DESCRIPTOR,
         metadata__pb2.DESCRIPTOR,
     ],
+)
+_COSTTRACKER = _descriptor.Descriptor(
+    name="CostTracker",
+    full_name="org.solana.sealevel.v1.CostTracker",
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name="block_cost",
+            full_name="org.solana.sealevel.v1.CostTracker.block_cost",
+            index=0,
+            number=1,
+            type=4,
+            cpp_type=4,
+            label=1,
+            has_default_value=False,
+            default_value=0,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+        _descriptor.FieldDescriptor(
+            name="vote_cost",
+            full_name="org.solana.sealevel.v1.CostTracker.vote_cost",
+            index=1,
+            number=2,
+            type=4,
+            cpp_type=4,
+            label=1,
+            has_default_value=False,
+            default_value=0,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    options=None,
+    is_extendable=False,
+    syntax="proto3",
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=81,
+    serialized_end=133,
 )
 _BLOCKCONTEXT = _descriptor.Descriptor(
     name="BlockContext",
@@ -131,8 +186,8 @@ _BLOCKCONTEXT = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=82,
-    serialized_end=349,
+    serialized_start=136,
+    serialized_end=403,
 )
 _BLOCKEFFECTS = _descriptor.Descriptor(
     name="BlockEffects",
@@ -195,6 +250,24 @@ _BLOCKEFFECTS = _descriptor.Descriptor(
             options=None,
             file=DESCRIPTOR,
         ),
+        _descriptor.FieldDescriptor(
+            name="cost_tracker",
+            full_name="org.solana.sealevel.v1.BlockEffects.cost_tracker",
+            index=3,
+            number=4,
+            type=11,
+            cpp_type=10,
+            label=1,
+            has_default_value=False,
+            default_value=None,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
     ],
     extensions=[],
     nested_types=[],
@@ -204,8 +277,8 @@ _BLOCKEFFECTS = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=351,
-    serialized_end=432,
+    serialized_start=406,
+    serialized_end=546,
 )
 _BLOCKFIXTURE = _descriptor.Descriptor(
     name="BlockFixture",
@@ -277,20 +350,28 @@ _BLOCKFIXTURE = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=435,
-    serialized_end=615,
+    serialized_start=549,
+    serialized_end=729,
 )
 _BLOCKCONTEXT.fields_by_name["txns"].message_type = txn__pb2._SANITIZEDTRANSACTION
 _BLOCKCONTEXT.fields_by_name["acct_states"].message_type = context__pb2._ACCTSTATE
 _BLOCKCONTEXT.fields_by_name["slot_ctx"].message_type = context__pb2._SLOTCONTEXT
 _BLOCKCONTEXT.fields_by_name["epoch_ctx"].message_type = context__pb2._EPOCHCONTEXT
+_BLOCKEFFECTS.fields_by_name["cost_tracker"].message_type = _COSTTRACKER
 _BLOCKFIXTURE.fields_by_name["metadata"].message_type = metadata__pb2._FIXTUREMETADATA
 _BLOCKFIXTURE.fields_by_name["input"].message_type = _BLOCKCONTEXT
 _BLOCKFIXTURE.fields_by_name["output"].message_type = _BLOCKEFFECTS
+DESCRIPTOR.message_types_by_name["CostTracker"] = _COSTTRACKER
 DESCRIPTOR.message_types_by_name["BlockContext"] = _BLOCKCONTEXT
 DESCRIPTOR.message_types_by_name["BlockEffects"] = _BLOCKEFFECTS
 DESCRIPTOR.message_types_by_name["BlockFixture"] = _BLOCKFIXTURE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
+CostTracker = _reflection.GeneratedProtocolMessageType(
+    "CostTracker",
+    (_message.Message,),
+    dict(DESCRIPTOR=_COSTTRACKER, __module__="block_pb2"),
+)
+_sym_db.RegisterMessage(CostTracker)
 BlockContext = _reflection.GeneratedProtocolMessageType(
     "BlockContext",
     (_message.Message,),
