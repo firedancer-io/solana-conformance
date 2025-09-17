@@ -6,7 +6,7 @@ import test_suite.globals as globals
 
 
 def log_results(
-    input_dir: Path,
+    test_cases: list[Path],
     test_case_results,
     shared_libraries,
     log_chunk_size: int,
@@ -65,7 +65,7 @@ def log_results(
             target_log_files[target].close()
 
     # Save successes and/or failures
-    for input_file in input_dir.rglob("*"):
+    for input_file in test_cases:
         if not input_file.is_file():
             continue
 
