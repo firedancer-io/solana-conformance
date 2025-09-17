@@ -25,7 +25,8 @@ def log_results(
     passed = 0
     failed = 0
     skipped = 0
-    failed_tests = []
+    successful_tests = set()
+    failed_tests = set()
     skipped_tests = []
     target_log_files = {target: None for target in shared_libraries}
     for file_stem, status, stringified_results in test_case_results:
@@ -54,20 +55,23 @@ def log_results(
 
         if status == 1:
             passed += 1
-            if save_successes:
-                successful_protobufs = list(input_dir.glob(f"{file_stem}*"))
-                for successful_protobuf in successful_protobufs:
-                    shutil.copy(successful_protobuf, successful_protobufs_dir)
+            successful_tests.add(file_stem)
         elif status == -1:
             failed += 1
-            failed_tests.append(file_stem)
-            if save_failures:
-                failed_protobufs = list(input_dir.glob(f"{file_stem}*"))
-                for failed_protobuf in failed_protobufs:
-                    shutil.copy(failed_protobuf, failed_protobufs_dir)
+            failed_tests.add(file_stem)
 
     for target in shared_libraries:
         if target_log_files[target]:
             target_log_files[target].close()
 
-    return passed, failed, skipped, target_log_files, failed_tests, skipped_tests
+    # Save successes and/or failures
+    for input_file in input_dir.rglob("*"):
+        if not input_file.is_file():
+            continue
+
+        if save_failures and input_file.stem in failed_tests:
+            shutil.copy(input_file, failed_protobufs_dir)
+        if save_successes and input_file.stem in successful_tests:
+            shutil.copy(input_file, successful_protobufs_dir)
+
+    return passed, failed, skipped, target_log_files, list(failed_tests), skipped_tests
