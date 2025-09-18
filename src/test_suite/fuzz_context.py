@@ -14,6 +14,7 @@ import test_suite.pack_pb2 as pack_pb
 import test_suite.type_pb2 as type_pb
 
 import test_suite.block.codec_utils as block_codec
+import test_suite.block.transform_utils as block_transform
 
 import test_suite.txn.codec_utils as txn_codec
 import test_suite.txn.prune_utils as txn_prune
@@ -93,7 +94,7 @@ BlockHarness = HarnessCtx(
     context_human_encode_fn=block_codec.encode_input,
     context_human_decode_fn=block_codec.decode_input,
     effects_human_encode_fn=block_codec.encode_output,
-    # TODO: Fill in other fields...
+    regenerate_transformation_fn=block_transform.transform_fixture,
 )
 
 TypeHarness = HarnessCtx(
