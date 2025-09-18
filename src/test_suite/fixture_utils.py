@@ -66,7 +66,9 @@ def create_fixture_from_context(
 
     # This is only relevant when you gather results for multiple targets
     if globals.only_keep_passing:
-        status, _ = build_test_results(harness_ctx, pruned_results)
+        status, _ = build_test_results(
+            harness_ctx, pruned_results, globals.reference_shared_library
+        )
         if status != 1:
             return None
 

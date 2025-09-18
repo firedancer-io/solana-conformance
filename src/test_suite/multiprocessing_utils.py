@@ -293,13 +293,15 @@ def merge_results_over_iterations(results: tuple) -> tuple[str, dict]:
 
 
 def build_test_results(
-    harness_ctx: HarnessCtx, results: dict[str, str | None]
+    harness_ctx: HarnessCtx, results: dict[str, str | None], reference_target: Path
 ) -> tuple[int, dict | None]:
     """
     Build a single result of single test execution and returns whether the test passed or failed.
 
     Args:
+        - harness_ctx (HarnessCtx): Harness context.
         - results (dict[str, str | None]): Dictionary of target library names and serialized instruction effects.
+        - reference_target (Path): Path to the reference target.
 
     Returns:
         - tuple[int, dict | None]: Tuple of:
@@ -313,7 +315,7 @@ def build_test_results(
 
     outputs = {target: "None\n" for target in results}
 
-    ref_result = results[globals.reference_shared_library]
+    ref_result = results[reference_target]
 
     if ref_result is None:
         print("Skipping test case due to Agave rejection")
@@ -325,7 +327,7 @@ def build_test_results(
     # Log execution results
     all_passed = True
     for target, result in results.items():
-        if target == globals.reference_shared_library:
+        if target == reference_target:
             continue
         # Create a Protobuf struct to compare and output, if applicable
         effects = None
@@ -352,7 +354,7 @@ def build_test_results(
             all_passed = False
 
     harness_ctx.effects_human_encode_fn(ref_effects)
-    outputs[globals.reference_shared_library] = text_format.MessageToString(ref_effects)
+    outputs[reference_target] = text_format.MessageToString(ref_effects)
 
     # 1 = passed, -1 = failed
     return 1 if all_passed else -1, outputs
@@ -402,7 +404,9 @@ def run_test(test_file: Path) -> tuple[str, int, dict | None]:
 
     results = process_single_test_case(harness_ctx, context)
     pruned_results = harness_ctx.prune_effects_fn(context, results)
-    return test_file.stem, *build_test_results(harness_ctx, pruned_results)
+    return test_file.stem, *build_test_results(
+        harness_ctx, pruned_results, globals.reference_shared_library
+    )
 
 
 def execute_fixture(test_file: Path) -> tuple[str, int, dict | None]:
@@ -421,14 +425,16 @@ def execute_fixture(test_file: Path) -> tuple[str, int, dict | None]:
     )
 
     results = {
-        globals.reference_shared_library: output.SerializeToString(deterministic=True),
+        Path("expected"): output.SerializeToString(deterministic=True),
         Path("actual"): (
             effects.SerializeToString(deterministic=True) if effects else None
         ),
     }
     prune_results = harness_ctx.prune_effects_fn(context, results)
 
-    return test_file.stem, *build_test_results(harness_ctx, prune_results)
+    return test_file.stem, *build_test_results(
+        harness_ctx, prune_results, Path("expected")
+    )
 
 
 def download_and_process(url):

@@ -1125,7 +1125,7 @@ def exec_fixtures(
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
     # Make expected and actual results directories
-    (globals.output_dir / shared_library.stem).mkdir(parents=True, exist_ok=True)
+    (globals.output_dir / "expected").mkdir(parents=True, exist_ok=True)
     (globals.output_dir / "actual").mkdir(parents=True, exist_ok=True)
 
     # Initialize output buffers and shared library
@@ -1158,7 +1158,7 @@ def exec_fixtures(
         log_results(
             test_cases,
             test_case_results,
-            [globals.reference_shared_library, Path("actual")],
+            [Path("expected"), Path("actual")],
             10000,
             failures_only,
             save_failures,
