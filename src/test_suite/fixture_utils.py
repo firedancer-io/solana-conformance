@@ -241,7 +241,7 @@ def regenerate_fixture(test_file: Path) -> int:
 
             # Apply minimum compatible features
             if features is not None:
-                features.features[:] = new_feature_set
+                features.features[:] = sorted(list(new_feature_set))
 
             # Apply any custom transformations to the data
             harness_ctx.regenerate_transformation_fn(fixture)
