@@ -220,7 +220,6 @@ $ solana-test-suite mass-regenerate-fixtures [OPTIONS]
 * `-f, --add-feature TEXT`: List of feature pubkeys to force add to the fixtures.
 * `-r, --remove-feature TEXT`: List of feature pubkeys to force remove from the fixtures.
 * `-k, --rekey-feature TEXT`: List of feature pubkeys to rekey in the fixtures, formatted 'old/new' (e.g. `--rekey-feature old/new`).
-* `-m, --merge-with-latest`: Merge with the latest cleaned-up and supported featureset pulled from the target.
 * `-a, --regenerate-all`: Regenerate all fixtures, regardless of feature set changes
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-d, --dry-run`: Only print the fixtures that would be regenerated
@@ -246,7 +245,6 @@ $ solana-test-suite regenerate-fixtures [OPTIONS]
 * `-f, --add-feature TEXT`: List of feature pubkeys to force add to the fixtures.
 * `-r, --remove-feature TEXT`: List of feature pubkeys to force remove from the fixtures.
 * `-k, --rekey-feature TEXT`: List of feature pubkeys to rekey in the fixtures, formatted 'old/new' (e.g. `--rekey-feature old/new`).
-* `-m, --merge-with-latest`: Merge with the latest cleaned-up and supported featureset pulled from the target.
 * `-a, --regenerate-all`: Regenerate all fixtures, regardless of feature set changes
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-l, --log-level INTEGER`: FD logging level  [default: 5]

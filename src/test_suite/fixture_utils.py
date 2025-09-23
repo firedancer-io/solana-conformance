@@ -224,11 +224,6 @@ def regenerate_fixture(test_file: Path) -> int:
             new_feature_set.remove(old_feature)
             new_feature_set.add(new_feature)
 
-    if globals.merge_with_latest:
-        new_feature_set = features_utils.min_compatible_featureset(
-            globals.target_features, new_feature_set
-        )
-
     regenerate = globals.regenerate_all or (new_feature_set != original_feature_set)
 
     if regenerate:

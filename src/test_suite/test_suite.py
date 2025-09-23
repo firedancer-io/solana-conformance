@@ -848,12 +848,6 @@ def regenerate_fixtures(
         "-k",
         help="List of feature pubkeys to rekey in the fixtures, formatted 'old/new' (e.g. `--rekey-feature old/new`).",
     ),
-    merge_with_latest: bool = typer.Option(
-        False,
-        "--merge-with-latest",
-        "-m",
-        help="Merge with the latest cleaned-up and supported featureset pulled from the target.",
-    ),
     regenerate_all: bool = typer.Option(
         False,
         "--regenerate-all",
@@ -903,7 +897,6 @@ def regenerate_fixtures(
         for feature in rekeyed_features
     )
 
-    globals.merge_with_latest = merge_with_latest
     globals.regenerate_all = regenerate_all
     globals.regenerate_dry_run = dry_run
     globals.regenerate_verbose = verbose
@@ -963,12 +956,6 @@ def mass_regenerate_fixtures(
         "--rekey-feature",
         "-k",
         help="List of feature pubkeys to rekey in the fixtures, formatted 'old/new' (e.g. `--rekey-feature old/new`).",
-    ),
-    merge_with_latest: bool = typer.Option(
-        False,
-        "--merge-with-latest",
-        "-m",
-        help="Merge with the latest cleaned-up and supported featureset pulled from the target.",
     ),
     regenerate_all: bool = typer.Option(
         False,
@@ -1048,7 +1035,6 @@ def mass_regenerate_fixtures(
                 add_features=add_features,
                 remove_features=remove_features,
                 rekeyed_features=rekeyed_features,
-                merge_with_latest=merge_with_latest,
                 regenerate_all=regenerate_all,
                 num_processes=num_processes,
                 verbose=verbose,

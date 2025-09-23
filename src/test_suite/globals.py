@@ -48,7 +48,6 @@ features_to_add: set[int] = set()
 features_to_remove: set[int] = set()
 rekey_features: list[tuple[int, ...]] = []
 target_features: TargetFeaturePool = None
-merge_with_latest: bool = False
 regenerate_all: bool = False
 regenerate_dry_run: bool = False
 regenerate_verbose: bool = False
