@@ -411,6 +411,12 @@ expected to use different amounts of compute units than the other. Note: Cannot 
         "-l",
         help="FD logging level",
     ),
+    debug_mode: bool = typer.Option(
+        False,
+        "--debug-mode",
+        "-d",
+        help="Enables debug mode, which disables multiprocessing",
+    ),
 ):
     # Add Solana library to shared libraries
     shared_libraries = [reference_shared_library] + shared_libraries
@@ -465,7 +471,7 @@ expected to use different amounts of compute units than the other. Note: Cannot 
     # Process the test results in parallel
     print("Running tests...")
     test_case_results = []
-    if num_processes > 1:
+    if num_processes > 1 and not debug_mode:
         with Pool(
             processes=num_processes,
             initializer=initialize_process_output_buffers,
@@ -1101,6 +1107,12 @@ def exec_fixtures(
         "-ss",
         help="Saves successful test cases to results directory",
     ),
+    debug_mode: bool = typer.Option(
+        False,
+        "--debug-mode",
+        "-d",
+        help="Enables debug mode, which disables multiprocessing",
+    ),
 ):
     # Specify globals
     globals.output_dir = output_dir
@@ -1128,16 +1140,22 @@ def exec_fixtures(
     num_test_cases = len(test_cases)
     print("Running tests...")
     test_case_results = []
-    with Pool(
-        processes=num_processes,
-        initializer=initialize_process_output_buffers,
-        initargs=(randomize_output_buffer,),
-    ) as pool:
-        for result in tqdm.tqdm(
-            pool.imap(execute_fixture, test_cases),
-            total=num_test_cases,
-        ):
-            test_case_results.append(result)
+
+    if num_processes > 1 and not debug_mode:
+        with Pool(
+            processes=num_processes,
+            initializer=initialize_process_output_buffers,
+            initargs=(randomize_output_buffer,),
+        ) as pool:
+            for result in tqdm.tqdm(
+                pool.imap(execute_fixture, test_cases),
+                total=num_test_cases,
+            ):
+                test_case_results.append(result)
+    else:
+        initialize_process_output_buffers(randomize_output_buffer)
+        for test_case in tqdm.tqdm(test_cases):
+            test_case_results.append(execute_fixture(test_case))
 
     print("Logging results...")
     passed, failed, skipped, target_log_files, failed_tests, skipped_tests = (
