@@ -16,7 +16,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     package="org.solana.sealevel.v1",
     syntax="proto3",
     serialized_pb=_b(
-        '\n\telf.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\x0emetadata.proto"\x19\n\tELFBinary\x12\x0c\n\x04data\x18\x01 \x01(\x0c"\x8b\x01\n\x0cELFLoaderCtx\x12.\n\x03elf\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.ELFBinary\x124\n\x08features\x18\x02 \x01(\x0b2".org.solana.sealevel.v1.FeatureSet\x12\x15\n\rdeploy_checks\x18\x04 \x01(\x08"~\n\x10ELFLoaderEffects\x12\x0e\n\x06rodata\x18\x01 \x01(\x0c\x12\x11\n\trodata_sz\x18\x02 \x01(\x04\x12\x10\n\x08text_cnt\x18\x04 \x01(\x04\x12\x10\n\x08text_off\x18\x05 \x01(\x04\x12\x10\n\x08entry_pc\x18\x06 \x01(\x04\x12\x11\n\tcalldests\x18\x07 \x03(\x04"¼\x01\n\x10ELFLoaderFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x123\n\x05input\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.ELFLoaderCtx\x128\n\x06output\x18\x03 \x01(\x0b2(.org.solana.sealevel.v1.ELFLoaderEffectsb\x06proto3'
+        '\n\telf.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\x0emetadata.proto"\x19\n\tELFBinary\x12\x0c\n\x04data\x18\x01 \x01(\x0c"\x8b\x01\n\x0cELFLoaderCtx\x12.\n\x03elf\x18\x01 \x01(\x0b2!.org.solana.sealevel.v1.ELFBinary\x124\n\x08features\x18\x02 \x01(\x0b2".org.solana.sealevel.v1.FeatureSet\x12\x15\n\rdeploy_checks\x18\x04 \x01(\x08"\x8d\x01\n\x10ELFLoaderEffects\x12\x0e\n\x06rodata\x18\x01 \x01(\x0c\x12\x11\n\trodata_sz\x18\x02 \x01(\x04\x12\x10\n\x08text_cnt\x18\x04 \x01(\x04\x12\x10\n\x08text_off\x18\x05 \x01(\x04\x12\x10\n\x08entry_pc\x18\x06 \x01(\x04\x12\x11\n\tcalldests\x18\x07 \x03(\x04\x12\r\n\x05error\x18\x08 \x01(\x05"¼\x01\n\x10ELFLoaderFixture\x129\n\x08metadata\x18\x01 \x01(\x0b2\'.org.solana.sealevel.v1.FixtureMetadata\x123\n\x05input\x18\x02 \x01(\x0b2$.org.solana.sealevel.v1.ELFLoaderCtx\x128\n\x06output\x18\x03 \x01(\x0b2(.org.solana.sealevel.v1.ELFLoaderEffectsb\x06proto3'
     ),
     dependencies=[context__pb2.DESCRIPTOR, metadata__pb2.DESCRIPTOR],
 )
@@ -245,6 +245,24 @@ _ELFLOADEREFFECTS = _descriptor.Descriptor(
             options=None,
             file=DESCRIPTOR,
         ),
+        _descriptor.FieldDescriptor(
+            name="error",
+            full_name="org.solana.sealevel.v1.ELFLoaderEffects.error",
+            index=6,
+            number=8,
+            type=5,
+            cpp_type=1,
+            label=1,
+            has_default_value=False,
+            default_value=0,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
     ],
     extensions=[],
     nested_types=[],
@@ -254,8 +272,8 @@ _ELFLOADEREFFECTS = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=237,
-    serialized_end=363,
+    serialized_start=238,
+    serialized_end=379,
 )
 _ELFLOADERFIXTURE = _descriptor.Descriptor(
     name="ELFLoaderFixture",
@@ -327,8 +345,8 @@ _ELFLOADERFIXTURE = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=366,
-    serialized_end=554,
+    serialized_start=382,
+    serialized_end=570,
 )
 _ELFLOADERCTX.fields_by_name["elf"].message_type = _ELFBINARY
 _ELFLOADERCTX.fields_by_name["features"].message_type = context__pb2._FEATURESET
