@@ -27,12 +27,17 @@ import test_suite.instr.diff_utils as instr_diff
 import test_suite.syscall.codec_utils as syscall_codec
 import test_suite.syscall.transform_utils as syscall_transform
 
+import test_suite.elf_loader.codec_utils as elf_codec
+
 import test_suite.type.diff_utils as type_diff
 
 
 ElfLoaderHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_elf_loader_v1",
     fixture_desc=elf_pb.ELFLoaderFixture.DESCRIPTOR,
+    context_human_encode_fn=elf_codec.encode_input,
+    context_human_decode_fn=elf_codec.decode_input,
+    effects_human_encode_fn=elf_codec.encode_output,
 )
 
 InstrHarness = HarnessCtx(
