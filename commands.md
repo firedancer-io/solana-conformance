@@ -53,6 +53,7 @@ $ solana-test-suite create-env [OPTIONS]
 * `-l, --section-limit INTEGER`: Limit number of fixture per section  [default: 0]
 * `-fd, --firedancer-repo PATH`: Path to firedancer repository
 * `-tv, --test-vectors-repo PATH`: Path to test-vectors repository
+* `--use-ng`: Use fuzz NG CLI (fuzz list/download repro) instead of API scraping
 * `--help`: Show this message and exit.
 
 ## `solana-test-suite create-fixtures`
@@ -107,6 +108,7 @@ $ solana-test-suite debug-mismatches [OPTIONS]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-l, --section-limit INTEGER`: Limit number of fixture per section  [default: 0]
+* `--use-ng`: Use fuzz NG CLI (fuzz list/download repro) instead of API scraping
 * `--help`: Show this message and exit.
 
 ## `solana-test-suite decode-protobufs`

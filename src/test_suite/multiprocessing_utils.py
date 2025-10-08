@@ -7,6 +7,7 @@ import test_suite.type_pb2 as type_pb
 import test_suite.metadata_pb2 as metadata_pb2
 import ctypes
 from ctypes import c_uint64, c_int, POINTER
+import shutil
 import subprocess
 from pathlib import Path
 import test_suite.globals as globals
@@ -437,27 +438,55 @@ def execute_fixture(test_file: Path) -> tuple[str, int, dict | None]:
     )
 
 
-def download_and_process(url):
-    zip_name = url.split("/")[-1]
+def download_and_process(source):
+    if isinstance(source, (tuple, list)) and len(source) == 2:
+        section_name, crash_hash = source
+        out_dir = globals.inputs_dir / f"{section_name}_{crash_hash}"
+        out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Step 1: Download the file
-    result = subprocess.run(
-        ["wget", "-q", url, "-O", f"{globals.output_dir}/{zip_name}"],
-        capture_output=True,
-        text=True,
-    )
+        fuzz_bin = os.getenv("FUZZ_BIN", "fuzz")
+        subprocess.run(
+            [
+                fuzz_bin,
+                "download",
+                "repro",
+                "--lineage",
+                section_name,
+                "--out-dir",
+                str(out_dir),
+                crash_hash,
+            ],
+            text=True,
+            check=True,
+            stderr=None,
+        )
 
-    result = subprocess.run(
-        ["unzip", f"{globals.output_dir}/{zip_name}", "-d", globals.output_dir],
-        capture_output=True,
-        text=True,
-    )
+        for fix in out_dir.rglob("*.fix"):
+            shutil.copy2(fix, globals.inputs_dir)
+        return f"Processed {section_name}/{crash_hash} successfully"
 
-    result = subprocess.run(
-        f"mv {globals.output_dir}/repro_custom/*.fix {globals.inputs_dir}",
-        shell=True,
-        capture_output=True,
-        text=True,
-    )
+    else:
+        zip_name = source.split("/")[-1]
 
-    return f"Processed {zip_name} successfully"
+        # Step 1: Download the file
+        result = subprocess.run(
+            ["wget", "-q", source, "-O", f"{globals.output_dir}/{zip_name}"],
+            capture_output=True,
+            text=True,
+        )
+
+        result = subprocess.run(
+            ["unzip", f"{globals.output_dir}/{zip_name}", "-d", globals.output_dir],
+            capture_output=True,
+            text=True,
+        )
+
+        result = subprocess.run(
+            f"mv {globals.output_dir}/repro_custom/*.fix {globals.inputs_dir}",
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
+        return f"Processed {zip_name} successfully"
+
+    return f"Unsupported source: {source}"

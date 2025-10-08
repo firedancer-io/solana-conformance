@@ -31,6 +31,7 @@ from test_suite.util import set_ld_preload_asan
 import resource
 import tqdm
 from test_suite.fuzz_context import *
+import json
 import os
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
@@ -655,6 +656,11 @@ def debug_mismatches(
     section_limit: int = typer.Option(
         0, "--section-limit", "-l", help="Limit number of fixture per section"
     ),
+    use_ng: bool = typer.Option(
+        False,
+        "--use-ng",
+        help="Use fuzz NG CLI (fuzz list/download repro) instead of API scraping",
+    ),
 ):
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
 
@@ -674,54 +680,101 @@ def debug_mismatches(
     repro_urls_list = repro_urls.split(",") if repro_urls else []
     section_names_list = section_names.split(",") if section_names else []
 
-    if len(section_names_list) != 0:
-        curl_command = f"curl {fuzzcorp_url} --cookie s={fuzzcorp_cookie}"
-        result = subprocess.run(
-            curl_command, shell=True, capture_output=True, text=True
-        )
-        page_content = result.stdout
-        soup = BeautifulSoup(page_content, "html.parser")
-        for section_name in section_names_list:
-            current_section_count = 0
-            print(f"Getting links from section {section_name}...")
-            lineage_div = soup.find("div", id=f"lin_{section_name}")
-
-            if lineage_div:
-                tables = lineage_div.find_all("table")
-                if len(tables) > 1:
-                    issues_table = tables[1]
-                    hrefs = [
-                        link["href"] for link in issues_table.find_all("a", href=True)
-                    ]
-                    for href in hrefs:
-                        if (
-                            section_limit != 0
-                            and current_section_count >= section_limit
-                        ):
-                            break
-                        repro_urls_list.append(urljoin(fuzzcorp_url, href))
-                        current_section_count += 1
-                else:
-                    print(f"No bugs found for section {section_name}.")
-            else:
-                print(f"Section {section_name} not found.")
-
     custom_data_urls = []
-    for url in repro_urls_list:
-        result = subprocess.run(
-            ["curl", "--cookie", f"s={fuzzcorp_cookie}", f"{url}.bash"],
-            capture_output=True,
-            text=True,
-        )
-        start_index = result.stdout.find("REPRO_CUSTOM_URL=")
-        end_index = result.stdout.find("\n", start_index)
-        custom_url = result.stdout[
-            start_index + len("REPRO_CUSTOM_URL=") + 1 : end_index - 1
-        ].strip()
-        if custom_url == "":
-            print(f"Failed to get custom URL from {url}")
-            continue
-        custom_data_urls.append(custom_url)
+    if use_ng:
+        fuzz_bin = os.getenv("FUZZ_BIN", "fuzz")
+        for section_name in section_names_list:
+            print(f"Fetching crashes for lineage {section_name} ...")
+            cmd = [
+                fuzz_bin,
+                "list",
+                "repro",
+                "--lineage",
+                section_name,
+                "--json",
+                "--verbose",
+            ]
+            result = subprocess.run(
+                cmd, text=True, capture_output=True, check=True, stderr=None
+            )
+            try:
+                data = json.loads(result.stdout)
+            except json.JSONDecodeError as e:
+                print(
+                    f"Error parsing JSON from FuzzCorp NG CLI for {section_name}: {e}"
+                )
+                continue
+
+            # NG schema: data["Data"] is a list of lineage entries
+            lineage_entry = next(
+                (
+                    item
+                    for item in data.get("Data", [])
+                    if item.get("LineageName") == section_name
+                ),
+                None,
+            )
+            if not lineage_entry:
+                print(f"No matching lineage found for {section_name}")
+                continue
+
+            repros = lineage_entry.get("Repros", [])
+            verified_repros = [r for r in repros if r.get("AllVerified") is True]
+
+            if section_limit != 0:
+                verified_repros = verified_repros[:section_limit]
+
+            for repro in verified_repros:
+                custom_data_urls.append((section_name, str(repro["Hash"])))
+    else:  # legacy FuzzCorp web page scraping
+        if len(section_names_list) != 0:
+            curl_command = f"curl {fuzzcorp_url} --cookie s={fuzzcorp_cookie}"
+            result = subprocess.run(
+                curl_command, shell=True, capture_output=True, text=True
+            )
+            page_content = result.stdout
+            soup = BeautifulSoup(page_content, "html.parser")
+            for section_name in section_names_list:
+                current_section_count = 0
+                print(f"Getting links from section {section_name}...")
+                lineage_div = soup.find("div", id=f"lin_{section_name}")
+
+                if lineage_div:
+                    tables = lineage_div.find_all("table")
+                    if len(tables) > 1:
+                        issues_table = tables[1]
+                        hrefs = [
+                            link["href"]
+                            for link in issues_table.find_all("a", href=True)
+                        ]
+                        for href in hrefs:
+                            if (
+                                section_limit != 0
+                                and current_section_count >= section_limit
+                            ):
+                                break
+                            repro_urls_list.append(urljoin(fuzzcorp_url, href))
+                            current_section_count += 1
+                    else:
+                        print(f"No bugs found for section {section_name}.")
+                else:
+                    print(f"Section {section_name} not found.")
+
+        for url in repro_urls_list:
+            result = subprocess.run(
+                ["curl", "--cookie", f"s={fuzzcorp_cookie}", f"{url}.bash"],
+                capture_output=True,
+                text=True,
+            )
+            start_index = result.stdout.find("REPRO_CUSTOM_URL=")
+            end_index = result.stdout.find("\n", start_index)
+            custom_url = result.stdout[
+                start_index + len("REPRO_CUSTOM_URL=") + 1 : end_index - 1
+            ].strip()
+            if custom_url == "":
+                print(f"Failed to get custom URL from {url}")
+                continue
+            custom_data_urls.append(custom_url)
 
     ld_preload = os.environ.pop("LD_PRELOAD", None)
 
@@ -1259,6 +1312,11 @@ def create_env(
         "-tv",
         help="Path to test-vectors repository",
     ),
+    use_ng: bool = typer.Option(
+        False,
+        "--use-ng",
+        help="Use fuzz NG CLI (fuzz list/download repro) instead of API scraping",
+    ),
 ):
     lists = [
         f"{file.parent.name}/{file.name}"
@@ -1307,6 +1365,7 @@ def create_env(
         randomize_output_buffer=randomize_output_buffer,
         num_processes=num_processes,
         section_limit=section_limit,
+        use_ng=use_ng,
     )
 
     if passed:
