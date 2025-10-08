@@ -682,10 +682,11 @@ def debug_mismatches(
 
     custom_data_urls = []
     if use_ng:
+        fuzz_bin = os.getenv("FUZZ_BIN", "fuzz")
         for section_name in section_names_list:
             print(f"Fetching crashes for lineage {section_name} ...")
             cmd = [
-                "fuzz",
+                fuzz_bin,
                 "list",
                 "repro",
                 "--lineage",
@@ -693,7 +694,9 @@ def debug_mismatches(
                 "--json",
                 "--verbose",
             ]
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            result = subprocess.run(
+                cmd, text=True, capture_output=True, check=True, stderr=None
+            )
             try:
                 data = json.loads(result.stdout)
             except json.JSONDecodeError as e:

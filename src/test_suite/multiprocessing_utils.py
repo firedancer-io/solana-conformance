@@ -444,9 +444,10 @@ def download_and_process(source):
         out_dir = globals.inputs_dir / f"{section_name}_{crash_hash}"
         out_dir.mkdir(parents=True, exist_ok=True)
 
+        fuzz_bin = os.getenv("FUZZ_BIN", "fuzz")
         subprocess.run(
             [
-                "fuzz",
+                fuzz_bin,
                 "download",
                 "repro",
                 "--lineage",
@@ -455,9 +456,9 @@ def download_and_process(source):
                 str(out_dir),
                 crash_hash,
             ],
-            capture_output=True,
             text=True,
             check=True,
+            stderr=None,
         )
 
         for fix in out_dir.rglob("*.fix"):
