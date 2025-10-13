@@ -1,5 +1,5 @@
-import base64
-from test_suite.context.codec_utils import encode_hex_compact
+import fd58
+from test_suite.context.codec_utils import encode_hex_compact, decode_hex_compact
 import test_suite.invoke_pb2 as invoke_pb
 import test_suite.vm_pb2 as vm_pb
 from test_suite.instr.codec_utils import encode_input as instr_encode_input
@@ -18,6 +18,16 @@ def encode_input(input: vm_pb.SyscallContext):
             input.vm_ctx.call_whitelist = encode_hex_compact(
                 input.vm_ctx.call_whitelist
             )
+        if input.vm_ctx.return_data:
+            if input.vm_ctx.return_data.program_id:
+                input.vm_ctx.return_data.program_id = fd58.enc32(
+                    input.vm_ctx.return_data.program_id
+                )
+            if input.vm_ctx.return_data.data:
+                input.vm_ctx.return_data.data = encode_hex_compact(
+                    input.vm_ctx.return_data.data
+                )
+
     if input.syscall_invocation:
         if input.syscall_invocation.function_name:
             input.syscall_invocation.function_name = encode_hex_compact(
@@ -56,3 +66,34 @@ def decode_input(input: vm_pb.SyscallContext):
     instr_ctx.CopyFrom(input.instr_ctx)
     instr_decode_input(instr_ctx)
     input.instr_ctx.CopyFrom(instr_ctx)
+    if input.vm_ctx:
+        if input.vm_ctx.rodata:
+            input.vm_ctx.rodata = decode_hex_compact(input.vm_ctx.rodata)
+        if input.vm_ctx.call_whitelist:
+            input.vm_ctx.call_whitelist = decode_hex_compact(
+                input.vm_ctx.call_whitelist
+            )
+        if input.vm_ctx.return_data:
+            if input.vm_ctx.return_data.program_id:
+                input.vm_ctx.return_data.program_id = fd58.dec32(
+                    input.vm_ctx.return_data.program_id
+                )
+            if input.vm_ctx.return_data.data:
+                input.vm_ctx.return_data.data = decode_hex_compact(
+                    input.vm_ctx.return_data.data
+                )
+
+    # Decode the syscall_invocation fields if present
+    if input.syscall_invocation:
+        if input.syscall_invocation.function_name:
+            input.syscall_invocation.function_name = decode_hex_compact(
+                input.syscall_invocation.function_name
+            )
+        if input.syscall_invocation.stack_prefix:
+            input.syscall_invocation.stack_prefix = decode_hex_compact(
+                input.syscall_invocation.stack_prefix
+            )
+        if input.syscall_invocation.heap_prefix:
+            input.syscall_invocation.heap_prefix = decode_hex_compact(
+                input.syscall_invocation.heap_prefix
+            )
