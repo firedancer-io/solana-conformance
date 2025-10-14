@@ -661,6 +661,12 @@ def debug_mismatches(
         "--use-ng",
         help="Use fuzz NG CLI (fuzz list/download repro) instead of API scraping",
     ),
+    debug_mode: bool = typer.Option(
+        False,
+        "--debug-mode",
+        "-d",
+        help="Enables debug mode, which disables multiprocessing",
+    ),
 ):
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
 
@@ -781,7 +787,7 @@ def debug_mismatches(
     num_test_cases = len(custom_data_urls)
     print("Downloading tests...")
     results = []
-    if num_processes > 1:
+    if num_processes > 1 and not debug_mode:
         with Pool(
             processes=num_processes,
             initializer=initialize_process_output_buffers,
@@ -1317,6 +1323,12 @@ def create_env(
         "--use-ng",
         help="Use fuzz NG CLI (fuzz list/download repro) instead of API scraping",
     ),
+    debug_mode: bool = typer.Option(
+        False,
+        "--debug-mode",
+        "-d",
+        help="Enables debug mode, which disables multiprocessing",
+    ),
 ):
     lists = [
         f"{file.parent.name}/{file.name}"
@@ -1366,6 +1378,7 @@ def create_env(
         num_processes=num_processes,
         section_limit=section_limit,
         use_ng=use_ng,
+        debug_mode=debug_mode,
     )
 
     if passed:
