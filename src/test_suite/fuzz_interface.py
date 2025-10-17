@@ -85,11 +85,11 @@ class HarnessCtx:
     effects_type: Type[EffectsType] = field(init=False)
 
     def __post_init__(self, fixture_desc):
-        self.fixture_type = msg_factory.GetPrototype(fixture_desc)
-        self.context_type = msg_factory.GetPrototype(
+        self.fixture_type = message_factory.GetMessageClass(fixture_desc)
+        self.context_type = message_factory.GetMessageClass(
             fixture_desc.fields_by_name["input"].message_type
         )
-        self.effects_type = msg_factory.GetPrototype(
+        self.effects_type = message_factory.GetMessageClass(
             fixture_desc.fields_by_name["output"].message_type
         )
 

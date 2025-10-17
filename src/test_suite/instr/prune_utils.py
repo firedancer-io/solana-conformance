@@ -1,7 +1,7 @@
 from test_suite.fuzz_interface import ContextType
 import test_suite.globals as globals
-import test_suite.invoke_pb2 as invoke_pb
-import test_suite.context_pb2 as context_pb
+import test_suite.protos.invoke_pb2 as invoke_pb
+import test_suite.protos.context_pb2 as context_pb
 from test_suite.validation_utils import check_account_unchanged
 
 

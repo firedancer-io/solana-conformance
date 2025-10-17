@@ -1,5 +1,5 @@
 import hashlib
-import test_suite.vm_pb2 as vm_pb
+import test_suite.protos.vm_pb2 as vm_pb
 import struct
 
 OUTPUT_DIR = "./test-vectors/vm_interp/tests/"

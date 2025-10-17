@@ -14,7 +14,6 @@ repos:
       - id: gen-cmd-docs
         name: Generate command documentation
         language: python
-        entry: typer src/test_suite/test_suite.py utils docs --name solana-test-suite --output commands.md
+        entry: bash -c 'SOLFUZZ_TARGET= FIREDANCER_TARGET= typer src/test_suite/test_suite.py utils docs --name solana-conformance --output commands.md'
         files: src/test_suite/test_suite.py
         pass_filenames: false
-

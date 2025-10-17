@@ -1,4 +1,4 @@
-import test_suite.txn_pb2 as txn_pb
+import test_suite.protos.txn_pb2 as txn_pb
 
 
 def consensus_txn_diff_effects(a: txn_pb.TxnResult, b: txn_pb.TxnResult):

@@ -5,7 +5,6 @@ test_fixtures/
 debug_mismatch*/
 regenerated_fixtures*/
 
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

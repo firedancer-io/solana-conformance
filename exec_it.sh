@@ -15,4 +15,4 @@ else
     TARGET=$FD_TARGET
 fi
 
-solana-test-suite exec-instr -t "$TARGET" -i "$1"
+solana-conformance exec-instr -t "$TARGET" -i "$1"

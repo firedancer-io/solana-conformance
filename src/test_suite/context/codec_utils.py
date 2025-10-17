@@ -1,4 +1,4 @@
-import test_suite.context_pb2 as context_pb
+import test_suite.protos.context_pb2 as context_pb
 import fd58
 import re
 

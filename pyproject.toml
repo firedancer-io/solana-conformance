@@ -1,27 +1,28 @@
 [project]
-name = "Solana-Test-Suite"
-description = "Tests client targets against Solana"
+name = "Solana-Conformance"
+description = "Conformance test client targets against Solana"
 authors = [
-  { name = "Manik Jain", email = "mjain@jumptrading.com"}
+  { name = "Manik Jain", email = "mjain@jumptrading.com"},
+  { name = "Charles Moyes", email = "cmoyes@jumptrading.com"},
+
 ]
 dynamic = ['version']
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-  "fd58~=0.1.0",
+  "fd58~=0.1.1",
   "loguru~=0.7.0",
-  "protobuf~=3.19.0",
   "typer~=0.12.3",
   "Cython>=3.0.9",
   "tqdm~=4.66.0",
-  "protoletariat~=3.2.0",
   "bs4~=0.0.2",
   "click<8.2.0",
   "requests~=2.32.0",
+  "protobuf==6.32.1",
 ]
 
 [project.scripts]
-solana-test-suite = "test_suite.test_suite:app"
+solana-conformance = "test_suite.test_suite:app"
 
 [project.optional-dependencies]
 test = [
@@ -32,7 +33,7 @@ test = [
 
 dev = [
   "pre-commit>=2.20.0",
-  "solana-test-suite[test]",
+  "solana-conformance[test]",
   "build>=0.10.0",
   "black>=22.10.0",
 ]

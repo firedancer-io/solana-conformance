@@ -1,4 +1,4 @@
-import test_suite.invoke_pb2 as invoke_pb
+import test_suite.protos.invoke_pb2 as invoke_pb
 
 
 def consensus_instr_diff_effects(a: invoke_pb.InstrEffects, b: invoke_pb.InstrEffects):

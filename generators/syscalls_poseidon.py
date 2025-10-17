@@ -1,5 +1,5 @@
 import hashlib
-import test_suite.vm_pb2 as vm_pb
+import test_suite.protos.vm_pb2 as vm_pb
 from syscalls_hash import test_vectors as test_vectors_hash, heap_vec
 
 OUTPUT_DIR = "./test-vectors/syscall/tests/poseidon"

@@ -1,5 +1,5 @@
 import hashlib
-import test_suite.vm_pb2 as vm_pb
+import test_suite.protos.vm_pb2 as vm_pb
 from eth_hash.auto import keccak
 
 OUTPUT_DIR = "./test-vectors/syscall/tests/secp256k1"

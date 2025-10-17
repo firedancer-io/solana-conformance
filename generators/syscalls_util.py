@@ -1,5 +1,5 @@
 import hashlib
-import test_suite.vm_pb2 as vm_pb
+import test_suite.protos.vm_pb2 as vm_pb
 import struct
 
 OUTPUT_DIR = "./test-vectors/syscall/tests/"
@@ -25,13 +25,15 @@ def heap_vec(data_vec, start):
             res += bytes(data)
     return res
 
+
 msg_hello = bytes("hello", "ascii")
 msg_utf8 = bytes("grüezi\0\n🔥💃", "utf8")
 msg_invalid_utf8 = bytes([0xE0, 0x80, 0x80])
 
 
 def exact_cu_cost(data_vec):
-    return 100 + 100*len(data_vec) + sum([len(x) for x in data_vec])
+    return 100 + 100 * len(data_vec) + sum([len(x) for x in data_vec])
+
 
 test_vectors_abort = [
     {
@@ -41,7 +43,7 @@ test_vectors_abort = [
         "cu_avail": 0,
     },
     {
-        "r1": 5, # useless
+        "r1": 5,  # useless
         "cu_avail": 0,
     },
 ]
@@ -49,8 +51,17 @@ test_vectors_abort = [
 panic_msg = msg_hello
 panic_utf8 = msg_utf8
 panic_invalid = msg_invalid_utf8
-panic_msg_max = bytes("x" * (10000-len("Program 11111111111111111111111111111111 failed: SBF program Panicked in | at 10:100")), "ascii")
-panic_msg_20k = bytes("y" * 20*1024, "ascii")
+panic_msg_max = bytes(
+    "x"
+    * (
+        10000
+        - len(
+            "Program 11111111111111111111111111111111 failed: SBF program Panicked in | at 10:100"
+        )
+    ),
+    "ascii",
+)
+panic_msg_20k = bytes("y" * 20 * 1024, "ascii")
 test_vectors_panic = [
     {
         # ok... well, panic :)
@@ -157,10 +168,10 @@ logs = [
     msg_invalid_utf8,
     bytes([]),
     bytes("a" * 99, "ascii"),
-    bytes("b" * 100, "ascii"), # cus switch from base to msg_sz
+    bytes("b" * 100, "ascii"),  # cus switch from base to msg_sz
     bytes("c" * 101, "ascii"),
-    bytes("x" * (10_000-len("Program log: ") - 1), "ascii"),
-    bytes("y" * (10_000-len("Program log: ")), "ascii"),
+    bytes("x" * (10_000 - len("Program log: ") - 1), "ascii"),
+    bytes("y" * (10_000 - len("Program log: ")), "ascii"),
     bytes("z" * 30_000, "ascii"),
 ]
 test_vectors_log = []
@@ -238,7 +249,7 @@ test_vectors_log_pk = [
     },
     {
         "heap_prefix": bytes([0] * 32),
-        "pubkey_vaddr": HEAP_START+1,
+        "pubkey_vaddr": HEAP_START + 1,
         "cu_avail": 100,
     },
     {
@@ -252,16 +263,16 @@ test_hello = [msg_hello]
 test_hello_world = [msg_hello, "world"]
 test_many = [msg_hello, msg_utf8, msg_invalid_utf8, "world"]
 test_truncate_1 = [bytes([1] * (7489))]
-test_truncate_1_dont = [bytes([1] * (7489-1))]
+test_truncate_1_dont = [bytes([1] * (7489 - 1))]
 test_truncate_2 = [msg_hello, bytes([2] * (7483))]
-test_truncate_2_dont = [msg_hello, bytes([2] * (7483-1))]
+test_truncate_2_dont = [msg_hello, bytes([2] * (7483 - 1))]
 test_big = [msg_hello] * 1000
 
 # large array of refs all to invalid mem
 # neither fd nor agave should attempt to read
 msg_stack = []
-msg_stack += struct.pack("<Q", STACK_START-1) # invalid ref
-msg_stack += struct.pack("<Q", 4096 * 2) # invalid length
+msg_stack += struct.pack("<Q", STACK_START - 1)  # invalid ref
+msg_stack += struct.pack("<Q", 4096 * 2)  # invalid length
 test_massive = [msg_stack] * 1024  # must fit in the heap
 
 # access violation on 2nd element
@@ -389,9 +400,7 @@ if __name__ == "__main__":
         )  # solfuzz-agave expectes a program_id
 
         serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
-        filename = (
-            str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
-        )
+        filename = str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
         with open(f"{OUTPUT_DIR}/abort/{filename}.bin", "wb") as f:
             f.write(serialized_instr)
 
@@ -413,9 +422,7 @@ if __name__ == "__main__":
         )  # solfuzz-agave expectes a program_id
 
         serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
-        filename = (
-            str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
-        )
+        filename = str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
         with open(f"{OUTPUT_DIR}/panic/{filename}.bin", "wb") as f:
             f.write(serialized_instr)
 
@@ -435,9 +442,7 @@ if __name__ == "__main__":
         )  # solfuzz-agave expectes a program_id
 
         serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
-        filename = (
-            str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
-        )
+        filename = str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
         with open(f"{OUTPUT_DIR}/log/{filename}.bin", "wb") as f:
             f.write(serialized_instr)
 
@@ -457,9 +462,7 @@ if __name__ == "__main__":
         )  # solfuzz-agave expectes a program_id
 
         serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
-        filename = (
-            str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
-        )
+        filename = str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
         with open(f"{OUTPUT_DIR}/log/{filename}.bin", "wb") as f:
             f.write(serialized_instr)
 
@@ -467,17 +470,17 @@ if __name__ == "__main__":
 
     for key, test in test_vectors_log_cu:
         syscall_ctx = vm_pb.SyscallContext()
-        syscall_ctx.syscall_invocation.function_name = bytes("sol_log_compute_units_", "ascii")
+        syscall_ctx.syscall_invocation.function_name = bytes(
+            "sol_log_compute_units_", "ascii"
+        )
         syscall_ctx.instr_ctx.cu_avail = test.get("cu_avail", 0)
-        syscall_ctx.vm_ctx.r1 = 0 # solfuzz-agave expectes at least a register
+        syscall_ctx.vm_ctx.r1 = 0  # solfuzz-agave expectes at least a register
         syscall_ctx.instr_ctx.program_id = bytes(
             [0] * 32
         )  # solfuzz-agave expectes a program_id
 
         serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
-        filename = (
-            str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
-        )
+        filename = str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
         with open(f"{OUTPUT_DIR}/log/{filename}.bin", "wb") as f:
             f.write(serialized_instr)
 
@@ -496,9 +499,7 @@ if __name__ == "__main__":
         )  # solfuzz-agave expectes a program_id
 
         serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
-        filename = (
-            str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
-        )
+        filename = str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
         with open(f"{OUTPUT_DIR}/log/{filename}.bin", "wb") as f:
             f.write(serialized_instr)
 
@@ -516,9 +517,7 @@ if __name__ == "__main__":
         )  # solfuzz-agave expectes a program_id
 
         serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
-        filename = (
-            str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
-        )
+        filename = str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
         with open(f"{OUTPUT_DIR}/log_data/{filename}.bin", "wb") as f:
             f.write(serialized_instr)
 

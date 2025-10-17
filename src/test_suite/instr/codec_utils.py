@@ -5,7 +5,7 @@ from test_suite.context.codec_utils import (
     encode_acct_state,
     encode_hex_compact,
 )
-import test_suite.invoke_pb2 as invoke_pb
+import test_suite.protos.invoke_pb2 as invoke_pb
 
 
 def decode_input(instruction_context: invoke_pb.InstrContext):

@@ -1,8 +1,8 @@
 import fd58
 import hashlib
 from eth_hash.auto import keccak
-import test_suite.context_pb2 as context_pb
-import test_suite.txn_pb2 as txn_pb
+import test_suite.protos.context_pb2 as context_pb
+import test_suite.protos.txn_pb2 as txn_pb
 from dataclasses import dataclass
 
 OUTPUT_DIR = "./test-vectors/txn/tests/precompile/secp256k1"
