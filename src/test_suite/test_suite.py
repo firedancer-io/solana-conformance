@@ -109,7 +109,14 @@ def execute(
     except:
         set_ld_preload_asan()
 
-    files_to_exec = list(input.iterdir()) if input.is_dir() else [input]
+    if input.is_file():
+        files_to_exec = [input]
+    else:
+        # Recursively find all files in the directory
+        files_to_exec = []
+        for file_path in input.rglob("*"):
+            if file_path.is_file():
+                files_to_exec.append(file_path)
     for file in files_to_exec:
         print(f"Handling {file}...")
         if file.suffix == ".fix":
@@ -181,7 +188,14 @@ def fix_to_ctx(
         shutil.rmtree(globals.output_dir)
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
-    test_cases = list(input.iterdir()) if input.is_dir() else [input]
+    if input.is_file():
+        test_cases = [input]
+    else:
+        # Recursively find all files in the directory
+        test_cases = []
+        for file_path in input.rglob("*"):
+            if file_path.is_file():
+                test_cases.append(file_path)
     num_test_cases = len(test_cases)
 
     print(f"Converting to Fixture messages...")
@@ -279,7 +293,14 @@ def create_fixtures(
         lib.sol_compat_init(log_level)
         globals.target_libraries[target] = lib
 
-    test_cases = [input] if input.is_file() else list(input.iterdir())
+    if input.is_file():
+        test_cases = [input]
+    else:
+        # Recursively find all files in the directory
+        test_cases = []
+        for file_path in input.rglob("*"):
+            if file_path.is_file():
+                test_cases.append(file_path)
     num_test_cases = len(test_cases)
 
     globals.default_harness_ctx = HARNESS_MAP[default_harness_ctx]
@@ -418,6 +439,12 @@ expected to use different amounts of compute units than the other. Note: Cannot 
         "-d",
         help="Enables debug mode, which disables multiprocessing",
     ),
+    fail_early: bool = typer.Option(
+        False,
+        "--fail-early",
+        "-fe",
+        help="Stop test execution on the first failure",
+    ),
 ):
     # Add Solana library to shared libraries
     shared_libraries = [reference_shared_library] + shared_libraries
@@ -472,7 +499,7 @@ expected to use different amounts of compute units than the other. Note: Cannot 
     # Process the test results in parallel
     print("Running tests...")
     test_case_results = []
-    if num_processes > 1 and not debug_mode:
+    if num_processes > 1 and not debug_mode and not fail_early:
         with Pool(
             processes=num_processes,
             initializer=initialize_process_output_buffers,
@@ -485,8 +512,20 @@ expected to use different amounts of compute units than the other. Note: Cannot 
                 test_case_results.append(result)
     else:
         initialize_process_output_buffers(randomize_output_buffer)
-        for test_case in tqdm.tqdm(test_cases):
-            test_case_results.append(run_test(test_case))
+        if fail_early:
+            # Run tests sequentially and stop on first failure
+            for test_case in tqdm.tqdm(test_cases, desc="Running tests"):
+                result = run_test(test_case)
+                test_case_results.append(result)
+                # Check if test failed (status == -1)
+                if len(result) >= 2 and result[1] == -1:
+                    print(
+                        f"\nTest failed: {result[0]}. Stopping execution due to --fail-early option."
+                    )
+                    break
+        else:
+            for test_case in tqdm.tqdm(test_cases):
+                test_case_results.append(run_test(test_case))
 
     print("Logging results...")
     passed, failed, skipped, target_log_files, failed_tests, skipped_tests = (
@@ -563,7 +602,14 @@ def decode_protobufs(
     globals.output_dir.mkdir(parents=True, exist_ok=True)
     globals.default_harness_ctx = HARNESS_MAP[default_harness_ctx]
 
-    test_cases = list(input.iterdir()) if input.is_dir() else [input]
+    if input.is_file():
+        test_cases = [input]
+    else:
+        # Recursively find all files in the directory
+        test_cases = []
+        for file_path in input.rglob("*"):
+            if file_path.is_file():
+                test_cases.append(file_path)
     num_test_cases = len(test_cases)
 
     write_results = []
@@ -947,7 +993,14 @@ def regenerate_fixtures(
     globals.target_libraries[shared_library] = lib
     initialize_process_output_buffers()
 
-    test_cases = list(input.iterdir()) if input.is_dir() else [input]
+    if input.is_file():
+        test_cases = [input]
+    else:
+        # Recursively find all files in the directory
+        test_cases = []
+        for file_path in input.rglob("*"):
+            if file_path.is_file():
+                test_cases.append(file_path)
     num_regenerated = 0
 
     globals.features_to_add = set(
@@ -1200,7 +1253,14 @@ def exec_fixtures(
     except:
         set_ld_preload_asan()
 
-    test_cases = list(input.iterdir()) if input.is_dir() else [input]
+    if input.is_file():
+        test_cases = [input]
+    else:
+        # Recursively find all files in the directory
+        test_cases = []
+        for file_path in input.rglob("*"):
+            if file_path.is_file():
+                test_cases.append(file_path)
     num_test_cases = len(test_cases)
     print("Running tests...")
     test_case_results = []

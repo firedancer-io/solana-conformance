@@ -287,4 +287,5 @@ $ solana-conformance run-tests [OPTIONS]
 * `-ss, --save-successes`: Saves successful test cases to results directory
 * `-l, --log-level INTEGER`: FD logging level  [default: 5]
 * `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
+* `-fe, --fail-early`: Stop test execution on the first failure
 * `--help`: Show this message and exit.
