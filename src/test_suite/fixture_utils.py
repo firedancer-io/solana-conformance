@@ -11,9 +11,9 @@ from test_suite.multiprocessing_utils import (
     process_single_test_case,
 )
 import test_suite.globals as globals
-import test_suite.context_pb2 as context_pb
-import test_suite.invoke_pb2 as invoke_pb
-import test_suite.metadata_pb2 as metadata_pb
+import test_suite.protos.context_pb2 as context_pb
+import test_suite.protos.invoke_pb2 as invoke_pb
+import test_suite.protos.metadata_pb2 as metadata_pb
 from google.protobuf import text_format
 from pathlib import Path
 from test_suite.fuzz_interface import ContextType, FixtureType
@@ -202,6 +202,8 @@ def get_program_type(instr_fixture: invoke_pb.InstrFixture) -> str:
 
 
 def regenerate_fixture(test_file: Path) -> int:
+    if test_file.is_dir():
+        return 0
     fixture = read_fixture(test_file)
     harness_ctx = ENTRYPOINT_HARNESS_MAP[fixture.metadata.fn_entrypoint]
 

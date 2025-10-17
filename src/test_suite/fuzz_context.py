@@ -1,17 +1,17 @@
 from test_suite.fuzz_interface import HarnessCtx
 
-import test_suite.txn_pb2 as txn_pb
+import test_suite.protos.txn_pb2 as txn_pb
 import test_suite.txn.codec_utils as txn_codec
 import test_suite.txn.prune_utils as txn_prune
 import test_suite.txn.diff_utils as txn_diff
 import test_suite.txn.transform_utils as txn_transform
 
-import test_suite.invoke_pb2 as invoke_pb
-import test_suite.elf_pb2 as elf_pb
-import test_suite.vm_pb2 as vm_pb
-import test_suite.block_pb2 as block_pb
-import test_suite.pack_pb2 as pack_pb
-import test_suite.type_pb2 as type_pb
+import test_suite.protos.invoke_pb2 as invoke_pb
+import test_suite.protos.elf_pb2 as elf_pb
+import test_suite.protos.vm_pb2 as vm_pb
+import test_suite.protos.block_pb2 as block_pb
+import test_suite.protos.pack_pb2 as pack_pb
+import test_suite.protos.type_pb2 as type_pb
 
 import test_suite.block.codec_utils as block_codec
 

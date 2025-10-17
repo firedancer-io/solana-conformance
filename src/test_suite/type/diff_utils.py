@@ -1,4 +1,4 @@
-import test_suite.type_pb2 as type_pb
+import test_suite.protos.type_pb2 as type_pb
 
 
 def diff_type_effects(a: type_pb.TypeEffects, b: type_pb.TypeEffects):

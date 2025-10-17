@@ -1,5 +1,5 @@
 import fd58
-import test_suite.block_pb2 as block_pb
+import test_suite.protos.block_pb2 as block_pb
 from test_suite.context.codec_utils import decode_acct_state, encode_acct_state
 from test_suite.txn.codec_utils import decode_sanitized_tx, encode_sanitized_tx
 

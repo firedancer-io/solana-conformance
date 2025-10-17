@@ -1,5 +1,5 @@
 import fd58
-import test_suite.block_pb2 as block_pb
+import test_suite.protos.block_pb2 as block_pb
 
 
 def transform_fixture(fixture: block_pb.BlockFixture):

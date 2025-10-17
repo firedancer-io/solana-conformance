@@ -1,5 +1,5 @@
-import test_suite.invoke_pb2 as invoke_pb
-import test_suite.context_pb2 as context_pb
+import test_suite.protos.invoke_pb2 as invoke_pb
+import test_suite.protos.context_pb2 as context_pb
 
 
 def is_valid(instruction_context: invoke_pb.InstrContext) -> bool:

@@ -5,7 +5,7 @@ from test_suite.context.codec_utils import (
     encode_acct_state,
     encode_hex_compact,
 )
-import test_suite.elf_pb2 as elf_pb
+import test_suite.protos.elf_pb2 as elf_pb
 
 
 def decode_input(elf_context: elf_pb.ELFLoaderCtx):

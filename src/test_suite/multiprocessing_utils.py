@@ -2,9 +2,9 @@ from dataclasses import dataclass, field
 from test_suite.constants import OUTPUT_BUFFER_SIZE
 from test_suite.fuzz_context import ENTRYPOINT_HARNESS_MAP, HarnessCtx
 from test_suite.fuzz_interface import ContextType, EffectsType
-import test_suite.invoke_pb2 as invoke_pb
-import test_suite.type_pb2 as type_pb
-import test_suite.metadata_pb2 as metadata_pb2
+import test_suite.protos.invoke_pb2 as invoke_pb
+import test_suite.protos.type_pb2 as type_pb
+import test_suite.protos.metadata_pb2 as metadata_pb2
 import ctypes
 from ctypes import c_uint64, c_int, POINTER
 import shutil

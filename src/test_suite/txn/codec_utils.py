@@ -5,7 +5,7 @@ from test_suite.context.codec_utils import (
     encode_acct_state,
     encode_hex_compact,
 )
-import test_suite.txn_pb2 as txn_pb
+import test_suite.protos.txn_pb2 as txn_pb
 
 
 def decode_sanitized_tx(tx: txn_pb.SanitizedTransaction):

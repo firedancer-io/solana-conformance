@@ -715,7 +715,7 @@ def debug_mismatches(
             lineage_entry = next(
                 (
                     item
-                    for item in data.get("Data", [])
+                    for item in (data.get("Data") or [])
                     if item.get("LineageName") == section_name
                 ),
                 None,
@@ -724,7 +724,7 @@ def debug_mismatches(
                 print(f"No matching lineage found for {section_name}")
                 continue
 
-            repros = lineage_entry.get("Repros", [])
+            repros = lineage_entry.get("Repros") or []
             verified_repros = [r for r in repros if r.get("AllVerified") is True]
 
             if section_limit != 0:
@@ -966,15 +966,20 @@ def regenerate_fixtures(
     globals.regenerate_dry_run = dry_run
     globals.regenerate_verbose = verbose
 
-    with Pool(
-        processes=num_processes,
-        initializer=initialize_process_output_buffers,
-    ) as pool:
-        for result in tqdm.tqdm(
-            pool.imap(regenerate_fixture, test_cases),
-            total=len(test_cases),
-        ):
-            num_regenerated += result
+    if num_processes > 1:
+        with Pool(
+            processes=num_processes,
+            initializer=initialize_process_output_buffers,
+        ) as pool:
+            for result in tqdm.tqdm(
+                pool.imap(regenerate_fixture, test_cases),
+                total=len(test_cases),
+            ):
+                num_regenerated += result
+    else:
+        initialize_process_output_buffers()
+        for test_case in tqdm.tqdm(test_cases):
+            num_regenerated += regenerate_fixture(test_case)
 
     lib.sol_compat_fini()
     print(f"Regenerated {num_regenerated} / {len(test_cases)} fixtures")

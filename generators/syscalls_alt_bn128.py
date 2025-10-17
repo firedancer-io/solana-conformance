@@ -1,6 +1,6 @@
 import base64
 import hashlib
-import test_suite.vm_pb2 as vm_pb
+import test_suite.protos.vm_pb2 as vm_pb
 
 OUTPUT_DIR = "./test-vectors/syscall/tests/alt_bn128"
 HEAP_START = 0x300000000
