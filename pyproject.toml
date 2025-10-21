@@ -18,7 +18,7 @@ dependencies = [
   "bs4~=0.0.2",
   "click<8.2.0",
   "requests~=2.32.0",
-  "protobuf==6.32.1",
+  "protobuf~=6.33.0",
 ]
 
 [project.scripts]
