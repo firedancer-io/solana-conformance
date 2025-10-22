@@ -4,8 +4,10 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Optional, Dict
+from typing import Optional, Dict, Callable, List, Any
 import httpx
+from multiprocessing import Pool
+import tqdm
 
 
 def run_fuzz_command(
@@ -59,6 +61,35 @@ def run_fuzz_command(
         print(f"[ERROR] Unexpected error running command: {' '.join(cmd)}")
         print(f"Error: {e}")
         return None
+
+
+def process_items(
+    items: List[Any],
+    process_func: Callable,
+    num_processes: int = 4,
+    debug_mode: bool = False,
+    initializer: Optional[Callable] = None,
+    initargs: tuple = (),
+    desc: str = "Processing",
+) -> List[Any]:
+    results = []
+    if num_processes > 1 and not debug_mode:
+        with Pool(
+            processes=num_processes, initializer=initializer, initargs=initargs
+        ) as pool:
+            for result in tqdm.tqdm(
+                pool.imap(process_func, items),
+                total=len(items),
+                desc=desc,
+            ):
+                results.append(result)
+    else:
+        if initializer:
+            initializer(*initargs)
+        for item in tqdm.tqdm(items, desc=desc):
+            results.append(process_func(item))
+
+    return results
 
 
 def deduplicate_fixtures_by_hash(directory: Path) -> int:

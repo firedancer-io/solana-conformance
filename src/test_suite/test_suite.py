@@ -32,6 +32,7 @@ from test_suite.util import (
     run_fuzz_command,
     deduplicate_fixtures_by_hash,
     fetch_with_retries,
+    process_items,
 )
 import resource
 import tqdm
@@ -211,17 +212,13 @@ def fix_to_ctx(
     num_test_cases = len(test_cases)
 
     print(f"Converting to Fixture messages...")
-    results = []
-    if num_processes > 1 and not debug_mode:
-        with Pool(processes=num_processes) as pool:
-            for result in tqdm.tqdm(
-                pool.imap(extract_context_from_fixture, test_cases),
-                total=num_test_cases,
-            ):
-                results.append(result)
-    else:
-        for test_case in tqdm.tqdm(test_cases):
-            results.append(extract_context_from_fixture(test_case))
+    results = process_items(
+        test_cases,
+        extract_context_from_fixture,
+        num_processes=num_processes,
+        debug_mode=debug_mode,
+        desc="Converting",
+    )
 
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
     print(f"{len(results)} total files seen")
@@ -330,26 +327,14 @@ def create_fixtures(
 
     # Generate the test cases in parallel from files on disk
     print(f"Creating fixtures...")
-    write_results = []
-    if num_processes > 1 and not debug_mode:
-        with Pool(
-            processes=num_processes, initializer=initialize_process_output_buffers
-        ) as pool:
-            for result in tqdm.tqdm(
-                pool.imap(
-                    create_fixture,
-                    test_cases,
-                ),
-                total=num_test_cases,
-            ):
-                write_results.append(result)
-    else:
-        initialize_process_output_buffers()
-        for test_case in tqdm.tqdm(test_cases):
-            fixture = create_fixture(test_case)
-            if fixture is None:
-                continue
-            write_results.append(fixture)
+    write_results = process_items(
+        test_cases,
+        create_fixture,
+        num_processes=num_processes,
+        debug_mode=debug_mode,
+        initializer=initialize_process_output_buffers,
+        desc="Creating fixtures",
+    )
 
     # Clean up
     print("Cleaning up...")
@@ -653,17 +638,13 @@ def decode_protobufs(
                 test_cases.append(file_path)
     num_test_cases = len(test_cases)
 
-    write_results = []
-    if num_processes > 1 and not debug_mode:
-        with Pool(processes=num_processes) as pool:
-            for result in tqdm.tqdm(
-                pool.imap(decode_single_test_case, test_cases),
-                total=num_test_cases,
-            ):
-                write_results.append(result)
-    else:
-        for test_case in tqdm.tqdm(test_cases):
-            write_results.append(decode_single_test_case(test_case))
+    write_results = process_items(
+        test_cases,
+        decode_single_test_case,
+        num_processes=num_processes,
+        debug_mode=debug_mode,
+        desc="Decoding",
+    )
 
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
     print(f"{len(write_results)} total files seen")
@@ -987,22 +968,15 @@ def debug_mismatches(
 
     num_test_cases = len(custom_data_urls)
     print(f"Downloading {num_test_cases} tests...")
-    results = []
-    if num_processes > 1 and not debug_mode:
-        with Pool(
-            processes=num_processes,
-            initializer=initialize_process_output_buffers,
-            initargs=(randomize_output_buffer,),
-        ) as pool:
-            for result in tqdm.tqdm(
-                pool.imap(download_and_process, custom_data_urls),
-                total=num_test_cases,
-            ):
-                results.append(result)
-    else:
-        initialize_process_output_buffers(randomize_output_buffer)
-        for url in tqdm.tqdm(custom_data_urls):
-            results.append(download_and_process(url))
+    results = process_items(
+        custom_data_urls,
+        download_and_process,
+        num_processes=num_processes,
+        debug_mode=debug_mode,
+        initializer=initialize_process_output_buffers,
+        initargs=(randomize_output_buffer,),
+        desc="Downloading",
+    )
 
     # Print download results summary
     successful_downloads = [r for r in results if r and "successfully" in r]
@@ -1189,20 +1163,15 @@ def regenerate_fixtures(
     globals.regenerate_dry_run = dry_run
     globals.regenerate_verbose = verbose
 
-    if num_processes > 1 and not debug_mode:
-        with Pool(
-            processes=num_processes,
-            initializer=initialize_process_output_buffers,
-        ) as pool:
-            for result in tqdm.tqdm(
-                pool.imap(regenerate_fixture, test_cases),
-                total=len(test_cases),
-            ):
-                num_regenerated += result
-    else:
-        initialize_process_output_buffers()
-        for test_case in tqdm.tqdm(test_cases):
-            num_regenerated += regenerate_fixture(test_case)
+    results = process_items(
+        test_cases,
+        regenerate_fixture,
+        num_processes=num_processes,
+        debug_mode=debug_mode,
+        initializer=initialize_process_output_buffers,
+        desc="Regenerating",
+    )
+    num_regenerated = sum(results)
 
     lib.sol_compat_fini()
     print(f"Regenerated {num_regenerated} / {len(test_cases)} fixtures")
@@ -1441,23 +1410,15 @@ def exec_fixtures(
                 test_cases.append(file_path)
     num_test_cases = len(test_cases)
     print("Running tests...")
-    test_case_results = []
-
-    if num_processes > 1 and not debug_mode:
-        with Pool(
-            processes=num_processes,
-            initializer=initialize_process_output_buffers,
-            initargs=(randomize_output_buffer,),
-        ) as pool:
-            for result in tqdm.tqdm(
-                pool.imap(execute_fixture, test_cases),
-                total=num_test_cases,
-            ):
-                test_case_results.append(result)
-    else:
-        initialize_process_output_buffers(randomize_output_buffer)
-        for test_case in tqdm.tqdm(test_cases):
-            test_case_results.append(execute_fixture(test_case))
+    test_case_results = process_items(
+        test_cases,
+        execute_fixture,
+        num_processes=num_processes,
+        debug_mode=debug_mode,
+        initializer=initialize_process_output_buffers,
+        initargs=(randomize_output_buffer,),
+        desc="Running tests",
+    )
 
     print("Logging results...")
     passed, failed, skipped, target_log_files, failed_tests, skipped_tests = (
