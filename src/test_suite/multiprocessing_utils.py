@@ -11,12 +11,11 @@ import shutil
 import subprocess
 from pathlib import Path
 import test_suite.globals as globals
-from test_suite.util import run_fuzz_command
+from test_suite.util import run_fuzz_command, download_with_retries
 from google.protobuf import text_format, message
 from google.protobuf.internal.decoder import _DecodeVarint
 import os
 import re
-import requests
 import time
 import zipfile
 
@@ -442,26 +441,6 @@ def execute_fixture(test_file: Path) -> tuple[str, int, dict | None]:
     )
 
 
-def download_with_retries(url, dest_path, retries=3, backoff=2):
-    for attempt in range(1, retries + 1):
-        try:
-            with requests.get(url, stream=True, timeout=30) as r:
-                r.raise_for_status()
-                with open(dest_path, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=8192):
-                        if chunk:
-                            f.write(chunk)
-            return  # Success — exit the function
-        except requests.RequestException as e:
-            if attempt < retries:
-                sleep_time = backoff ** (attempt - 1)
-                time.sleep(sleep_time)
-            else:
-                raise RuntimeError(
-                    f"Failed to download {url} after {retries} attempts"
-                ) from e
-
-
 def download_and_process(source):
     try:
         if isinstance(source, (tuple, list)) and len(source) == 2:
@@ -480,26 +459,49 @@ def download_and_process(source):
                 os.fspath(out_dir),
                 crash_hash,
             ]
-            result = run_fuzz_command(cmd)
+            # Stream output so user can see download progress
+            result = run_fuzz_command(cmd, stream_output=True)
             if result is None:
-                return f"Failed to download {section_name}/{crash_hash}"
+                return f"Failed to download {section_name}/{crash_hash}: fuzz command failed"
 
-            for fix in out_dir.rglob("*.fix"):
+            # Count and copy fixtures
+            fixtures = list(out_dir.rglob("*.fix"))
+            if not fixtures:
+                return f"Failed to process {section_name}/{crash_hash}: no .fix files found"
+
+            for fix in fixtures:
                 shutil.copy2(fix, globals.inputs_dir)
-            return f"Processed {section_name}/{crash_hash} successfully"
+            return f"Processed {section_name}/{crash_hash} successfully ({len(fixtures)} fixture(s))"
 
         else:
+            # Download ZIP file (legacy FuzzCorp mode)
             zip_name = Path(source).name
             dest_file = globals.output_dir / zip_name
-            download_with_retries(source, dest_file)
 
-            with zipfile.ZipFile(f"{globals.output_dir}/{zip_name}") as z:
-                z.extractall(globals.output_dir)
+            # Check if we need FuzzCorp authentication
+            fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
+            cookies = {"s": fuzzcorp_cookie} if fuzzcorp_cookie else None
 
-            for fix in (globals.output_dir / "repro_custom").glob("*.fix"):
+            download_with_retries(source, dest_file, cookies=cookies)
+
+            # Extract ZIP
+            try:
+                with zipfile.ZipFile(f"{globals.output_dir}/{zip_name}") as z:
+                    z.extractall(globals.output_dir)
+            except zipfile.BadZipFile as e:
+                return f"Error processing {source}: invalid ZIP file - {str(e)}"
+
+            # Count and copy fixtures
+            fixtures = list((globals.output_dir / "repro_custom").glob("*.fix"))
+            if not fixtures:
+                return f"Failed to process {zip_name}: no .fix files found in ZIP"
+
+            for fix in fixtures:
                 shutil.copy2(fix, globals.inputs_dir)
-            return f"Processed {zip_name} successfully"
+            return f"Processed {zip_name} successfully ({len(fixtures)} fixture(s))"
 
         return f"Unsupported source: {source}"
+    except zipfile.BadZipFile as e:
+        return f"Error processing {source}: invalid ZIP file - {str(e)}"
     except Exception as e:
-        return f"Error processing {source}: {str(e)}"
+        return f"Error processing {source}: {type(e).__name__}: {str(e)}"

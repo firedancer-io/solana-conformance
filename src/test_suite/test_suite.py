@@ -31,6 +31,7 @@ from test_suite.util import (
     set_ld_preload_asan,
     run_fuzz_command,
     deduplicate_fixtures_by_hash,
+    fetch_with_retries,
 )
 import resource
 import tqdm
@@ -738,19 +739,11 @@ def list_repros(
             print("[ERROR] FUZZCORP_COOKIE environment variable not set")
             raise typer.Exit(code=1)
 
-        curl_command = f"curl {fuzzcorp_url} --cookie s={fuzzcorp_cookie}"
-        result = subprocess.run(
-            curl_command, shell=True, capture_output=True, text=True
-        )
-
-        if result.returncode != 0:
+        page_content = fetch_with_retries(fuzzcorp_url, cookies={"s": fuzzcorp_cookie})
+        if page_content is None:
             print(f"[ERROR] Failed to fetch page from {fuzzcorp_url}")
-            print(f"Exit code: {result.returncode}")
-            if result.stderr:
-                print(f"Stderr: {result.stderr}")
             raise typer.Exit(code=1)
 
-        page_content = result.stdout
         soup = BeautifulSoup(page_content, "html.parser")
 
         # Parse lineages from the HTML
@@ -940,11 +933,12 @@ def debug_mismatches(
                 custom_data_urls.append((section_name, str(repro["Hash"])))
     else:  # legacy FuzzCorp web page scraping
         if len(section_names_list) != 0:
-            curl_command = f"curl {fuzzcorp_url} --cookie s={fuzzcorp_cookie}"
-            result = subprocess.run(
-                curl_command, shell=True, capture_output=True, text=True
+            page_content = fetch_with_retries(
+                fuzzcorp_url, cookies={"s": fuzzcorp_cookie}
             )
-            page_content = result.stdout
+            if page_content is None:
+                print(f"[ERROR] Failed to fetch page from {fuzzcorp_url}")
+                return False
             soup = BeautifulSoup(page_content, "html.parser")
             for section_name in section_names_list:
                 current_section_count = 0
@@ -973,14 +967,15 @@ def debug_mismatches(
                     print(f"Section {section_name} not found.")
 
         for url in repro_urls_list:
-            result = subprocess.run(
-                ["curl", "--cookie", f"s={fuzzcorp_cookie}", f"{url}.bash"],
-                capture_output=True,
-                text=True,
+            bash_content = fetch_with_retries(
+                f"{url}.bash", cookies={"s": fuzzcorp_cookie}
             )
-            start_index = result.stdout.find("REPRO_CUSTOM_URL=")
-            end_index = result.stdout.find("\n", start_index)
-            custom_url = result.stdout[
+            if bash_content is None:
+                print(f"[WARNING] Failed to fetch bash script from {url}.bash")
+                continue
+            start_index = bash_content.find("REPRO_CUSTOM_URL=")
+            end_index = bash_content.find("\n", start_index)
+            custom_url = bash_content[
                 start_index + len("REPRO_CUSTOM_URL=") + 1 : end_index - 1
             ].strip()
             if custom_url == "":
@@ -1008,6 +1003,18 @@ def debug_mismatches(
         initialize_process_output_buffers(randomize_output_buffer)
         for url in tqdm.tqdm(custom_data_urls):
             results.append(download_and_process(url))
+
+    # Print download results summary
+    successful_downloads = [r for r in results if r and "successfully" in r]
+    failed_downloads = [r for r in results if r and ("Failed" in r or "Error" in r)]
+    print(
+        f"\nDownload summary: {len(successful_downloads)} succeeded, {len(failed_downloads)} failed"
+    )
+
+    if failed_downloads:
+        print(f"\n[WARNING] Failed downloads:")
+        for failure in failed_downloads:
+            print(f"  - {failure}")
 
     if ld_preload is not None:
         os.environ["LD_PRELOAD"] = ld_preload
