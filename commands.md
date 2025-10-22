@@ -82,6 +82,7 @@ $ solana-conformance create-fixtures [OPTIONS]
 * `-k, --keep-passing`: Only keep passing test cases
 * `-g, --group-by-program`: Group fixture output by program type
 * `-l, --log-level INTEGER`: FD logging level  [default: 5]
+* `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
 * `--help`: Show this message and exit.
 
 ## `solana-conformance debug-mismatches`
@@ -129,6 +130,7 @@ $ solana-conformance decode-protobufs [OPTIONS]
 * `-o, --output-dir PATH`: Output directory for base58-encoded, Context and/or Fixture human-readable messages  [required]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
+* `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
 * `--help`: Show this message and exit.
 
 ## `solana-conformance exec-fixtures`
@@ -191,6 +193,7 @@ $ solana-conformance fix-to-ctx [OPTIONS]
 * `-i, --input PATH`: Input Fixture file or directory of Fixture files  [required]
 * `-o, --output-dir PATH`: Output directory for messages  [required]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
+* `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
 * `--help`: Show this message and exit.
 
 ## `solana-conformance list-harness-types`
@@ -229,6 +232,7 @@ $ solana-conformance mass-regenerate-fixtures [OPTIONS]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-d, --dry-run`: Only print the fixtures that would be regenerated
 * `-v, --verbose`: Verbose output: print filenames that will be regenerated
+* `--debug-mode`: Enables debug mode, which disables multiprocessing
 * `--help`: Show this message and exit.
 
 ## `solana-conformance regenerate-fixtures`
@@ -254,6 +258,7 @@ $ solana-conformance regenerate-fixtures [OPTIONS]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-l, --log-level INTEGER`: FD logging level  [default: 5]
 * `-v, --verbose`: Verbose output: print filenames that will be regenerated
+* `--debug-mode`: Enables debug mode, which disables multiprocessing
 * `--help`: Show this message and exit.
 
 ## `solana-conformance run-tests`

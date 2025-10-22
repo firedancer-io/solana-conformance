@@ -469,21 +469,24 @@ def download_and_process(source):
             out_dir.mkdir(parents=True, exist_ok=True)
 
             fuzz_bin = os.getenv("FUZZ_BIN", "fuzz")
-            subprocess.run(
-                [
-                    fuzz_bin,
-                    "download",
-                    "repro",
-                    "--lineage",
-                    section_name,
-                    "--out-dir",
-                    str(out_dir),
-                    crash_hash,
-                ],
+            cmd = [
+                fuzz_bin,
+                "download",
+                "repro",
+                "--lineage",
+                section_name,
+                "--out-dir",
+                os.fspath(out_dir),
+                crash_hash,
+            ]
+            result = subprocess.run(
+                cmd,
                 text=True,
-                check=True,
                 stderr=None,
             )
+
+            if result.returncode != 0:
+                return f"Failed to download {section_name}/{crash_hash}: {result.stdout}: {result.stderr}"
 
             for fix in out_dir.rglob("*.fix"):
                 shutil.copy2(fix, globals.inputs_dir)

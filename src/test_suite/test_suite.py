@@ -114,7 +114,7 @@ def execute(
     else:
         # Recursively find all files in the directory
         files_to_exec = []
-        for file_path in input.rglob("*"):
+        for file_path in input.rglob("*.fix"):
             if file_path.is_file():
                 files_to_exec.append(file_path)
     for file in files_to_exec:
@@ -179,6 +179,12 @@ def fix_to_ctx(
     num_processes: int = typer.Option(
         4, "--num-processes", "-p", help="Number of processes to use"
     ),
+    debug_mode: bool = typer.Option(
+        False,
+        "--debug-mode",
+        "-d",
+        help="Enables debug mode, which disables multiprocessing",
+    ),
 ):
     # Specify globals
     globals.output_dir = output_dir
@@ -193,19 +199,23 @@ def fix_to_ctx(
     else:
         # Recursively find all files in the directory
         test_cases = []
-        for file_path in input.rglob("*"):
+        for file_path in input.rglob("*.fix"):
             if file_path.is_file():
                 test_cases.append(file_path)
     num_test_cases = len(test_cases)
 
     print(f"Converting to Fixture messages...")
     results = []
-    with Pool(processes=num_processes) as pool:
-        for result in tqdm.tqdm(
-            pool.imap(extract_context_from_fixture, test_cases),
-            total=num_test_cases,
-        ):
-            results.append(result)
+    if num_processes > 1 and not debug_mode:
+        with Pool(processes=num_processes) as pool:
+            for result in tqdm.tqdm(
+                pool.imap(extract_context_from_fixture, test_cases),
+                total=num_test_cases,
+            ):
+                results.append(result)
+    else:
+        for test_case in tqdm.tqdm(test_cases):
+            results.append(extract_context_from_fixture(test_case))
 
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
     print(f"{len(results)} total files seen")
@@ -270,6 +280,12 @@ def create_fixtures(
         "-l",
         help="FD logging level",
     ),
+    debug_mode: bool = typer.Option(
+        False,
+        "--debug-mode",
+        "-d",
+        help="Enables debug mode, which disables multiprocessing",
+    ),
 ):
     # Add Solana library to shared libraries
     shared_libraries = [reference_shared_library] + shared_libraries
@@ -298,7 +314,7 @@ def create_fixtures(
     else:
         # Recursively find all files in the directory
         test_cases = []
-        for file_path in input.rglob("*"):
+        for file_path in input.rglob("*.fix"):
             if file_path.is_file():
                 test_cases.append(file_path)
     num_test_cases = len(test_cases)
@@ -308,17 +324,25 @@ def create_fixtures(
     # Generate the test cases in parallel from files on disk
     print(f"Creating fixtures...")
     write_results = []
-    with Pool(
-        processes=num_processes, initializer=initialize_process_output_buffers
-    ) as pool:
-        for result in tqdm.tqdm(
-            pool.imap(
-                create_fixture,
-                test_cases,
-            ),
-            total=num_test_cases,
-        ):
-            write_results.append(result)
+    if num_processes > 1 and not debug_mode:
+        with Pool(
+            processes=num_processes, initializer=initialize_process_output_buffers
+        ) as pool:
+            for result in tqdm.tqdm(
+                pool.imap(
+                    create_fixture,
+                    test_cases,
+                ),
+                total=num_test_cases,
+            ):
+                write_results.append(result)
+    else:
+        initialize_process_output_buffers()
+        for test_case in tqdm.tqdm(test_cases):
+            fixture = create_fixture(test_case)
+            if fixture is None:
+                continue
+            write_results.append(fixture)
 
     # Clean up
     print("Cleaning up...")
@@ -490,7 +514,7 @@ expected to use different amounts of compute units than the other. Note: Cannot 
     else:
         # Recursively find all files in the directory
         test_cases = []
-        for file_path in input.rglob("*"):
+        for file_path in input.rglob("*.fix"):
             if file_path.is_file():
                 test_cases.append(file_path)
 
@@ -593,6 +617,12 @@ def decode_protobufs(
         "-h",
         help=f"Harness type to use for Context protobufs",
     ),
+    debug_mode: bool = typer.Option(
+        False,
+        "--debug-mode",
+        "-d",
+        help="Enables debug mode, which disables multiprocessing",
+    ),
 ):
     globals.output_dir = output_dir
 
@@ -607,18 +637,22 @@ def decode_protobufs(
     else:
         # Recursively find all files in the directory
         test_cases = []
-        for file_path in input.rglob("*"):
+        for file_path in input.rglob("*.fix"):
             if file_path.is_file():
                 test_cases.append(file_path)
     num_test_cases = len(test_cases)
 
     write_results = []
-    with Pool(processes=num_processes) as pool:
-        for result in tqdm.tqdm(
-            pool.imap(decode_single_test_case, test_cases),
-            total=num_test_cases,
-        ):
-            write_results.append(result)
+    if num_processes > 1 and not debug_mode:
+        with Pool(processes=num_processes) as pool:
+            for result in tqdm.tqdm(
+                pool.imap(decode_single_test_case, test_cases),
+                total=num_test_cases,
+            ):
+                write_results.append(result)
+    else:
+        for test_case in tqdm.tqdm(test_cases):
+            write_results.append(decode_single_test_case(test_case))
 
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
     print(f"{len(write_results)} total files seen")
@@ -746,9 +780,14 @@ def debug_mismatches(
                 "--json",
                 "--verbose",
             ]
-            result = subprocess.run(
-                cmd, text=True, capture_output=True, check=True, stderr=None
-            )
+            result = subprocess.run(cmd, text=True, capture_output=True, stderr=None)
+            if result.returncode != 0:
+                print(f"[ERROR] Command failed: {' '.join(cmd)}")
+                print(f"Exit code: {result.returncode}")
+                print(f"Stdout:\n{result.stdout}")
+                print(f"Stderr:\n{result.stderr}")
+                continue
+
             try:
                 data = json.loads(result.stdout)
             except json.JSONDecodeError as e:
@@ -775,6 +814,10 @@ def debug_mismatches(
 
             if section_limit != 0:
                 verified_repros = verified_repros[:section_limit]
+
+            if len(verified_repros) == 0:
+                print(f"No verified repros found for {section_name}")
+                continue
 
             for repro in verified_repros:
                 custom_data_urls.append((section_name, str(repro["Hash"])))
@@ -831,7 +874,7 @@ def debug_mismatches(
     ld_preload = os.environ.pop("LD_PRELOAD", None)
 
     num_test_cases = len(custom_data_urls)
-    print("Downloading tests...")
+    print(f"Downloading {num_test_cases} tests...")
     results = []
     if num_processes > 1 and not debug_mode:
         with Pool(
@@ -857,7 +900,8 @@ def debug_mismatches(
         shutil.rmtree(repro_custom)
 
     files = glob(str(globals.inputs_dir) + "/*")
-
+    print(f"Deduplicating {len(files)} downloaded fixture(s)...")
+    num_duplicates = 0
     for i in range(len(files)):
         for j in range(i + 1, len(files)):
             if (
@@ -866,6 +910,9 @@ def debug_mismatches(
                 and filecmp.cmp(files[i], files[j], shallow=False)
             ):
                 os.remove(files[j])
+                num_duplicates += 1
+    if num_duplicates > 0:
+        print(f"Removed {num_duplicates} duplicate(s)")
 
     create_fixtures_dir = globals.output_dir / "create_fixtures"
     if create_fixtures_dir.exists():
@@ -885,6 +932,7 @@ def debug_mismatches(
         only_keep_passing=False,
         organize_fixture_dir=False,
         log_level=log_level,
+        debug_mode=debug_mode,
     )
 
     shutil.rmtree(globals.inputs_dir)
@@ -908,6 +956,8 @@ def debug_mismatches(
         save_failures=True,
         save_successes=True,
         log_level=log_level,
+        debug_mode=debug_mode,
+        fail_early=False,
     )
 
 
@@ -980,6 +1030,11 @@ def regenerate_fixtures(
         "-v",
         help="Verbose output: print filenames that will be regenerated",
     ),
+    debug_mode: bool = typer.Option(
+        False,
+        "--debug-mode",
+        help="Enables debug mode, which disables multiprocessing",
+    ),
 ):
     globals.output_dir = output_dir
     globals.reference_shared_library = shared_library
@@ -998,7 +1053,7 @@ def regenerate_fixtures(
     else:
         # Recursively find all files in the directory
         test_cases = []
-        for file_path in input.rglob("*"):
+        for file_path in input.rglob("*.fix"):
             if file_path.is_file():
                 test_cases.append(file_path)
     num_regenerated = 0
@@ -1019,7 +1074,7 @@ def regenerate_fixtures(
     globals.regenerate_dry_run = dry_run
     globals.regenerate_verbose = verbose
 
-    if num_processes > 1:
+    if num_processes > 1 and not debug_mode:
         with Pool(
             processes=num_processes,
             initializer=initialize_process_output_buffers,
@@ -1101,6 +1156,11 @@ def mass_regenerate_fixtures(
         "-v",
         help="Verbose output: print filenames that will be regenerated",
     ),
+    debug_mode: bool = typer.Option(
+        False,
+        "--debug-mode",
+        help="Enables debug mode, which disables multiprocessing",
+    ),
 ):
     globals.output_dir = output_dir
 
@@ -1162,6 +1222,7 @@ def mass_regenerate_fixtures(
                 num_processes=num_processes,
                 verbose=verbose,
                 log_level=5,
+                debug_mode=debug_mode,
             )
 
     print(f"Regenerated fixtures from {test_vectors} to {output_dir}")
@@ -1258,7 +1319,7 @@ def exec_fixtures(
     else:
         # Recursively find all files in the directory
         test_cases = []
-        for file_path in input.rglob("*"):
+        for file_path in input.rglob("*.fix"):
             if file_path.is_file():
                 test_cases.append(file_path)
     num_test_cases = len(test_cases)
@@ -1430,6 +1491,7 @@ def create_env(
         + f"/contrib/test/test-vectors-fixtures/{selected_option}"
     )[0]
 
+    print("Running debug_mismatches to test fixtures...")
     passed = debug_mismatches(
         reference_shared_library=reference_shared_library,
         default_harness_ctx=default_harness_ctx,
@@ -1452,6 +1514,9 @@ def create_env(
 
     failures = glob(str(output_dir) + "/test_results/failed_protobufs/*")
 
+    print(
+        f"Adding {len(failures)} failed test(s) to {list_path} and copying to test vectors repository..."
+    )
     for failure in failures:
         with open(list_path, "r") as file:
             lines = file.readlines()
@@ -1467,6 +1532,11 @@ def create_env(
             "dump/test-vectors", str(test_vectors_repos_path)
         )
         shutil.copy2(failure, os.path.dirname(failure_test_vector_path))
+        print(f"Copied to {os.path.dirname(failure_test_vector_path)}")
+
+    print(f"Successfully processed {len(failures)} failed test(s)")
+    print(f"Updated list file: {list_path}")
+    print(f"Copied fixtures to: {test_vectors_repos_path}")
 
 
 if __name__ == "__main__":
