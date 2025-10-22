@@ -24,6 +24,7 @@ $ solana-conformance [OPTIONS] COMMAND [ARGS]...
 * `execute`: Execute Context or Fixture message(s) and...
 * `fix-to-ctx`: Extract Context messages from Fixtures.
 * `list-harness-types`: List harness types available for use.
+* `list-repros`: List all available repro lineages.
 * `mass-regenerate-fixtures`: Regenerate features for fixtures in...
 * `regenerate-fixtures`: Regenerate features in fixture messages.
 * `run-tests`: Run tests on a set of targets with a...
@@ -208,6 +209,22 @@ $ solana-conformance list-harness-types [OPTIONS]
 
 **Options**:
 
+* `--help`: Show this message and exit.
+
+## `solana-conformance list-repros`
+
+List all available repro lineages.
+
+**Usage**:
+
+```console
+$ solana-conformance list-repros [OPTIONS]
+```
+
+**Options**:
+
+* `--use-ng`: Use fuzz NG CLI instead of web scraping
+* `-f, --fuzzcorp-url TEXT`: FuzzCorp URL for web scraping (used when --use-ng is not set)  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance mass-regenerate-fixtures`

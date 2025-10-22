@@ -11,6 +11,7 @@ import shutil
 import subprocess
 from pathlib import Path
 import test_suite.globals as globals
+from test_suite.util import run_fuzz_command
 from google.protobuf import text_format, message
 from google.protobuf.internal.decoder import _DecodeVarint
 import os
@@ -479,14 +480,9 @@ def download_and_process(source):
                 os.fspath(out_dir),
                 crash_hash,
             ]
-            result = subprocess.run(
-                cmd,
-                text=True,
-                stderr=None,
-            )
-
-            if result.returncode != 0:
-                return f"Failed to download {section_name}/{crash_hash}: {result.stdout}: {result.stderr}"
+            result = run_fuzz_command(cmd)
+            if result is None:
+                return f"Failed to download {section_name}/{crash_hash}"
 
             for fix in out_dir.rglob("*.fix"):
                 shutil.copy2(fix, globals.inputs_dir)

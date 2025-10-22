@@ -27,7 +27,11 @@ from test_suite.multiprocessing_utils import (
     read_context,
 )
 import test_suite.globals as globals
-from test_suite.util import set_ld_preload_asan
+from test_suite.util import (
+    set_ld_preload_asan,
+    run_fuzz_command,
+    deduplicate_fixtures_by_hash,
+)
 import resource
 import tqdm
 from test_suite.fuzz_context import *
@@ -160,6 +164,7 @@ def execute(
             print(parsed_instruction_effects)
 
     lib.sol_compat_fini()
+    return True
 
 
 @app.command(help=f"Extract Context messages from Fixtures.")
@@ -220,6 +225,7 @@ def fix_to_ctx(
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
     print(f"{len(results)} total files seen")
     print(f"{sum(results)} files successfully written")
+    return True
 
 
 @app.command(
@@ -352,6 +358,9 @@ def create_fixtures(
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
     print(f"{len(write_results)} total files seen")
     print(f"{sum(write_results)} files successfully written")
+
+    # Return success if at least one fixture was written
+    return sum(write_results) > 0
 
 
 @app.command(
@@ -591,7 +600,8 @@ expected to use different amounts of compute units than the other. Note: Cannot 
         ):
             print(f"Diff between {name1} and {name2}: vimdiff {file1} {file2}")
 
-    return (failed == 0) and (skipped == 0) and (passed > 0)
+    success = (failed == 0) and (skipped == 0) and (passed > 0)
+    return success
 
 
 @app.command(help=f"Convert Context and/or Fixture messages to human-readable format.")
@@ -657,6 +667,7 @@ def decode_protobufs(
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
     print(f"{len(write_results)} total files seen")
     print(f"{sum(write_results)} files successfully written")
+    return True
 
 
 @app.command(help=f"List harness types available for use.")
@@ -665,6 +676,116 @@ def list_harness_types():
     print("Available harness types:")
     for name in HARNESS_MAP:
         print(f"- {name}")
+    return True
+
+
+@app.command(help=f"List all available repro lineages.")
+def list_repros(
+    use_ng: bool = typer.Option(
+        False,
+        "--use-ng",
+        help="Use fuzz NG CLI instead of web scraping",
+    ),
+    fuzzcorp_url: str = typer.Option(
+        os.getenv(
+            "FUZZCORP_URL",
+            "https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/",
+        ),
+        "--fuzzcorp-url",
+        "-f",
+        help="FuzzCorp URL for web scraping (used when --use-ng is not set)",
+    ),
+):
+    """List all repro lineages with their counts using either fuzz CLI or web scraping."""
+
+    if use_ng:
+        # Use fuzz NG CLI
+        fuzz_bin = os.getenv("FUZZ_BIN", "fuzz")
+        cmd = [fuzz_bin, "list", "repros", "--json"]
+        result = run_fuzz_command(cmd)
+        if result is None:
+            raise typer.Exit(code=1)
+
+        try:
+            data = json.loads(result.stdout)
+        except json.JSONDecodeError as e:
+            print(f"[ERROR] Failed to parse JSON output: {e}")
+            print(f"Output: {result.stdout}")
+            raise typer.Exit(code=1)
+
+        # Display the results in a nice table format
+        bundle_id = data.get("BundleID", "N/A")
+        lineages = data.get("Data", [])
+
+        print(f"\nBundle ID: {bundle_id}\n")
+
+        # Print header
+        print(f"{'LINEAGE':<40} {'COUNT':<10} {'VERIFIED':<10}")
+        print("─" * 60)
+
+        # Print each lineage
+        for lineage in lineages:
+            name = lineage.get("LineageName", "")
+            count = lineage.get("ReproCount", 0)
+            verified = lineage.get("Verified", 0)
+            print(f"{name:<40} {count:<10} {verified:<10}")
+
+        print(f"\nFound {len(lineages)} entries.")
+    else:
+        # Use web scraping
+        fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
+        if not fuzzcorp_cookie:
+            print("[ERROR] FUZZCORP_COOKIE environment variable not set")
+            raise typer.Exit(code=1)
+
+        curl_command = f"curl {fuzzcorp_url} --cookie s={fuzzcorp_cookie}"
+        result = subprocess.run(
+            curl_command, shell=True, capture_output=True, text=True
+        )
+
+        if result.returncode != 0:
+            print(f"[ERROR] Failed to fetch page from {fuzzcorp_url}")
+            print(f"Exit code: {result.returncode}")
+            if result.stderr:
+                print(f"Stderr: {result.stderr}")
+            raise typer.Exit(code=1)
+
+        page_content = result.stdout
+        soup = BeautifulSoup(page_content, "html.parser")
+
+        # Parse lineages from the HTML
+        lineages = []
+        lineage_items = soup.find_all("li", class_="lineage-item")
+
+        for item in lineage_items:
+            # Extract text like "sol_prog_generic_diff (17)"
+            text = item.get_text(strip=True)
+            # Parse lineage name and count using regex
+            import re
+
+            match = re.match(r"(.+?)\s*\((\d+)\)", text)
+            if match:
+                name = match.group(1).strip()
+                count = int(match.group(2))
+                lineages.append({"name": name, "count": count})
+
+        if not lineages:
+            print("[WARNING] No lineages found on the page")
+            return True
+
+        # Display results
+        print()
+        print(f"{'LINEAGE':<40} {'COUNT':<10}")
+        print("─" * 50)
+
+        for lineage in lineages:
+            name = lineage["name"]
+            count = lineage["count"]
+            print(f"{name:<40} {count:<10}")
+
+        print(f"\nFound {len(lineages)} entries.")
+
+    return True
 
 
 @app.command(
@@ -780,19 +901,15 @@ def debug_mismatches(
                 "--json",
                 "--verbose",
             ]
-            result = subprocess.run(cmd, text=True, capture_output=True, stderr=None)
-            if result.returncode != 0:
-                print(f"[ERROR] Command failed: {' '.join(cmd)}")
-                print(f"Exit code: {result.returncode}")
-                print(f"Stdout:\n{result.stdout}")
-                print(f"Stderr:\n{result.stderr}")
+            result = run_fuzz_command(cmd)
+            if result is None:
                 continue
 
             try:
                 data = json.loads(result.stdout)
             except json.JSONDecodeError as e:
                 print(
-                    f"Error parsing JSON from FuzzCorp NG CLI for {section_name}: {e}"
+                    f"[ERROR] Failed to parse JSON from FuzzCorp NG CLI for {section_name}: {e}"
                 )
                 continue
 
@@ -899,18 +1016,9 @@ def debug_mismatches(
     if repro_custom.exists():
         shutil.rmtree(repro_custom)
 
-    files = glob(str(globals.inputs_dir) + "/*")
+    files = list(Path(globals.inputs_dir).iterdir())
     print(f"Deduplicating {len(files)} downloaded fixture(s)...")
-    num_duplicates = 0
-    for i in range(len(files)):
-        for j in range(i + 1, len(files)):
-            if (
-                os.path.exists(files[i])
-                and os.path.exists(files[j])
-                and filecmp.cmp(files[i], files[j], shallow=False)
-            ):
-                os.remove(files[j])
-                num_duplicates += 1
+    num_duplicates = deduplicate_fixtures_by_hash(globals.inputs_dir)
     if num_duplicates > 0:
         print(f"Removed {num_duplicates} duplicate(s)")
 
@@ -1091,6 +1199,7 @@ def regenerate_fixtures(
 
     lib.sol_compat_fini()
     print(f"Regenerated {num_regenerated} / {len(test_cases)} fixtures")
+    return True
 
 
 @app.command(
@@ -1226,6 +1335,7 @@ def mass_regenerate_fixtures(
             )
 
     print(f"Regenerated fixtures from {test_vectors} to {output_dir}")
+    return True
 
 
 @app.command(
@@ -1363,6 +1473,8 @@ def exec_fixtures(
         print(f"Failed tests: {failed_tests}")
     if skipped != 0:
         print(f"Skipped tests: {skipped_tests}")
+
+    return (failed == 0) and (skipped == 0) and (passed > 0)
 
 
 @app.command(
@@ -1510,7 +1622,7 @@ def create_env(
 
     if passed:
         print("All fixtures already pass")
-        typer.Exit(code=1)
+        raise typer.Exit(code=0)
 
     failures = glob(str(output_dir) + "/test_results/failed_protobufs/*")
 
@@ -1537,6 +1649,7 @@ def create_env(
     print(f"Successfully processed {len(failures)} failed test(s)")
     print(f"Updated list file: {list_path}")
     print(f"Copied fixtures to: {test_vectors_repos_path}")
+    return True
 
 
 if __name__ == "__main__":
