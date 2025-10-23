@@ -324,7 +324,13 @@ def create_fixtures(
         for file_path in input.rglob("*.fix"):
             if file_path.is_file():
                 test_cases.append(file_path)
+
     num_test_cases = len(test_cases)
+
+    # Early exit if no test cases found
+    if num_test_cases == 0:
+        print(f"\n[NOTICE] No test cases found in {input}")
+        return True
 
     globals.default_harness_ctx = HARNESS_MAP[default_harness_ctx]
 
@@ -517,6 +523,11 @@ expected to use different amounts of compute units than the other. Note: Cannot 
                 test_cases.append(file_path)
 
     num_test_cases = len(test_cases)
+
+    # Early exit if no test cases found
+    if num_test_cases == 0:
+        print(f"\n[NOTICE] No test cases found in {input}")
+        return True
 
     # Process the test results in parallel
     print("Running tests...")
@@ -733,8 +744,8 @@ def configure_fuzzcorp(
 def list_repros(
     use_ng: bool = typer.Option(
         True,
-        "--use-ng",
-        help="Use fuzz NG API instead of web scraping",
+        "--use-ng/--no-use-ng",
+        help="Use fuzz NG API (default: enabled)",
     ),
     lineage: str = typer.Option(
         None,
@@ -985,22 +996,44 @@ def download_repros(
     ),
     use_ng: bool = typer.Option(
         True,
-        "--use-ng",
-        help="Use fuzz NG CLI (fuzz list/download repro) instead of API scraping",
+        "--use-ng/--no-use-ng",
+        help="Use fuzz NG API (default: enabled)",
     ),
     interactive: bool = typer.Option(
         True,
         "--interactive/--no-interactive",
         help="Prompt for authentication if needed",
     ),
+    force_redownload: bool = typer.Option(
+        False,
+        "--force-redownload",
+        help="Force re-download even if fixtures are already cached",
+    ),
 ):
     """Download repros from FuzzCorp NG API."""
-    # Create output directories
+    # Set force redownload environment variable for worker processes
+    if force_redownload:
+        os.environ["FORCE_REDOWNLOAD"] = "1"
+    else:
+        os.environ.pop("FORCE_REDOWNLOAD", None)
+
+    # Create output directories (preserve inputs for caching)
     if output_dir.exists():
-        shutil.rmtree(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
+        for item in output_dir.iterdir():
+            if item.name != "inputs":  # Preserve inputs for caching
+                if item.is_dir():
+                    shutil.rmtree(item)
+                else:
+                    item.unlink()
+    else:
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     inputs_dir = output_dir / "inputs"
+
+    # Only delete inputs_dir if force redownload is set
+    if force_redownload and inputs_dir.exists():
+        shutil.rmtree(inputs_dir)
+
     inputs_dir.mkdir(parents=True, exist_ok=True)
 
     # Set globals for download_and_process
@@ -1062,51 +1095,194 @@ def download_repros(
 
         # Download in parallel with progress bar
         if num_processes > 1:
+            from multiprocessing import Manager
+            import functools
+
+            # Debug mode for progress tracking
+            debug_progress = os.getenv("DEBUG_DOWNLOAD_PROGRESS", "").lower() in (
+                "1",
+                "true",
+                "yes",
+            )
+
+            if debug_progress:
+                print(
+                    f"[DEBUG] Main process: debug logging enabled, starting {len(download_list)} downloads with {num_processes} workers",
+                    flush=True,
+                )
+
+            # Create a shared queue for progress updates
+            manager = Manager()
+            progress_queue = manager.Queue()
+
+            # Wrap download_and_process to include progress_queue
+            download_with_progress = functools.partial(
+                download_and_process, progress_queue=progress_queue
+            )
+
             with Pool(processes=num_processes) as pool:
                 results = []
                 total_artifacts = 0
                 total_fixtures = 0
+                total_bytes_downloaded = 0
+                total_bytes_expected = 0
+                total_cached = 0
+
+                # Track per-artifact progress
+                artifact_progress = {}  # artifact_hash -> (downloaded, total)
+
                 with tqdm.tqdm(
                     total=len(download_list), desc="Downloading", unit="repro"
                 ) as pbar:
-                    for result in pool.imap_unordered(
-                        download_and_process, download_list
-                    ):
-                        results.append(result)
-                        # Handle structured results
-                        if isinstance(result, dict):
-                            if result.get("success"):
-                                artifacts = result.get("artifacts", 0)
-                                fixtures = result.get("fixtures", 0)
-                                total_artifacts += artifacts
-                                total_fixtures += fixtures
-                                pbar.set_postfix(
-                                    {
+                    # Start async downloads
+                    async_result = pool.imap_unordered(
+                        download_with_progress, download_list
+                    )
+
+                    completed = 0
+                    while completed < len(download_list):
+                        # Check for progress updates (non-blocking)
+                        while not progress_queue.empty():
+                            try:
+                                update = progress_queue.get_nowait()
+                                if update["type"] == "download_progress":
+                                    artifact_hash = update["artifact_hash"]
+                                    downloaded = update["downloaded"]
+                                    total = update["total"]
+
+                                    # Update artifact tracking
+                                    old_downloaded = artifact_progress.get(
+                                        artifact_hash, (0, 0)
+                                    )[0]
+                                    artifact_progress[artifact_hash] = (
+                                        downloaded,
+                                        total,
+                                    )
+
+                                    # Update totals
+                                    delta = downloaded - old_downloaded
+                                    total_bytes_downloaded += delta
+                                    if total > 0:
+                                        old_total = artifact_progress.get(
+                                            artifact_hash, (0, 0)
+                                        )[1]
+                                        if old_total == 0:
+                                            total_bytes_expected += total
+
+                                    # Debug logging if enabled
+                                    if debug_progress:
+                                        if total > 0:
+                                            pct = downloaded / total * 100
+                                            artifact_str = (
+                                                f"{downloaded}/{total} ({pct:.1f}%)"
+                                            )
+                                        else:
+                                            artifact_str = (
+                                                f"{downloaded} bytes (total unknown)"
+                                            )
+
+                                        if total_bytes_expected > 0:
+                                            global_str = f"{total_bytes_downloaded / 1024 / 1024:.1f}/{total_bytes_expected / 1024 / 1024:.1f}MB"
+                                        else:
+                                            global_str = f"{total_bytes_downloaded / 1024 / 1024:.1f}MB (total unknown)"
+
+                                    # Update progress bar with byte-level granularity
+                                    postfix = {
                                         "artifacts": total_artifacts,
                                         "fixtures": total_fixtures,
                                     }
-                                )
+                                    if total_bytes_expected > 0:
+                                        postfix["data"] = (
+                                            f"{total_bytes_downloaded / 1024 / 1024:.1f}/{total_bytes_expected / 1024 / 1024:.1f}MB"
+                                        )
+                                    pbar.set_postfix(postfix, refresh=True)
+                            except:
+                                break
+
+                        # Check for completed downloads (timeout to allow progress updates)
+                        try:
+                            result = async_result.__next__()
+                            completed += 1
+                            results.append(result)
+
+                            # Handle structured results
+                            if isinstance(result, dict):
+                                if result.get("success"):
+                                    artifacts = result.get("artifacts", 0)
+                                    fixtures = result.get("fixtures", 0)
+                                    cached = result.get("cached", False)
+                                    total_artifacts += artifacts
+                                    total_fixtures += fixtures
+                                    if cached:
+                                        total_cached += 1
+
+                                    postfix = {
+                                        "artifacts": total_artifacts,
+                                        "fixtures": total_fixtures,
+                                    }
+                                    if total_cached > 0:
+                                        postfix["cached"] = total_cached
+                                    pbar.set_postfix(postfix)
+                                else:
+                                    pbar.write(
+                                        f"  [WARNING] {result['repro']}: {result['message']}"
+                                    )
                             else:
-                                pbar.write(
-                                    f"  [WARNING] {result['repro']}: {result['message']}"
-                                )
-                        else:
-                            # Legacy string result
-                            if result.startswith("Error") or result.startswith(
-                                "Failed"
-                            ):
-                                pbar.write(f"  [WARNING] {result}")
-                        pbar.update(1)
+                                # Legacy string result
+                                if result.startswith("Error") or result.startswith(
+                                    "Failed"
+                                ):
+                                    pbar.write(f"  [WARNING] {result}")
+                            pbar.update(1)
+                        except StopIteration:
+                            break
         else:
-            # Sequential download with progress bar
+            # Sequential download with progress bar and granular progress
             results = []
             total_artifacts = 0
             total_fixtures = 0
+            total_bytes_downloaded = 0
+            total_bytes_expected = 0
+            artifact_progress = {}  # artifact_hash -> (downloaded, total)
+
+            # Create in-process progress callback
+            def progress_callback_factory(pbar_ref):
+                """Create a progress callback that updates the tqdm bar."""
+
+                def callback(downloaded, total, artifact_hash):
+                    nonlocal total_bytes_downloaded, total_bytes_expected, artifact_progress
+
+                    # Update artifact tracking
+                    old_downloaded = artifact_progress.get(artifact_hash, (0, 0))[0]
+                    artifact_progress[artifact_hash] = (downloaded, total)
+
+                    # Update totals
+                    total_bytes_downloaded += downloaded - old_downloaded
+                    if total > 0:
+                        old_total = artifact_progress.get(artifact_hash, (0, 0))[1]
+                        if old_total == 0:
+                            total_bytes_expected += total
+
+                    # Update progress bar
+                    postfix = {
+                        "artifacts": total_artifacts,
+                        "fixtures": total_fixtures,
+                    }
+                    if total_bytes_expected > 0:
+                        postfix["data"] = (
+                            f"{total_bytes_downloaded / 1024 / 1024:.1f}/{total_bytes_expected / 1024 / 1024:.1f}MB"
+                        )
+                    pbar_ref.set_postfix(postfix, refresh=True)
+
+                return callback
+
             with tqdm.tqdm(
                 total=len(download_list), desc="Downloading", unit="repro"
             ) as pbar:
                 for item in download_list:
-                    result = download_and_process(item)
+                    # NOTE: Sequential mode doesn't use progress_queue
+                    # Instead we rely on the progress_callback in the API client
+                    result = download_and_process(item, progress_queue=None)
                     results.append(result)
                     # Handle structured results
                     if isinstance(result, dict):
@@ -1232,8 +1408,8 @@ def debug_mismatches(
     ),
     use_ng: bool = typer.Option(
         True,
-        "--use-ng",
-        help="Use fuzz NG CLI (fuzz list/download repro) instead of API scraping",
+        "--use-ng/--no-use-ng",
+        help="Use fuzz NG API (default: enabled)",
     ),
     debug_mode: bool = typer.Option(
         False,
@@ -1241,19 +1417,40 @@ def debug_mismatches(
         "-d",
         help="Enables debug mode, which disables multiprocessing",
     ),
+    force_redownload: bool = typer.Option(
+        False,
+        "--force-redownload",
+        help="Force re-download even if fixtures are already cached",
+    ),
 ):
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
 
+    # Set force redownload environment variable for worker processes
+    if force_redownload:
+        os.environ["FORCE_REDOWNLOAD"] = "1"
+    else:
+        os.environ.pop("FORCE_REDOWNLOAD", None)
+
     globals.output_dir = output_dir
 
+    # Only delete output_dir if it exists (but preserve inputs for caching)
+    # We'll clean up other subdirectories but keep inputs_dir for cache reuse
     if globals.output_dir.exists():
-        shutil.rmtree(globals.output_dir)
-    globals.output_dir.mkdir(parents=True, exist_ok=True)
+        for item in globals.output_dir.iterdir():
+            if item.name != "inputs":  # Preserve inputs for caching
+                if item.is_dir():
+                    shutil.rmtree(item)
+                else:
+                    item.unlink()
+    else:
+        globals.output_dir.mkdir(parents=True, exist_ok=True)
 
     globals.inputs_dir = globals.output_dir / "inputs"
 
-    if globals.inputs_dir.exists():
+    # Only delete inputs_dir if force redownload is set
+    if force_redownload and globals.inputs_dir.exists():
         shutil.rmtree(globals.inputs_dir)
+
     globals.inputs_dir.mkdir(parents=True, exist_ok=True)
 
     fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
@@ -1354,6 +1551,10 @@ def debug_mismatches(
                 continue
             custom_data_urls.append(custom_url)
 
+    if not custom_data_urls:
+        print("\n[NOTICE] No repros to download")
+        return True
+
     ld_preload = os.environ.pop("LD_PRELOAD", None)
 
     num_test_cases = len(custom_data_urls)
@@ -1369,8 +1570,23 @@ def debug_mismatches(
     )
 
     # Print download results summary
-    successful_downloads = [r for r in results if r and "successfully" in r]
-    failed_downloads = [r for r in results if r and ("Failed" in r or "Error" in r)]
+    successful_downloads = []
+    failed_downloads = []
+    for r in results:
+        if not r:
+            continue
+        if isinstance(r, dict):
+            if r.get("success"):
+                successful_downloads.append(r)
+            else:
+                failed_downloads.append(r)
+        else:
+            # Legacy string results
+            if "successfully" in r:
+                successful_downloads.append(r)
+            elif "Failed" in r or "Error" in r:
+                failed_downloads.append(r)
+
     print(
         f"\nDownload summary: {len(successful_downloads)} succeeded, {len(failed_downloads)} failed"
     )
@@ -1378,7 +1594,10 @@ def debug_mismatches(
     if failed_downloads:
         print(f"\n[WARNING] Failed downloads:")
         for failure in failed_downloads:
-            print(f"  - {failure}")
+            if isinstance(failure, dict):
+                print(f"  - {failure['repro']}: {failure['message']}")
+            else:
+                print(f"  - {failure}")
 
     if ld_preload is not None:
         os.environ["LD_PRELOAD"] = ld_preload
@@ -2094,8 +2313,8 @@ def create_env(
     ),
     use_ng: bool = typer.Option(
         True,
-        "--use-ng",
-        help="Use fuzz NG CLI (fuzz list/download repro) instead of API scraping",
+        "--use-ng/--no-use-ng",
+        help="Use fuzz NG API (default: enabled)",
     ),
     debug_mode: bool = typer.Option(
         False,

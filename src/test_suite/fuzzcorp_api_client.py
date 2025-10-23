@@ -238,6 +238,7 @@ class FuzzCorpAPIClient:
         lineage: str,
         org: Optional[str] = None,
         project: Optional[str] = None,
+        progress_callback=None,
     ) -> bytes:
         data = {
             "file_name": artifact_hash,
@@ -257,7 +258,28 @@ class FuzzCorpAPIClient:
         query_data = json.dumps(data)
         url = f"{url}?arpc={urllib.parse.quote(query_data)}"
 
-        # Stream the response to handle large files
+        # Stream the response to handle large files with progress tracking
         with self.client.stream("GET", url, headers=headers) as response:
             response.raise_for_status()
-            return response.read()
+
+            # Get total size from Content-Length header (if available)
+            total_size = int(response.headers.get("Content-Length", 0))
+
+            # If no progress callback, just read all at once
+            if progress_callback is None:
+                return response.read()
+
+            # Download with progress tracking
+            downloaded = 0
+            chunks = []
+            chunk_count = 0
+
+            for chunk in response.iter_bytes(chunk_size=8192):
+                chunks.append(chunk)
+                downloaded += len(chunk)
+                chunk_count += 1
+
+                # Call progress callback (total_size may be 0 if no Content-Length)
+                progress_callback(downloaded, total_size)
+
+            return b"".join(chunks)

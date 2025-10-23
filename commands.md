@@ -77,7 +77,7 @@ $ solana-conformance create-env [OPTIONS]
 * `-l, --section-limit INTEGER`: Limit number of fixture per section  [default: 0]
 * `-fd, --firedancer-repo PATH`: Path to firedancer repository
 * `-tv, --test-vectors-repo PATH`: Path to test-vectors repository
-* `--use-ng`: Use fuzz NG CLI (fuzz list/download repro) instead of API scraping  [default: True]
+* `--use-ng / --no-use-ng`: Use fuzz NG API (default: enabled)  [default: use-ng]
 * `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
 * `--help`: Show this message and exit.
 
@@ -162,8 +162,9 @@ $ solana-conformance debug-mismatches [OPTIONS]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-l, --section-limit INTEGER`: Limit number of fixture per section  [default: 0]
-* `--use-ng`: Use fuzz NG CLI (fuzz list/download repro) instead of API scraping  [default: True]
+* `--use-ng / --no-use-ng`: Use fuzz NG API (default: enabled)  [default: use-ng]
 * `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
+* `--force-redownload`: Force re-download even if fixtures are already cached
 * `--help`: Show this message and exit.
 
 ## `solana-conformance decode-protobufs`
@@ -223,8 +224,9 @@ $ solana-conformance download-repros [OPTIONS]
 * `-n, --section-names TEXT`: Comma-delimited list of lineage names to download  [required]
 * `-l, --section-limit INTEGER`: Limit number of repros per lineage (0 = all verified)  [default: 0]
 * `-p, --num-processes INTEGER`: Number of parallel download processes  [default: 4]
-* `--use-ng`: Use fuzz NG CLI (fuzz list/download repro) instead of API scraping  [default: True]
+* `--use-ng / --no-use-ng`: Use fuzz NG API (default: enabled)  [default: use-ng]
 * `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
+* `--force-redownload`: Force re-download even if fixtures are already cached
 * `--help`: Show this message and exit.
 
 ## `solana-conformance exec-fixtures`
@@ -330,7 +332,7 @@ $ solana-conformance list-repros [OPTIONS]
 
 **Options**:
 
-* `--use-ng`: Use fuzz NG API instead of web scraping  [default: True]
+* `--use-ng / --no-use-ng`: Use fuzz NG API (default: enabled)  [default: use-ng]
 * `-l, --lineage TEXT`: Filter to specific lineage (shows all repros in that lineage)
 * `--interactive / --no-interactive`: Enable interactive configuration prompts if credentials are missing  [default: interactive]
 * `-f, --fuzzcorp-url TEXT`: FuzzCorp URL for web scraping (used when --use-ng is not set)  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
