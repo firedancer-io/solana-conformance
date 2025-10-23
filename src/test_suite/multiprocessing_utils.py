@@ -524,15 +524,6 @@ def download_and_process(source, progress_queue=None):
 
                 # Only use cache if actual fixture files exist
                 if fixture_count > 0:
-                    debug_progress = os.getenv(
-                        "DEBUG_DOWNLOAD_PROGRESS", ""
-                    ).lower() in ("1", "true", "yes")
-                    if debug_progress:
-                        print(
-                            f"[DEBUG] Worker PID={os.getpid()} skipping {section_name}/{crash_hash} (already downloaded, {fixture_count} fixtures cached)",
-                            flush=True,
-                        )
-
                     return {
                         "success": True,
                         "repro": f"{section_name}/{crash_hash}",
@@ -554,35 +545,13 @@ def download_and_process(source, progress_queue=None):
                 }
 
             # Parallel artifact downloads with optional progress tracking
-            debug_progress = os.getenv("DEBUG_DOWNLOAD_PROGRESS", "").lower() in (
-                "1",
-                "true",
-                "yes",
-            )
-
-            if debug_progress:
-                print(
-                    f"[DEBUG] Worker PID={os.getpid()} starting download for {section_name}/{crash_hash}",
-                    flush=True,
-                )
-
             def download_artifact(artifact_hash):
                 """Download a single artifact and return its data."""
                 # Create progress callback if queue is provided
                 progress_callback = None
-                if progress_queue or debug_progress:
+                if progress_queue:
 
                     def callback(downloaded, total):
-                        # Debug logging if enabled
-                        if debug_progress:
-                            if total > 0:
-                                pct = downloaded / total * 100
-                                progress_str = (
-                                    f"{downloaded}/{total} bytes ({pct:.1f}%)"
-                                )
-                            else:
-                                progress_str = f"{downloaded} bytes (total unknown)"
-
                         # Send progress update to main process
                         if progress_queue:
                             progress_queue.put(
@@ -652,8 +621,10 @@ def download_and_process(source, progress_queue=None):
                     f.write(f"artifacts={num_artifacts}\n")
             except Exception as e:
                 # Non-fatal: just means we'll re-download next time
-                if debug_progress:
-                    print(f"[DEBUG] Failed to create cache marker: {e}", flush=True)
+                print(
+                    f"[NOTICE] Failed to create cache marker for {section_name}/{crash_hash}: {e}",
+                    flush=True,
+                )
 
             # Return structured result with artifact count
             return {

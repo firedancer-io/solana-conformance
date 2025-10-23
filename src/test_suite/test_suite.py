@@ -46,6 +46,8 @@ import traceback
 import httpx
 from test_suite.fuzzcorp_auth import get_fuzzcorp_auth, FuzzCorpAuth
 from test_suite.fuzzcorp_utils import fuzzcorp_api_call
+from multiprocessing import Manager
+import functools
 
 """
 Harness options:
@@ -1095,22 +1097,6 @@ def download_repros(
 
         # Download in parallel with progress bar
         if num_processes > 1:
-            from multiprocessing import Manager
-            import functools
-
-            # Debug mode for progress tracking
-            debug_progress = os.getenv("DEBUG_DOWNLOAD_PROGRESS", "").lower() in (
-                "1",
-                "true",
-                "yes",
-            )
-
-            if debug_progress:
-                print(
-                    f"[DEBUG] Main process: debug logging enabled, starting {len(download_list)} downloads with {num_processes} workers",
-                    flush=True,
-                )
-
             # Create a shared queue for progress updates
             manager = Manager()
             progress_queue = manager.Queue()
@@ -1168,23 +1154,6 @@ def download_repros(
                                         )[1]
                                         if old_total == 0:
                                             total_bytes_expected += total
-
-                                    # Debug logging if enabled
-                                    if debug_progress:
-                                        if total > 0:
-                                            pct = downloaded / total * 100
-                                            artifact_str = (
-                                                f"{downloaded}/{total} ({pct:.1f}%)"
-                                            )
-                                        else:
-                                            artifact_str = (
-                                                f"{downloaded} bytes (total unknown)"
-                                            )
-
-                                        if total_bytes_expected > 0:
-                                            global_str = f"{total_bytes_downloaded / 1024 / 1024:.1f}/{total_bytes_expected / 1024 / 1024:.1f}MB"
-                                        else:
-                                            global_str = f"{total_bytes_downloaded / 1024 / 1024:.1f}MB (total unknown)"
 
                                     # Update progress bar with byte-level granularity
                                     postfix = {
