@@ -11,13 +11,16 @@ import shutil
 import subprocess
 from pathlib import Path
 import test_suite.globals as globals
-from test_suite.util import run_fuzz_command, download_with_retries
+from test_suite.util import download_with_retries
 from google.protobuf import text_format, message
 from google.protobuf.internal.decoder import _DecodeVarint
 import os
 import re
+import tempfile
 import time
 import zipfile
+from test_suite.fuzzcorp_auth import get_fuzzcorp_auth
+from test_suite.fuzzcorp_api_client import FuzzCorpAPIClient
 
 
 def process_target(
@@ -448,30 +451,83 @@ def download_and_process(source):
             out_dir = globals.inputs_dir / f"{section_name}_{crash_hash}"
             out_dir.mkdir(parents=True, exist_ok=True)
 
-            fuzz_bin = os.getenv("FUZZ_BIN", "fuzz")
-            cmd = [
-                fuzz_bin,
-                "download",
-                "repro",
-                "--lineage",
-                section_name,
-                "--out-dir",
-                os.fspath(out_dir),
-                crash_hash,
-            ]
-            # Stream output so user can see download progress
-            result = run_fuzz_command(cmd, stream_output=True)
-            if result is None:
-                return f"Failed to download {section_name}/{crash_hash}: fuzz command failed"
+            # Use FuzzCorp HTTP API to download repro
+            # Get configuration
+            config = get_fuzzcorp_auth(interactive=False)
+            if not config:
+                return {
+                    "success": False,
+                    "repro": f"{section_name}/{crash_hash}",
+                    "message": "Failed to download: no FuzzCorp config",
+                }
 
-            # Count and copy fixtures
-            fixtures = list(out_dir.rglob("*.fix"))
-            if not fixtures:
-                return f"Failed to process {section_name}/{crash_hash}: no .fix files found"
+            # Create HTTP client
+            with FuzzCorpAPIClient(
+                api_origin=config.get_api_origin(),
+                token=config.get_token(),
+                org=config.get_organization(),
+                project=config.get_project(),
+                http2=True,
+            ) as client:
+                # Get repro metadata to find artifact hashes
+                repro_metadata = client.get_repro_by_hash(
+                    crash_hash,
+                    org=config.get_organization(),
+                    project=config.get_project(),
+                )
 
-            for fix in fixtures:
-                shutil.copy2(fix, globals.inputs_dir)
-            return f"Processed {section_name}/{crash_hash} successfully ({len(fixtures)} fixture(s))"
+                if not repro_metadata.artifact_hashes:
+                    return {
+                        "success": False,
+                        "repro": f"{section_name}/{crash_hash}",
+                        "message": "Failed to process: no artifacts found",
+                    }
+
+                # Download and extract each artifact
+                fix_count = 0
+                num_artifacts = len(repro_metadata.artifact_hashes)
+                for idx, artifact_hash in enumerate(repro_metadata.artifact_hashes, 1):
+                    # Download artifact (ZIP file)
+                    artifact_data = client.download_artifact_data(
+                        artifact_hash, section_name
+                    )
+
+                    # Save and extract ZIP
+                    with tempfile.NamedTemporaryFile(
+                        suffix=".zip", delete=False
+                    ) as tmp_zip:
+                        tmp_zip.write(artifact_data)
+                        tmp_zip_path = tmp_zip.name
+
+                    try:
+                        with zipfile.ZipFile(tmp_zip_path) as z:
+                            # Extract all .fix files
+                            for member in z.namelist():
+                                if member.endswith(".fix"):
+                                    fix_content = z.read(member)
+                                    fix_name = Path(member).name
+                                    fix_path = globals.inputs_dir / fix_name
+                                    with open(fix_path, "wb") as f:
+                                        f.write(fix_content)
+                                    fix_count += 1
+                    finally:
+                        os.unlink(tmp_zip_path)
+
+            if fix_count == 0:
+                return {
+                    "success": False,
+                    "repro": f"{section_name}/{crash_hash}",
+                    "message": "Failed to process: no .fix files found in artifacts",
+                }
+
+            # Return structured result with artifact count
+            return {
+                "success": True,
+                "repro": f"{section_name}/{crash_hash}",
+                "fixtures": fix_count,
+                "artifacts": num_artifacts,
+                "message": f"Processed {section_name}/{crash_hash} successfully ({fix_count} fixture(s) from {num_artifacts} artifact(s))",
+            }
 
         else:
             # Download ZIP file (legacy FuzzCorp mode)
@@ -500,8 +556,30 @@ def download_and_process(source):
                 shutil.copy2(fix, globals.inputs_dir)
             return f"Processed {zip_name} successfully ({len(fixtures)} fixture(s))"
 
-        return f"Unsupported source: {source}"
+        return {
+            "success": False,
+            "repro": str(source),
+            "message": f"Unsupported source type",
+        }
     except zipfile.BadZipFile as e:
-        return f"Error processing {source}: invalid ZIP file - {str(e)}"
+        repro_id = (
+            f"{section_name}/{crash_hash}"
+            if isinstance(source, (tuple, list)) and len(source) == 2
+            else str(source)
+        )
+        return {
+            "success": False,
+            "repro": repro_id,
+            "message": f"Error: invalid ZIP file - {str(e)}",
+        }
     except Exception as e:
-        return f"Error processing {source}: {type(e).__name__}: {str(e)}"
+        repro_id = (
+            f"{section_name}/{crash_hash}"
+            if isinstance(source, (tuple, list)) and len(source) == 2
+            else str(source)
+        )
+        return {
+            "success": False,
+            "repro": repro_id,
+            "message": f"Error: {type(e).__name__}: {str(e)}",
+        }

@@ -16,18 +16,41 @@ $ solana-conformance [OPTIONS] COMMAND [ARGS]...
 
 **Commands**:
 
+* `configure-fuzzcorp`: Configure FuzzCorp API credentials...
 * `create-env`: Set up environment for debugging a...
 * `create-fixtures`: Create test fixtures from a directory of...
+* `debug-mismatch`: Debug a single repro by hash.
 * `debug-mismatches`: Run tests on a set of targets with a list...
 * `decode-protobufs`: Convert Context and/or Fixture messages to...
+* `download-repro`: Download a single repro by hash from...
+* `download-repros`: Download repros from FuzzCorp NG for...
 * `exec-fixtures`: Execute fixtures and check for correct...
 * `execute`: Execute Context or Fixture message(s) and...
 * `fix-to-ctx`: Extract Context messages from Fixtures.
+* `fuzz`: Run the fuzzcorp 'fuzz' binary with the...
 * `list-harness-types`: List harness types available for use.
 * `list-repros`: List all available repro lineages.
 * `mass-regenerate-fixtures`: Regenerate features for fixtures in...
 * `regenerate-fixtures`: Regenerate features in fixture messages.
 * `run-tests`: Run tests on a set of targets with a...
+
+## `solana-conformance configure-fuzzcorp`
+
+Configure FuzzCorp API credentials (interactive).
+
+**Usage**:
+
+```console
+$ solana-conformance configure-fuzzcorp [OPTIONS]
+```
+
+**Options**:
+
+* `--force`: Force reconfiguration even if config exists
+* `--clear`: Clear all cached configuration
+* `--validate`: Validate current configuration and token
+* `--use-ng`: (No-op, kept for compatibility)  [default: True]
+* `--help`: Show this message and exit.
 
 ## `solana-conformance create-env`
 
@@ -54,7 +77,7 @@ $ solana-conformance create-env [OPTIONS]
 * `-l, --section-limit INTEGER`: Limit number of fixture per section  [default: 0]
 * `-fd, --firedancer-repo PATH`: Path to firedancer repository
 * `-tv, --test-vectors-repo PATH`: Path to test-vectors repository
-* `--use-ng`: Use fuzz NG CLI (fuzz list/download repro) instead of API scraping
+* `--use-ng`: Use fuzz NG CLI (fuzz list/download repro) instead of API scraping  [default: True]
 * `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
 * `--help`: Show this message and exit.
 
@@ -86,6 +109,34 @@ $ solana-conformance create-fixtures [OPTIONS]
 * `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
 * `--help`: Show this message and exit.
 
+## `solana-conformance debug-mismatch`
+
+Debug a single repro by hash.
+
+**Usage**:
+
+```console
+$ solana-conformance debug-mismatch [OPTIONS] REPRO_HASH
+```
+
+**Arguments**:
+
+* `REPRO_HASH`: Hash of the repro to debug  [required]
+
+**Options**:
+
+* `-l, --lineage TEXT`: Lineage name (e.g., sol_vm_syscall_cpi_rust_diff_hf)  [required]
+* `-s, --solana-target PATH`: Solana (or ground truth) shared object (.so) target file path  [default: .]
+* `-t, --target PATH`: Shared object (.so) target file paths to test against reference  [default: .]
+* `-o, --output-dir PATH`: Output directory for test results  [required]
+* `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
+* `--log-level INTEGER`: FD logging level  [default: 5]
+* `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
+* `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
+* `-d, --debug`: Enable debug mode for detailed output
+* `--use-ng`: (No-op, kept for compatibility)  [default: True]
+* `--help`: Show this message and exit.
+
 ## `solana-conformance debug-mismatches`
 
 Run tests on a set of targets with a list of FuzzCorp mismatch links.
@@ -111,7 +162,7 @@ $ solana-conformance debug-mismatches [OPTIONS]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-l, --section-limit INTEGER`: Limit number of fixture per section  [default: 0]
-* `--use-ng`: Use fuzz NG CLI (fuzz list/download repro) instead of API scraping
+* `--use-ng`: Use fuzz NG CLI (fuzz list/download repro) instead of API scraping  [default: True]
 * `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
 * `--help`: Show this message and exit.
 
@@ -132,6 +183,48 @@ $ solana-conformance decode-protobufs [OPTIONS]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
 * `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
+* `--help`: Show this message and exit.
+
+## `solana-conformance download-repro`
+
+Download a single repro by hash from FuzzCorp NG.
+
+**Usage**:
+
+```console
+$ solana-conformance download-repro [OPTIONS] REPRO_HASH
+```
+
+**Arguments**:
+
+* `REPRO_HASH`: Hash of the repro to download  [required]
+
+**Options**:
+
+* `-l, --lineage TEXT`: Lineage name (e.g., sol_vm_syscall_cpi_rust_diff_hf)  [required]
+* `-o, --output-dir PATH`: Output directory for downloaded repro  [default: fuzzcorp_downloads]
+* `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
+* `--use-ng`: (No-op, kept for compatibility)  [default: True]
+* `--help`: Show this message and exit.
+
+## `solana-conformance download-repros`
+
+Download repros from FuzzCorp NG for specified lineages.
+
+**Usage**:
+
+```console
+$ solana-conformance download-repros [OPTIONS]
+```
+
+**Options**:
+
+* `-o, --output-dir PATH`: Output directory for downloaded repros  [default: fuzzcorp_downloads]
+* `-n, --section-names TEXT`: Comma-delimited list of lineage names to download  [required]
+* `-l, --section-limit INTEGER`: Limit number of repros per lineage (0 = all verified)  [default: 0]
+* `-p, --num-processes INTEGER`: Number of parallel download processes  [default: 4]
+* `--use-ng`: Use fuzz NG CLI (fuzz list/download repro) instead of API scraping  [default: True]
+* `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance exec-fixtures`
@@ -197,6 +290,20 @@ $ solana-conformance fix-to-ctx [OPTIONS]
 * `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
 * `--help`: Show this message and exit.
 
+## `solana-conformance fuzz`
+
+Run the fuzzcorp 'fuzz' binary with the provided arguments.
+
+**Usage**:
+
+```console
+$ solana-conformance fuzz [OPTIONS]
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
 ## `solana-conformance list-harness-types`
 
 List harness types available for use.
@@ -223,7 +330,9 @@ $ solana-conformance list-repros [OPTIONS]
 
 **Options**:
 
-* `--use-ng`: Use fuzz NG CLI instead of web scraping
+* `--use-ng`: Use fuzz NG API instead of web scraping  [default: True]
+* `-l, --lineage TEXT`: Filter to specific lineage (shows all repros in that lineage)
+* `--interactive / --no-interactive`: Enable interactive configuration prompts if credentials are missing  [default: interactive]
 * `-f, --fuzzcorp-url TEXT`: FuzzCorp URL for web scraping (used when --use-ng is not set)  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
 * `--help`: Show this message and exit.
 

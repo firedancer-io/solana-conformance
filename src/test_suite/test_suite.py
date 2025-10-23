@@ -29,7 +29,6 @@ from test_suite.multiprocessing_utils import (
 import test_suite.globals as globals
 from test_suite.util import (
     set_ld_preload_asan,
-    run_fuzz_command,
     deduplicate_fixtures_by_hash,
     fetch_with_retries,
     process_items,
@@ -43,6 +42,10 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 import time
 import test_suite.features_utils as features_utils
+import traceback
+import httpx
+from test_suite.fuzzcorp_auth import get_fuzzcorp_auth, FuzzCorpAuth
+from test_suite.fuzzcorp_utils import fuzzcorp_api_call
 
 """
 Harness options:
@@ -661,12 +664,88 @@ def list_harness_types():
     return True
 
 
+@app.command(help=f"Configure FuzzCorp API credentials (interactive).")
+def configure_fuzzcorp(
+    force: bool = typer.Option(
+        False,
+        "--force",
+        help="Force reconfiguration even if config exists",
+    ),
+    clear: bool = typer.Option(
+        False,
+        "--clear",
+        help="Clear all cached configuration",
+    ),
+    validate: bool = typer.Option(
+        False,
+        "--validate",
+        help="Validate current configuration and token",
+    ),
+    use_ng: bool = typer.Option(
+        True,
+        "--use-ng",
+        help="(No-op, kept for compatibility)",
+    ),
+):
+    """Configure FuzzCorp API credentials interactively or manage configuration."""
+    config = FuzzCorpAuth()
+
+    if clear:
+        config.clear_all()
+        print("Configuration cleared from:", config.config_file)
+        return True
+
+    if validate:
+        print("Checking configuration...")
+        print(f"  API Origin: {config.get_api_origin()}")
+        print(f"  Organization: {config.get_organization()}")
+        print(f"  Project: {config.get_project()}")
+
+        if config.get_token():
+            print(f"  Token: (cached)")
+            print("\nValidating token...")
+            if config.validate_token():
+                print("Token is valid!")
+                return True
+            else:
+                print("Token is invalid or expired")
+                print(
+                    "\nRun 'solana-conformance configure-fuzzcorp' to re-authenticate."
+                )
+                raise typer.Exit(code=1)
+        else:
+            print("No token cached")
+            missing_auth = config.get_missing_auth()
+            if missing_auth:
+                print(f"\nPlease set: {missing_auth}")
+            print("\nOr run 'solana-conformance configure-fuzzcorp' to authenticate.")
+            raise typer.Exit(code=1)
+
+    # Interactive setup
+    if config.interactive_setup(force=force):
+        return True
+    else:
+        print("[ERROR] Configuration setup failed")
+        raise typer.Exit(code=1)
+
+
 @app.command(help=f"List all available repro lineages.")
 def list_repros(
     use_ng: bool = typer.Option(
-        False,
+        True,
         "--use-ng",
-        help="Use fuzz NG CLI instead of web scraping",
+        help="Use fuzz NG API instead of web scraping",
+    ),
+    lineage: str = typer.Option(
+        None,
+        "--lineage",
+        "-l",
+        help="Filter to specific lineage (shows all repros in that lineage)",
+    ),
+    interactive: bool = typer.Option(
+        True,
+        "--interactive/--no-interactive",
+        help="Enable interactive configuration prompts if credentials are missing",
     ),
     fuzzcorp_url: str = typer.Option(
         os.getenv(
@@ -678,41 +757,68 @@ def list_repros(
         help="FuzzCorp URL for web scraping (used when --use-ng is not set)",
     ),
 ):
-    """List all repro lineages with their counts using either fuzz CLI or web scraping."""
+    """List all repro lineages with their counts, or all repros in a specific lineage."""
 
     if use_ng:
-        # Use fuzz NG CLI
-        fuzz_bin = os.getenv("FUZZ_BIN", "fuzz")
-        cmd = [fuzz_bin, "list", "repros", "--json"]
-        result = run_fuzz_command(cmd)
-        if result is None:
+        # Use FuzzCorp HTTP API directly with interactive configuration
+        # Get configuration (with interactive prompts if needed)
+        config = get_fuzzcorp_auth(interactive=interactive)
+        if not config:
             raise typer.Exit(code=1)
 
-        try:
-            data = json.loads(result.stdout)
-        except json.JSONDecodeError as e:
-            print(f"[ERROR] Failed to parse JSON output: {e}")
-            print(f"Output: {result.stdout}")
-            raise typer.Exit(code=1)
+        # Fetch repros using the API wrapper
+        print(f"Fetching repro index from {config.get_api_origin()}...")
+
+        def fetch_repros(client):
+            return client.list_repros()
+
+        response = fuzzcorp_api_call(config, fetch_repros, interactive=interactive)
 
         # Display the results in a nice table format
-        bundle_id = data.get("BundleID", "N/A")
-        lineages = data.get("Data", [])
+        print(f"\nBundle ID: {response.bundle_id}\n")
 
-        print(f"\nBundle ID: {bundle_id}\n")
+        if lineage:
+            # Show all repros in the specified lineage
+            if lineage not in response.lineages:
+                print(f"[ERROR] Lineage '{lineage}' not found")
+                print(f"\nAvailable lineages:")
+                for name in sorted(response.lineages.keys()):
+                    print(f"  - {name}")
+                raise typer.Exit(code=1)
 
-        # Print header
-        print(f"{'LINEAGE':<40} {'COUNT':<10} {'VERIFIED':<10}")
-        print("─" * 60)
+            repros = response.lineages[lineage]
+            print(f"Lineage: {lineage}")
+            print(f"Total repros: {len(repros)}\n")
 
-        # Print each lineage
-        for lineage in lineages:
-            name = lineage.get("LineageName", "")
-            count = lineage.get("ReproCount", 0)
-            verified = lineage.get("Verified", 0)
-            print(f"{name:<40} {count:<10} {verified:<10}")
+            # Print header
+            print(f"{'HASH':<70} {'COUNT':<8} {'VERIFIED':<10} {'CREATED':<20}")
+            print("─" * 110)
 
-        print(f"\nFound {len(lineages)} entries.")
+            # Print each repro
+            for repro in sorted(repros, key=lambda r: r.created_at, reverse=True):
+                verified_str = "Yes" if repro.all_verified else "No"
+                created_str = (
+                    repro.created_at.strftime("%Y-%m-%d %H:%M:%S")
+                    if repro.created_at
+                    else "N/A"
+                )
+                print(
+                    f"{repro.hash:<70} {repro.count:<8} {verified_str:<10} {created_str:<20}"
+                )
+
+            verified_count = sum(1 for r in repros if r.all_verified)
+            print(f"\nTotal: {len(repros)} repro(s), {verified_count} verified")
+        else:
+            # Print each lineage in a table
+            print(f"{'LINEAGE':<40} {'COUNT':<10} {'VERIFIED':<10}")
+            print("─" * 60)
+
+            for lineage_name, repros in sorted(response.lineages.items()):
+                total_count = sum(r.count for r in repros)
+                verified_count = sum(r.count for r in repros if r.all_verified)
+                print(f"{lineage_name:<40} {total_count:<10} {verified_count:<10}")
+
+            print(f"\nFound {len(response.lineages)} lineage(s).")
     else:
         # Use web scraping
         fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
@@ -760,6 +866,299 @@ def list_repros(
         print(f"\nFound {len(lineages)} entries.")
 
     return True
+
+
+@app.command(help="Download a single repro by hash from FuzzCorp NG.")
+def download_repro(
+    repro_hash: str = typer.Argument(
+        ...,
+        help="Hash of the repro to download",
+    ),
+    lineage: str = typer.Option(
+        ...,
+        "--lineage",
+        "-l",
+        help="Lineage name (e.g., sol_vm_syscall_cpi_rust_diff_hf)",
+    ),
+    output_dir: Path = typer.Option(
+        Path("./fuzzcorp_downloads"),
+        "--output-dir",
+        "-o",
+        help="Output directory for downloaded repro",
+    ),
+    interactive: bool = typer.Option(
+        True,
+        "--interactive/--no-interactive",
+        help="Prompt for authentication if needed",
+    ),
+    use_ng: bool = typer.Option(
+        True,
+        "--use-ng",
+        help="(No-op, kept for compatibility)",
+    ),
+):
+    """Download a single repro by hash from FuzzCorp NG API."""
+    # Create output directories
+    if output_dir.exists():
+        shutil.rmtree(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    inputs_dir = output_dir / "inputs"
+    inputs_dir.mkdir(parents=True, exist_ok=True)
+
+    # Set globals for download_and_process
+    globals.output_dir = output_dir
+    globals.inputs_dir = inputs_dir
+
+    try:
+        # Get configuration
+        config = get_fuzzcorp_auth(interactive=interactive)
+        if not config:
+            print("[ERROR] Failed to authenticate with FuzzCorp API")
+            raise typer.Exit(code=1)
+
+        print(f"\nDownloading repro {repro_hash} from lineage {lineage}...\n")
+
+        # Download the repro
+        result = download_and_process((lineage, repro_hash))
+
+        # Handle result
+        if isinstance(result, dict):
+            if result.get("success"):
+                print(f"Success!")
+                print(f"   Repro: {result['repro']}")
+                print(f"   Artifacts: {result.get('artifacts', 0)}")
+                print(f"   Fixtures: {result.get('fixtures', 0)}")
+            else:
+                print(f"[ERROR] Failed: {result['message']}")
+                raise typer.Exit(code=1)
+        else:
+            # Legacy string result
+            if result.startswith("Error") or result.startswith("Failed"):
+                print(f"[ERROR] {result}")
+                raise typer.Exit(code=1)
+            else:
+                print(f"{result}")
+
+        # Show output location
+        actual_fixtures = len(list(inputs_dir.glob("*.fix")))
+        print(f"   Total fixtures on disk: {actual_fixtures}")
+        print(f"   Output directory: {output_dir}")
+        print(f"   Fixtures directory: {inputs_dir}")
+
+    except httpx.HTTPError as e:
+        print(f"[ERROR] HTTP request failed: {e}")
+        if hasattr(e, "response") and e.response:
+            print(f"[ERROR] Response: {e.response.text}")
+        raise typer.Exit(code=1)
+    except Exception as e:
+        print(f"[ERROR] Failed to download repro: {e}")
+        traceback.print_exc()
+        raise typer.Exit(code=1)
+
+
+@app.command(help="Download repros from FuzzCorp NG for specified lineages.")
+def download_repros(
+    output_dir: Path = typer.Option(
+        Path("./fuzzcorp_downloads"),
+        "--output-dir",
+        "-o",
+        help="Output directory for downloaded repros",
+    ),
+    section_names: str = typer.Option(
+        ...,
+        "--section-names",
+        "-n",
+        help="Comma-delimited list of lineage names to download",
+    ),
+    section_limit: int = typer.Option(
+        0,
+        "--section-limit",
+        "-l",
+        help="Limit number of repros per lineage (0 = all verified)",
+    ),
+    num_processes: int = typer.Option(
+        4,
+        "--num-processes",
+        "-p",
+        help="Number of parallel download processes",
+    ),
+    use_ng: bool = typer.Option(
+        True,
+        "--use-ng",
+        help="Use fuzz NG CLI (fuzz list/download repro) instead of API scraping",
+    ),
+    interactive: bool = typer.Option(
+        True,
+        "--interactive/--no-interactive",
+        help="Prompt for authentication if needed",
+    ),
+):
+    """Download repros from FuzzCorp NG API."""
+    # Create output directories
+    if output_dir.exists():
+        shutil.rmtree(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    inputs_dir = output_dir / "inputs"
+    inputs_dir.mkdir(parents=True, exist_ok=True)
+
+    # Set globals for download_and_process
+    globals.output_dir = output_dir
+    globals.inputs_dir = inputs_dir
+
+    try:
+        # Get configuration
+        config = get_fuzzcorp_auth(interactive=interactive)
+        if not config:
+            print("[ERROR] Failed to authenticate with FuzzCorp API")
+            raise typer.Exit(code=1)
+
+        # Create HTTP client and fetch repros
+        section_names_list = section_names.split(",")
+        download_list = []
+
+        # Fetch all repros using API wrapper
+        print(f"Fetching repro index ...")
+
+        def fetch_repros(client):
+            return client.list_repros()
+
+        response = fuzzcorp_api_call(config, fetch_repros, interactive=interactive)
+        print(f"Bundle ID: {response.bundle_id}\n")
+
+        # Process each requested lineage
+        for section_name in section_names_list:
+            section_name = section_name.strip()
+            print(f"Processing lineage: {section_name}")
+
+            # Get repros for this lineage
+            lineage_repros = response.lineages.get(section_name, [])
+            if not lineage_repros:
+                print(f"  [WARNING] No repros found for lineage {section_name}")
+                continue
+
+            # Filter to verified repros only
+            verified_repros = [r for r in lineage_repros if r.all_verified]
+
+            if section_limit > 0:
+                verified_repros = verified_repros[:section_limit]
+
+            if len(verified_repros) == 0:
+                print(f"  [WARNING] No verified repros found for {section_name}")
+                continue
+
+            # Add to download list
+            for repro in verified_repros:
+                download_list.append((section_name, repro.hash))
+
+            print(f"  Found {len(verified_repros)} verified repro(s)")
+
+        if not download_list:
+            print("\n[ERROR] No repros to download")
+            raise typer.Exit(code=1)
+
+        print(f"\nDownloading {len(download_list)} repro(s)...\n")
+
+        # Download in parallel with progress bar
+        if num_processes > 1:
+            with Pool(processes=num_processes) as pool:
+                results = []
+                total_artifacts = 0
+                total_fixtures = 0
+                with tqdm.tqdm(
+                    total=len(download_list), desc="Downloading", unit="repro"
+                ) as pbar:
+                    for result in pool.imap_unordered(
+                        download_and_process, download_list
+                    ):
+                        results.append(result)
+                        # Handle structured results
+                        if isinstance(result, dict):
+                            if result.get("success"):
+                                artifacts = result.get("artifacts", 0)
+                                fixtures = result.get("fixtures", 0)
+                                total_artifacts += artifacts
+                                total_fixtures += fixtures
+                                pbar.set_postfix(
+                                    {
+                                        "artifacts": total_artifacts,
+                                        "fixtures": total_fixtures,
+                                    }
+                                )
+                            else:
+                                pbar.write(
+                                    f"  [WARNING] {result['repro']}: {result['message']}"
+                                )
+                        else:
+                            # Legacy string result
+                            if result.startswith("Error") or result.startswith(
+                                "Failed"
+                            ):
+                                pbar.write(f"  [WARNING] {result}")
+                        pbar.update(1)
+        else:
+            # Sequential download with progress bar
+            results = []
+            total_artifacts = 0
+            total_fixtures = 0
+            with tqdm.tqdm(
+                total=len(download_list), desc="Downloading", unit="repro"
+            ) as pbar:
+                for item in download_list:
+                    result = download_and_process(item)
+                    results.append(result)
+                    # Handle structured results
+                    if isinstance(result, dict):
+                        if result.get("success"):
+                            artifacts = result.get("artifacts", 0)
+                            fixtures = result.get("fixtures", 0)
+                            total_artifacts += artifacts
+                            total_fixtures += fixtures
+                            pbar.set_postfix(
+                                {
+                                    "artifacts": total_artifacts,
+                                    "fixtures": total_fixtures,
+                                }
+                            )
+                        else:
+                            pbar.write(
+                                f"  [WARNING] {result['repro']}: {result['message']}"
+                            )
+                    else:
+                        # Legacy string result
+                        if result.startswith("Error") or result.startswith("Failed"):
+                            pbar.write(f"  [WARNING] {result}")
+                    pbar.update(1)
+
+        # Count fixtures and summarize results
+        actual_fixtures = len(list(inputs_dir.glob("*.fix")))
+        successful = sum(
+            1
+            for r in results
+            if (isinstance(r, dict) and r.get("success"))
+            or (isinstance(r, str) and r.startswith("Processed"))
+        )
+        failed = len(results) - successful
+
+        print(f"\nDownload complete!")
+        print(f"   Total artifacts: {total_artifacts}")
+        print(f"   Total fixtures: {actual_fixtures}")
+        print(f"   Successful: {successful}/{len(download_list)}")
+        if failed > 0:
+            print(f"   Failed: {failed}")
+        print(f"   Output directory: {output_dir}")
+        print(f"   Fixtures directory: {inputs_dir}")
+
+    except httpx.HTTPError as e:
+        print(f"[ERROR] HTTP request failed: {e}")
+        if hasattr(e, "response") and e.response:
+            print(f"[ERROR] Response: {e.response.text}")
+        raise typer.Exit(code=1)
+    except Exception as e:
+        print(f"[ERROR] Failed to download repros: {e}")
+        traceback.print_exc()
+        raise typer.Exit(code=1)
 
 
 @app.command(
@@ -832,7 +1231,7 @@ def debug_mismatches(
         0, "--section-limit", "-l", help="Limit number of fixture per section"
     ),
     use_ng: bool = typer.Option(
-        False,
+        True,
         "--use-ng",
         help="Use fuzz NG CLI (fuzz list/download repro) instead of API scraping",
     ),
@@ -863,45 +1262,33 @@ def debug_mismatches(
 
     custom_data_urls = []
     if use_ng:
-        fuzz_bin = os.getenv("FUZZ_BIN", "fuzz")
+        # Use FuzzCorp HTTP API to list repros
+        # Get configuration (interactive if needed)
+        config = get_fuzzcorp_auth(interactive=True)
+        if not config:
+            print("[ERROR] Failed to authenticate with FuzzCorp API")
+            raise typer.Exit(code=1)
+
+        # Fetch all repros using API wrapper
+        print(f"Fetching repro index from {config.get_api_origin()}...")
+
+        def fetch_repros(client):
+            return client.list_repros()
+
+        response = fuzzcorp_api_call(config, fetch_repros, interactive=True)
+
+        # Process each requested lineage
         for section_name in section_names_list:
             print(f"Fetching crashes for lineage {section_name} ...")
-            cmd = [
-                fuzz_bin,
-                "list",
-                "repro",
-                "--lineage",
-                section_name,
-                "--json",
-                "--verbose",
-            ]
-            result = run_fuzz_command(cmd)
-            if result is None:
+
+            # Get repros for this lineage
+            lineage_repros = response.lineages.get(section_name, [])
+            if not lineage_repros:
+                print(f"No repros found for lineage {section_name}")
                 continue
 
-            try:
-                data = json.loads(result.stdout)
-            except json.JSONDecodeError as e:
-                print(
-                    f"[ERROR] Failed to parse JSON from FuzzCorp NG CLI for {section_name}: {e}"
-                )
-                continue
-
-            # NG schema: data["Data"] is a list of lineage entries
-            lineage_entry = next(
-                (
-                    item
-                    for item in (data.get("Data") or [])
-                    if item.get("LineageName") == section_name
-                ),
-                None,
-            )
-            if not lineage_entry:
-                print(f"No matching lineage found for {section_name}")
-                continue
-
-            repros = lineage_entry.get("Repros") or []
-            verified_repros = [r for r in repros if r.get("AllVerified") is True]
+            # Filter to verified repros only
+            verified_repros = [r for r in lineage_repros if r.all_verified]
 
             if section_limit != 0:
                 verified_repros = verified_repros[:section_limit]
@@ -910,8 +1297,11 @@ def debug_mismatches(
                 print(f"No verified repros found for {section_name}")
                 continue
 
+            # Add to download list
             for repro in verified_repros:
-                custom_data_urls.append((section_name, str(repro["Hash"])))
+                custom_data_urls.append((section_name, repro.hash))
+
+            print(f"Found {len(verified_repros)} verified repro(s) for {section_name}")
     else:  # legacy FuzzCorp web page scraping
         if len(section_names_list) != 0:
             page_content = fetch_with_retries(
@@ -1048,6 +1438,184 @@ def debug_mismatches(
         debug_mode=debug_mode,
         fail_early=False,
     )
+
+
+@app.command(help="Debug a single repro by hash.")
+def debug_mismatch(
+    repro_hash: str = typer.Argument(
+        ...,
+        help="Hash of the repro to debug",
+    ),
+    lineage: str = typer.Option(
+        ...,
+        "--lineage",
+        "-l",
+        help="Lineage name (e.g., sol_vm_syscall_cpi_rust_diff_hf)",
+    ),
+    reference_shared_library: Path = typer.Option(
+        Path(os.getenv("SOLFUZZ_TARGET", "")),
+        "--solana-target",
+        "-s",
+        help="Solana (or ground truth) shared object (.so) target file path",
+    ),
+    shared_libraries: List[Path] = typer.Option(
+        [Path(os.getenv("FIREDANCER_TARGET", ""))],
+        "--target",
+        "-t",
+        help="Shared object (.so) target file paths to test against reference",
+    ),
+    output_dir: Path = typer.Option(
+        ...,
+        "--output-dir",
+        "-o",
+        help="Output directory for test results",
+    ),
+    default_harness_ctx: str = typer.Option(
+        "InstrHarness",
+        "--default-harness-type",
+        "-h",
+        help="Harness type to use for Context protobufs",
+    ),
+    log_level: int = typer.Option(
+        5,
+        "--log-level",
+        help="FD logging level",
+    ),
+    randomize_output_buffer: bool = typer.Option(
+        False,
+        "--randomize-output-buffer",
+        "-r",
+        help="Randomizes bytes in output buffer before shared library execution",
+    ),
+    interactive: bool = typer.Option(
+        True,
+        "--interactive/--no-interactive",
+        help="Prompt for authentication if needed",
+    ),
+    debug_mode: bool = typer.Option(
+        False,
+        "--debug",
+        "-d",
+        help="Enable debug mode for detailed output",
+    ),
+    use_ng: bool = typer.Option(
+        True,
+        "--use-ng",
+        help="(No-op, kept for compatibility)",
+    ),
+):
+    """Debug a single repro by downloading and testing it."""
+    initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
+
+    globals.output_dir = output_dir
+
+    if globals.output_dir.exists():
+        shutil.rmtree(globals.output_dir)
+    globals.output_dir.mkdir(parents=True, exist_ok=True)
+
+    globals.inputs_dir = globals.output_dir / "inputs"
+    if globals.inputs_dir.exists():
+        shutil.rmtree(globals.inputs_dir)
+    globals.inputs_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        # Get configuration
+        config = get_fuzzcorp_auth(interactive=interactive)
+        if not config:
+            print("[ERROR] Failed to authenticate with FuzzCorp API")
+            raise typer.Exit(code=1)
+
+        print(f"\nDownloading repro {repro_hash} from lineage {lineage}...")
+
+        # Download the repro
+        result = download_and_process((lineage, repro_hash))
+
+        # Handle result
+        if isinstance(result, dict):
+            if not result.get("success"):
+                print(f"[ERROR] Download failed: {result['message']}")
+                raise typer.Exit(code=1)
+            print(
+                f"Downloaded {result.get('fixtures', 0)} fixture(s) from {result.get('artifacts', 0)} artifact(s)\n"
+            )
+        else:
+            # Legacy string result
+            if result.startswith("Error") or result.startswith("Failed"):
+                print(f"[ERROR] {result}")
+                raise typer.Exit(code=1)
+            print(f"{result}\n")
+
+        # Deduplicate
+        print("Deduplicating fixtures...")
+        num_duplicates = deduplicate_fixtures_by_hash(globals.inputs_dir)
+        if num_duplicates > 0:
+            print(f"Removed {num_duplicates} duplicate(s)")
+
+        # Create fixtures
+        create_fixtures_dir = globals.output_dir / "create_fixtures"
+        if create_fixtures_dir.exists():
+            shutil.rmtree(create_fixtures_dir)
+        create_fixtures_dir.mkdir(parents=True, exist_ok=True)
+
+        run_tests_output = globals.output_dir / "test_results"
+
+        print("Creating fixtures...")
+        create_fixtures(
+            input=globals.inputs_dir,
+            default_harness_ctx=default_harness_ctx,
+            reference_shared_library=reference_shared_library,
+            shared_libraries=shared_libraries,
+            output_dir=create_fixtures_dir,
+            num_processes=1,  # Single repro, no need for parallel
+            readable=False,
+            only_keep_passing=False,
+            organize_fixture_dir=False,
+            log_level=log_level,
+            debug_mode=debug_mode,
+        )
+
+        print("Running tests...")
+        run_tests(
+            input=create_fixtures_dir,
+            default_harness_ctx=default_harness_ctx,
+            reference_shared_library=reference_shared_library,
+            shared_libraries=shared_libraries,
+            output_dir=run_tests_output,
+            num_processes=1,  # Single repro, no need for parallel
+            randomize_output_buffer=randomize_output_buffer,
+            log_chunk_size=10000,
+            verbose=True,  # Verbose for single repro debugging
+            consensus_mode=False,
+            core_bpf_mode=False,
+            ignore_compute_units_mode=False,
+            save_failures=True,
+            save_successes=True,
+            log_level=log_level,
+            debug_mode=debug_mode,
+            fail_early=False,
+        )
+
+        # Show results
+        print(f"\nResults:")
+        print(f"   Output directory: {output_dir}")
+        print(f"   Fixtures directory: {globals.inputs_dir}")
+        print(f"   Test results: {run_tests_output}")
+
+        # Show vimdiff command if there are failures
+        failed_protobufs = run_tests_output / "failed_protobufs"
+        if failed_protobufs.exists() and list(failed_protobufs.glob("*")):
+            libsolfuzz = run_tests_output / "libsolfuzz_agave"
+            libfd = run_tests_output / "libfd_exec_sol_compat"
+            first_failure = next(failed_protobufs.glob("*")).stem
+            print(f"\nTo view differences:")
+            print(
+                f"   vimdiff {libsolfuzz}/{first_failure}.txt {libfd}/{first_failure}.txt"
+            )
+
+    except Exception as e:
+        print(f"[ERROR] Failed to debug repro: {e}")
+        traceback.print_exc()
+        raise typer.Exit(code=1)
 
 
 @app.command(
@@ -1525,7 +2093,7 @@ def create_env(
         help="Path to test-vectors repository",
     ),
     use_ng: bool = typer.Option(
-        False,
+        True,
         "--use-ng",
         help="Use fuzz NG CLI (fuzz list/download repro) instead of API scraping",
     ),
@@ -1618,6 +2186,69 @@ def create_env(
     print(f"Updated list file: {list_path}")
     print(f"Copied fixtures to: {test_vectors_repos_path}")
     return True
+
+
+@app.command(
+    context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+    help="Run the fuzzcorp 'fuzz' binary with the provided arguments.",
+)
+def fuzz(
+    ctx: typer.Context,
+):
+    """
+    Pass-through command to run the fuzzcorp 'fuzz' binary.
+
+    This command looks for the 'fuzz' binary in:
+    1. FUZZCORP_FUZZ_BINARY environment variable (if set)
+    2. System PATH
+
+    All arguments after 'fuzz' are passed directly to the binary.
+
+    Examples:
+        ./solana-conformance fuzz help
+        ./solana-conformance fuzz version
+        ./solana-conformance fuzz list repros --org myorg --project myproject
+
+    Note: Use 'fuzz help' instead of 'fuzz --help' to get the fuzz binary's help.
+    """
+    # Check for FUZZCORP_FUZZ_BINARY environment variable
+    fuzz_binary = os.getenv("FUZZCORP_FUZZ_BINARY")
+    if fuzz_binary:
+        if not os.path.exists(fuzz_binary):
+            print(
+                f"[ERROR] FUZZCORP_FUZZ_BINARY is set but file not found: {fuzz_binary}"
+            )
+            raise typer.Exit(code=1)
+        if not os.access(fuzz_binary, os.X_OK):
+            print(
+                f"[ERROR] FUZZCORP_FUZZ_BINARY is set but file is not executable: {fuzz_binary}"
+            )
+            raise typer.Exit(code=1)
+    else:
+        # Look for 'fuzz' in PATH
+        fuzz_binary = shutil.which("fuzz")
+        if not fuzz_binary:
+            print("[ERROR] 'fuzz' binary not found in PATH")
+            print("\nPlease either:")
+            print("  1. Add the 'fuzz' binary to your PATH, or")
+            print("  2. Set FUZZCORP_FUZZ_BINARY environment variable to the full path")
+            print("\nExample:")
+            print("  export FUZZCORP_FUZZ_BINARY=/path/to/fuzz")
+            raise typer.Exit(code=1)
+
+    # Build command with all extra arguments
+    cmd = [fuzz_binary] + ctx.args
+
+    # Run the fuzz binary with all arguments
+    try:
+        result = subprocess.run(cmd, check=False)
+        raise typer.Exit(code=result.returncode)
+    except FileNotFoundError:
+        print(f"[ERROR] Failed to execute: {fuzz_binary}")
+        raise typer.Exit(code=1)
+    except KeyboardInterrupt:
+        print("\n[INFO] Interrupted by user")
+        raise typer.Exit(code=130)
 
 
 if __name__ == "__main__":
