@@ -27,7 +27,13 @@ from test_suite.multiprocessing_utils import (
     read_context,
 )
 import test_suite.globals as globals
-from test_suite.util import set_ld_preload_asan
+from test_suite.util import (
+    set_ld_preload_asan,
+    run_fuzz_command,
+    deduplicate_fixtures_by_hash,
+    fetch_with_retries,
+    process_items,
+)
 import resource
 import tqdm
 from test_suite.fuzz_context import *
@@ -114,7 +120,7 @@ def execute(
     else:
         # Recursively find all files in the directory
         files_to_exec = []
-        for file_path in input.rglob("*"):
+        for file_path in input.rglob("*.fix"):
             if file_path.is_file():
                 files_to_exec.append(file_path)
     for file in files_to_exec:
@@ -160,6 +166,7 @@ def execute(
             print(parsed_instruction_effects)
 
     lib.sol_compat_fini()
+    return True
 
 
 @app.command(help=f"Extract Context messages from Fixtures.")
@@ -179,6 +186,12 @@ def fix_to_ctx(
     num_processes: int = typer.Option(
         4, "--num-processes", "-p", help="Number of processes to use"
     ),
+    debug_mode: bool = typer.Option(
+        False,
+        "--debug-mode",
+        "-d",
+        help="Enables debug mode, which disables multiprocessing",
+    ),
 ):
     # Specify globals
     globals.output_dir = output_dir
@@ -193,23 +206,24 @@ def fix_to_ctx(
     else:
         # Recursively find all files in the directory
         test_cases = []
-        for file_path in input.rglob("*"):
+        for file_path in input.rglob("*.fix"):
             if file_path.is_file():
                 test_cases.append(file_path)
     num_test_cases = len(test_cases)
 
     print(f"Converting to Fixture messages...")
-    results = []
-    with Pool(processes=num_processes) as pool:
-        for result in tqdm.tqdm(
-            pool.imap(extract_context_from_fixture, test_cases),
-            total=num_test_cases,
-        ):
-            results.append(result)
+    results = process_items(
+        test_cases,
+        extract_context_from_fixture,
+        num_processes=num_processes,
+        debug_mode=debug_mode,
+        desc="Converting",
+    )
 
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
     print(f"{len(results)} total files seen")
     print(f"{sum(results)} files successfully written")
+    return True
 
 
 @app.command(
@@ -270,6 +284,12 @@ def create_fixtures(
         "-l",
         help="FD logging level",
     ),
+    debug_mode: bool = typer.Option(
+        False,
+        "--debug-mode",
+        "-d",
+        help="Enables debug mode, which disables multiprocessing",
+    ),
 ):
     # Add Solana library to shared libraries
     shared_libraries = [reference_shared_library] + shared_libraries
@@ -298,7 +318,7 @@ def create_fixtures(
     else:
         # Recursively find all files in the directory
         test_cases = []
-        for file_path in input.rglob("*"):
+        for file_path in input.rglob("*.fix"):
             if file_path.is_file():
                 test_cases.append(file_path)
     num_test_cases = len(test_cases)
@@ -307,18 +327,14 @@ def create_fixtures(
 
     # Generate the test cases in parallel from files on disk
     print(f"Creating fixtures...")
-    write_results = []
-    with Pool(
-        processes=num_processes, initializer=initialize_process_output_buffers
-    ) as pool:
-        for result in tqdm.tqdm(
-            pool.imap(
-                create_fixture,
-                test_cases,
-            ),
-            total=num_test_cases,
-        ):
-            write_results.append(result)
+    write_results = process_items(
+        test_cases,
+        create_fixture,
+        num_processes=num_processes,
+        debug_mode=debug_mode,
+        initializer=initialize_process_output_buffers,
+        desc="Creating fixtures",
+    )
 
     # Clean up
     print("Cleaning up...")
@@ -328,6 +344,9 @@ def create_fixtures(
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
     print(f"{len(write_results)} total files seen")
     print(f"{sum(write_results)} files successfully written")
+
+    # Return success if at least one fixture was written
+    return sum(write_results) > 0
 
 
 @app.command(
@@ -490,7 +509,7 @@ expected to use different amounts of compute units than the other. Note: Cannot 
     else:
         # Recursively find all files in the directory
         test_cases = []
-        for file_path in input.rglob("*"):
+        for file_path in input.rglob("*.fix"):
             if file_path.is_file():
                 test_cases.append(file_path)
 
@@ -567,7 +586,8 @@ expected to use different amounts of compute units than the other. Note: Cannot 
         ):
             print(f"Diff between {name1} and {name2}: vimdiff {file1} {file2}")
 
-    return (failed == 0) and (skipped == 0) and (passed > 0)
+    success = (failed == 0) and (skipped == 0) and (passed > 0)
+    return success
 
 
 @app.command(help=f"Convert Context and/or Fixture messages to human-readable format.")
@@ -593,6 +613,12 @@ def decode_protobufs(
         "-h",
         help=f"Harness type to use for Context protobufs",
     ),
+    debug_mode: bool = typer.Option(
+        False,
+        "--debug-mode",
+        "-d",
+        help="Enables debug mode, which disables multiprocessing",
+    ),
 ):
     globals.output_dir = output_dir
 
@@ -607,22 +633,23 @@ def decode_protobufs(
     else:
         # Recursively find all files in the directory
         test_cases = []
-        for file_path in input.rglob("*"):
+        for file_path in input.rglob("*.fix"):
             if file_path.is_file():
                 test_cases.append(file_path)
     num_test_cases = len(test_cases)
 
-    write_results = []
-    with Pool(processes=num_processes) as pool:
-        for result in tqdm.tqdm(
-            pool.imap(decode_single_test_case, test_cases),
-            total=num_test_cases,
-        ):
-            write_results.append(result)
+    write_results = process_items(
+        test_cases,
+        decode_single_test_case,
+        num_processes=num_processes,
+        debug_mode=debug_mode,
+        desc="Decoding",
+    )
 
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
     print(f"{len(write_results)} total files seen")
     print(f"{sum(write_results)} files successfully written")
+    return True
 
 
 @app.command(help=f"List harness types available for use.")
@@ -631,6 +658,108 @@ def list_harness_types():
     print("Available harness types:")
     for name in HARNESS_MAP:
         print(f"- {name}")
+    return True
+
+
+@app.command(help=f"List all available repro lineages.")
+def list_repros(
+    use_ng: bool = typer.Option(
+        False,
+        "--use-ng",
+        help="Use fuzz NG CLI instead of web scraping",
+    ),
+    fuzzcorp_url: str = typer.Option(
+        os.getenv(
+            "FUZZCORP_URL",
+            "https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/",
+        ),
+        "--fuzzcorp-url",
+        "-f",
+        help="FuzzCorp URL for web scraping (used when --use-ng is not set)",
+    ),
+):
+    """List all repro lineages with their counts using either fuzz CLI or web scraping."""
+
+    if use_ng:
+        # Use fuzz NG CLI
+        fuzz_bin = os.getenv("FUZZ_BIN", "fuzz")
+        cmd = [fuzz_bin, "list", "repros", "--json"]
+        result = run_fuzz_command(cmd)
+        if result is None:
+            raise typer.Exit(code=1)
+
+        try:
+            data = json.loads(result.stdout)
+        except json.JSONDecodeError as e:
+            print(f"[ERROR] Failed to parse JSON output: {e}")
+            print(f"Output: {result.stdout}")
+            raise typer.Exit(code=1)
+
+        # Display the results in a nice table format
+        bundle_id = data.get("BundleID", "N/A")
+        lineages = data.get("Data", [])
+
+        print(f"\nBundle ID: {bundle_id}\n")
+
+        # Print header
+        print(f"{'LINEAGE':<40} {'COUNT':<10} {'VERIFIED':<10}")
+        print("─" * 60)
+
+        # Print each lineage
+        for lineage in lineages:
+            name = lineage.get("LineageName", "")
+            count = lineage.get("ReproCount", 0)
+            verified = lineage.get("Verified", 0)
+            print(f"{name:<40} {count:<10} {verified:<10}")
+
+        print(f"\nFound {len(lineages)} entries.")
+    else:
+        # Use web scraping
+        fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
+        if not fuzzcorp_cookie:
+            print("[ERROR] FUZZCORP_COOKIE environment variable not set")
+            raise typer.Exit(code=1)
+
+        page_content = fetch_with_retries(fuzzcorp_url, cookies={"s": fuzzcorp_cookie})
+        if page_content is None:
+            print(f"[ERROR] Failed to fetch page from {fuzzcorp_url}")
+            raise typer.Exit(code=1)
+
+        soup = BeautifulSoup(page_content, "html.parser")
+
+        # Parse lineages from the HTML
+        lineages = []
+        lineage_items = soup.find_all("li", class_="lineage-item")
+
+        for item in lineage_items:
+            # Extract text like "sol_prog_generic_diff (17)"
+            text = item.get_text(strip=True)
+            # Parse lineage name and count using regex
+            import re
+
+            match = re.match(r"(.+?)\s*\((\d+)\)", text)
+            if match:
+                name = match.group(1).strip()
+                count = int(match.group(2))
+                lineages.append({"name": name, "count": count})
+
+        if not lineages:
+            print("[WARNING] No lineages found on the page")
+            return True
+
+        # Display results
+        print()
+        print(f"{'LINEAGE':<40} {'COUNT':<10}")
+        print("─" * 50)
+
+        for lineage in lineages:
+            name = lineage["name"]
+            count = lineage["count"]
+            print(f"{name:<40} {count:<10}")
+
+        print(f"\nFound {len(lineages)} entries.")
+
+    return True
 
 
 @app.command(
@@ -746,14 +875,15 @@ def debug_mismatches(
                 "--json",
                 "--verbose",
             ]
-            result = subprocess.run(
-                cmd, text=True, capture_output=True, check=True, stderr=None
-            )
+            result = run_fuzz_command(cmd)
+            if result is None:
+                continue
+
             try:
                 data = json.loads(result.stdout)
             except json.JSONDecodeError as e:
                 print(
-                    f"Error parsing JSON from FuzzCorp NG CLI for {section_name}: {e}"
+                    f"[ERROR] Failed to parse JSON from FuzzCorp NG CLI for {section_name}: {e}"
                 )
                 continue
 
@@ -776,15 +906,20 @@ def debug_mismatches(
             if section_limit != 0:
                 verified_repros = verified_repros[:section_limit]
 
+            if len(verified_repros) == 0:
+                print(f"No verified repros found for {section_name}")
+                continue
+
             for repro in verified_repros:
                 custom_data_urls.append((section_name, str(repro["Hash"])))
     else:  # legacy FuzzCorp web page scraping
         if len(section_names_list) != 0:
-            curl_command = f"curl {fuzzcorp_url} --cookie s={fuzzcorp_cookie}"
-            result = subprocess.run(
-                curl_command, shell=True, capture_output=True, text=True
+            page_content = fetch_with_retries(
+                fuzzcorp_url, cookies={"s": fuzzcorp_cookie}
             )
-            page_content = result.stdout
+            if page_content is None:
+                print(f"[ERROR] Failed to fetch page from {fuzzcorp_url}")
+                return False
             soup = BeautifulSoup(page_content, "html.parser")
             for section_name in section_names_list:
                 current_section_count = 0
@@ -813,14 +948,15 @@ def debug_mismatches(
                     print(f"Section {section_name} not found.")
 
         for url in repro_urls_list:
-            result = subprocess.run(
-                ["curl", "--cookie", f"s={fuzzcorp_cookie}", f"{url}.bash"],
-                capture_output=True,
-                text=True,
+            bash_content = fetch_with_retries(
+                f"{url}.bash", cookies={"s": fuzzcorp_cookie}
             )
-            start_index = result.stdout.find("REPRO_CUSTOM_URL=")
-            end_index = result.stdout.find("\n", start_index)
-            custom_url = result.stdout[
+            if bash_content is None:
+                print(f"[WARNING] Failed to fetch bash script from {url}.bash")
+                continue
+            start_index = bash_content.find("REPRO_CUSTOM_URL=")
+            end_index = bash_content.find("\n", start_index)
+            custom_url = bash_content[
                 start_index + len("REPRO_CUSTOM_URL=") + 1 : end_index - 1
             ].strip()
             if custom_url == "":
@@ -831,23 +967,28 @@ def debug_mismatches(
     ld_preload = os.environ.pop("LD_PRELOAD", None)
 
     num_test_cases = len(custom_data_urls)
-    print("Downloading tests...")
-    results = []
-    if num_processes > 1 and not debug_mode:
-        with Pool(
-            processes=num_processes,
-            initializer=initialize_process_output_buffers,
-            initargs=(randomize_output_buffer,),
-        ) as pool:
-            for result in tqdm.tqdm(
-                pool.imap(download_and_process, custom_data_urls),
-                total=num_test_cases,
-            ):
-                results.append(result)
-    else:
-        initialize_process_output_buffers(randomize_output_buffer)
-        for url in tqdm.tqdm(custom_data_urls):
-            results.append(download_and_process(url))
+    print(f"Downloading {num_test_cases} tests...")
+    results = process_items(
+        custom_data_urls,
+        download_and_process,
+        num_processes=num_processes,
+        debug_mode=debug_mode,
+        initializer=initialize_process_output_buffers,
+        initargs=(randomize_output_buffer,),
+        desc="Downloading",
+    )
+
+    # Print download results summary
+    successful_downloads = [r for r in results if r and "successfully" in r]
+    failed_downloads = [r for r in results if r and ("Failed" in r or "Error" in r)]
+    print(
+        f"\nDownload summary: {len(successful_downloads)} succeeded, {len(failed_downloads)} failed"
+    )
+
+    if failed_downloads:
+        print(f"\n[WARNING] Failed downloads:")
+        for failure in failed_downloads:
+            print(f"  - {failure}")
 
     if ld_preload is not None:
         os.environ["LD_PRELOAD"] = ld_preload
@@ -856,16 +997,11 @@ def debug_mismatches(
     if repro_custom.exists():
         shutil.rmtree(repro_custom)
 
-    files = glob(str(globals.inputs_dir) + "/*")
-
-    for i in range(len(files)):
-        for j in range(i + 1, len(files)):
-            if (
-                os.path.exists(files[i])
-                and os.path.exists(files[j])
-                and filecmp.cmp(files[i], files[j], shallow=False)
-            ):
-                os.remove(files[j])
+    files = list(Path(globals.inputs_dir).iterdir())
+    print(f"Deduplicating {len(files)} downloaded fixture(s)...")
+    num_duplicates = deduplicate_fixtures_by_hash(globals.inputs_dir)
+    if num_duplicates > 0:
+        print(f"Removed {num_duplicates} duplicate(s)")
 
     create_fixtures_dir = globals.output_dir / "create_fixtures"
     if create_fixtures_dir.exists():
@@ -885,6 +1021,7 @@ def debug_mismatches(
         only_keep_passing=False,
         organize_fixture_dir=False,
         log_level=log_level,
+        debug_mode=debug_mode,
     )
 
     shutil.rmtree(globals.inputs_dir)
@@ -908,6 +1045,8 @@ def debug_mismatches(
         save_failures=True,
         save_successes=True,
         log_level=log_level,
+        debug_mode=debug_mode,
+        fail_early=False,
     )
 
 
@@ -980,6 +1119,11 @@ def regenerate_fixtures(
         "-v",
         help="Verbose output: print filenames that will be regenerated",
     ),
+    debug_mode: bool = typer.Option(
+        False,
+        "--debug-mode",
+        help="Enables debug mode, which disables multiprocessing",
+    ),
 ):
     globals.output_dir = output_dir
     globals.reference_shared_library = shared_library
@@ -998,7 +1142,7 @@ def regenerate_fixtures(
     else:
         # Recursively find all files in the directory
         test_cases = []
-        for file_path in input.rglob("*"):
+        for file_path in input.rglob("*.fix"):
             if file_path.is_file():
                 test_cases.append(file_path)
     num_regenerated = 0
@@ -1019,23 +1163,19 @@ def regenerate_fixtures(
     globals.regenerate_dry_run = dry_run
     globals.regenerate_verbose = verbose
 
-    if num_processes > 1:
-        with Pool(
-            processes=num_processes,
-            initializer=initialize_process_output_buffers,
-        ) as pool:
-            for result in tqdm.tqdm(
-                pool.imap(regenerate_fixture, test_cases),
-                total=len(test_cases),
-            ):
-                num_regenerated += result
-    else:
-        initialize_process_output_buffers()
-        for test_case in tqdm.tqdm(test_cases):
-            num_regenerated += regenerate_fixture(test_case)
+    results = process_items(
+        test_cases,
+        regenerate_fixture,
+        num_processes=num_processes,
+        debug_mode=debug_mode,
+        initializer=initialize_process_output_buffers,
+        desc="Regenerating",
+    )
+    num_regenerated = sum(results)
 
     lib.sol_compat_fini()
     print(f"Regenerated {num_regenerated} / {len(test_cases)} fixtures")
+    return True
 
 
 @app.command(
@@ -1101,6 +1241,11 @@ def mass_regenerate_fixtures(
         "-v",
         help="Verbose output: print filenames that will be regenerated",
     ),
+    debug_mode: bool = typer.Option(
+        False,
+        "--debug-mode",
+        help="Enables debug mode, which disables multiprocessing",
+    ),
 ):
     globals.output_dir = output_dir
 
@@ -1162,9 +1307,11 @@ def mass_regenerate_fixtures(
                 num_processes=num_processes,
                 verbose=verbose,
                 log_level=5,
+                debug_mode=debug_mode,
             )
 
     print(f"Regenerated fixtures from {test_vectors} to {output_dir}")
+    return True
 
 
 @app.command(
@@ -1258,28 +1405,20 @@ def exec_fixtures(
     else:
         # Recursively find all files in the directory
         test_cases = []
-        for file_path in input.rglob("*"):
+        for file_path in input.rglob("*.fix"):
             if file_path.is_file():
                 test_cases.append(file_path)
     num_test_cases = len(test_cases)
     print("Running tests...")
-    test_case_results = []
-
-    if num_processes > 1 and not debug_mode:
-        with Pool(
-            processes=num_processes,
-            initializer=initialize_process_output_buffers,
-            initargs=(randomize_output_buffer,),
-        ) as pool:
-            for result in tqdm.tqdm(
-                pool.imap(execute_fixture, test_cases),
-                total=num_test_cases,
-            ):
-                test_case_results.append(result)
-    else:
-        initialize_process_output_buffers(randomize_output_buffer)
-        for test_case in tqdm.tqdm(test_cases):
-            test_case_results.append(execute_fixture(test_case))
+    test_case_results = process_items(
+        test_cases,
+        execute_fixture,
+        num_processes=num_processes,
+        debug_mode=debug_mode,
+        initializer=initialize_process_output_buffers,
+        initargs=(randomize_output_buffer,),
+        desc="Running tests",
+    )
 
     print("Logging results...")
     passed, failed, skipped, target_log_files, failed_tests, skipped_tests = (
@@ -1302,6 +1441,8 @@ def exec_fixtures(
         print(f"Failed tests: {failed_tests}")
     if skipped != 0:
         print(f"Skipped tests: {skipped_tests}")
+
+    return (failed == 0) and (skipped == 0) and (passed > 0)
 
 
 @app.command(
@@ -1430,6 +1571,7 @@ def create_env(
         + f"/contrib/test/test-vectors-fixtures/{selected_option}"
     )[0]
 
+    print("Running debug_mismatches to test fixtures...")
     passed = debug_mismatches(
         reference_shared_library=reference_shared_library,
         default_harness_ctx=default_harness_ctx,
@@ -1448,10 +1590,13 @@ def create_env(
 
     if passed:
         print("All fixtures already pass")
-        typer.Exit(code=1)
+        raise typer.Exit(code=0)
 
     failures = glob(str(output_dir) + "/test_results/failed_protobufs/*")
 
+    print(
+        f"Adding {len(failures)} failed test(s) to {list_path} and copying to test vectors repository..."
+    )
     for failure in failures:
         with open(list_path, "r") as file:
             lines = file.readlines()
@@ -1467,6 +1612,12 @@ def create_env(
             "dump/test-vectors", str(test_vectors_repos_path)
         )
         shutil.copy2(failure, os.path.dirname(failure_test_vector_path))
+        print(f"Copied to {os.path.dirname(failure_test_vector_path)}")
+
+    print(f"Successfully processed {len(failures)} failed test(s)")
+    print(f"Updated list file: {list_path}")
+    print(f"Copied fixtures to: {test_vectors_repos_path}")
+    return True
 
 
 if __name__ == "__main__":
