@@ -27,6 +27,7 @@ $ solana-conformance [OPTIONS] COMMAND [ARGS]...
 * `exec-fixtures`: Execute fixtures and check for correct...
 * `execute`: Execute Context or Fixture message(s) and...
 * `fix-to-ctx`: Extract Context messages from Fixtures.
+* `fuzz`: Run the fuzzcorp 'fuzz' binary with the...
 * `list-harness-types`: List harness types available for use.
 * `list-repros`: List all available repro lineages.
 * `mass-regenerate-fixtures`: Regenerate features for fixtures in...
@@ -287,6 +288,20 @@ $ solana-conformance fix-to-ctx [OPTIONS]
 * `-o, --output-dir PATH`: Output directory for messages  [required]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
+* `--help`: Show this message and exit.
+
+## `solana-conformance fuzz`
+
+Run the fuzzcorp 'fuzz' binary with the provided arguments.
+
+**Usage**:
+
+```console
+$ solana-conformance fuzz [OPTIONS]
+```
+
+**Options**:
+
 * `--help`: Show this message and exit.
 
 ## `solana-conformance list-harness-types`
