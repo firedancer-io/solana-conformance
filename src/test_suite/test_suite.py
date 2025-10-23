@@ -732,7 +732,7 @@ def configure_fuzzcorp(
 @app.command(help=f"List all available repro lineages.")
 def list_repros(
     use_ng: bool = typer.Option(
-        False,
+        True,
         "--use-ng",
         help="Use fuzz NG API instead of web scraping",
     ),
@@ -1231,7 +1231,7 @@ def debug_mismatches(
         0, "--section-limit", "-l", help="Limit number of fixture per section"
     ),
     use_ng: bool = typer.Option(
-        False,
+        True,
         "--use-ng",
         help="Use fuzz NG CLI (fuzz list/download repro) instead of API scraping",
     ),
@@ -2093,7 +2093,7 @@ def create_env(
         help="Path to test-vectors repository",
     ),
     use_ng: bool = typer.Option(
-        False,
+        True,
         "--use-ng",
         help="Use fuzz NG CLI (fuzz list/download repro) instead of API scraping",
     ),
