@@ -104,11 +104,19 @@ def execute(
         "-evm",
         help="Enable FD VM tracing",
     ),
+    solcap_file: Path = typer.Option(
+        ...,
+        "--solcap_file",
+        "-sf",
+        help="file path for firedancer solcap output used for debugging bank hash mismatches in block level fixtures",
+    ),
 ):
     # Initialize output buffers and shared library
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
     if enable_vm_tracing:
         os.environ["ENABLE_VM_TRACING"] = "1"
+    if solcap_file.exists():
+        os.environ["FD_SOLCAP"] = str(solcap_file)
 
     try:
         lib = ctypes.CDLL(shared_library)

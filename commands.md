@@ -270,6 +270,7 @@ $ solana-conformance execute [OPTIONS]
 * `-l, --log-level INTEGER`: FD logging level  [default: 2]
 * `-n, --no-print-effects`: Do not print effects to stdout
 * `-evm, --enable-vm-tracing`: Enable FD VM tracing
+* `-sf, --solcap_file PATH`: file path for firedancer solcap output used for debugging bank hash mismatches in block level fixtures  [required]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance fix-to-ctx`
