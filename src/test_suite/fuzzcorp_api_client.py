@@ -18,6 +18,7 @@ USER_PREFIX = PROTECTED_PREFIX + "user/"
 LOGIN_PATH = AUTH_PREFIX + "login"
 USER_DATA_PATH = USER_PREFIX + "data"
 REPRO_INDEX_PATH = STORAGE_PREFIX + "repro_index"
+REPRO_LIST_PATH = STORAGE_PREFIX + "repro_list"
 REPRO_BY_HASH_PATH = STORAGE_PREFIX + "repro_hash"
 STORAGE_DATA_GET_PATH = STORAGE_PREFIX + "data_entry"
 
@@ -216,6 +217,22 @@ class FuzzCorpAPIClient:
 
         response = self._make_request("GET", REPRO_INDEX_PATH, data, use_query=True)
         return ReproIndexResponse.from_dict(response)
+
+    def list_repros_full(
+        self,
+        bundle_id: Optional[str] = None,
+        org: Optional[str] = None,
+        project: Optional[str] = None,
+    ) -> List[ReproMetadata]:
+        data = {
+            "org": org or self.org,
+            "prj": project or self.project,
+            "BundleID": bundle_id or "00000000-0000-0000-0000-000000000000",
+        }
+
+        response = self._make_request("GET", REPRO_LIST_PATH, data, use_query=True)
+        repros = response.get("repros", [])
+        return [ReproMetadata.from_dict(repro) for repro in repros]
 
     def get_repro_by_hash(
         self,
