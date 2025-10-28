@@ -11,16 +11,52 @@ import shutil
 import subprocess
 from pathlib import Path
 import test_suite.globals as globals
-from test_suite.util import download_with_retries
 from google.protobuf import text_format, message
 from google.protobuf.internal.decoder import _DecodeVarint
 import os
 import re
-import tempfile
 import time
 import zipfile
+import threading
+import io
+from datetime import datetime
 from test_suite.fuzzcorp_auth import get_fuzzcorp_auth
 from test_suite.fuzzcorp_api_client import FuzzCorpAPIClient
+
+# Thread-safe deduplication variables
+_download_cache_lock = threading.Lock()
+_extracted_fixtures = set()
+_downloaded_artifact_hashes = set()
+
+
+def extract_fix_files_from_zip(
+    zip_data: bytes, target_dir: Path, enable_deduplication: bool = True
+) -> int:
+    fix_count = 0
+
+    with zipfile.ZipFile(io.BytesIO(zip_data)) as z:
+        for member in z.namelist():
+            if member.endswith(".fix"):
+                fix_content = z.read(member)
+                fix_name = Path(member).name
+                fix_path = target_dir / fix_name
+
+                if enable_deduplication:
+                    with _download_cache_lock:
+                        if fix_path.exists():
+                            existing_size = fix_path.stat().st_size
+                            if existing_size == len(fix_content):
+                                continue
+
+                        if fix_name in _extracted_fixtures:
+                            continue
+                        _extracted_fixtures.add(fix_name)
+
+                with open(fix_path, "wb") as f:
+                    f.write(fix_content)
+                fix_count += 1
+
+    return fix_count
 
 
 def process_target(
@@ -446,22 +482,29 @@ def execute_fixture(test_file: Path) -> tuple[str, int, dict | None]:
 
 def download_and_process(source):
     try:
-        if isinstance(source, (tuple, list)) and len(source) == 2:
-            section_name, crash_hash = source
-            out_dir = globals.inputs_dir / f"{section_name}_{crash_hash}"
-            out_dir.mkdir(parents=True, exist_ok=True)
+        section_name, crash_hash = source
 
-            # Use FuzzCorp HTTP API to download repro
-            # Get configuration
-            config = get_fuzzcorp_auth(interactive=False)
-            if not config:
-                return {
-                    "success": False,
-                    "repro": f"{section_name}/{crash_hash}",
-                    "message": "Failed to download: no FuzzCorp config",
-                }
+        out_dir = globals.inputs_dir / f"{section_name}_{crash_hash}"
+        out_dir.mkdir(parents=True, exist_ok=True)
 
-            # Create HTTP client
+        # Use FuzzCorp HTTP API to download repro
+        config = get_fuzzcorp_auth(interactive=False)
+        if not config:
+            return {
+                "success": False,
+                "repro": f"{section_name}/{crash_hash}",
+                "message": "Failed to download: no FuzzCorp config",
+            }
+
+        # Check if metadata is cached (to avoid slow API calls)
+        repro_metadata = None
+        if (
+            hasattr(globals, "repro_metadata_cache")
+            and crash_hash in globals.repro_metadata_cache
+        ):
+            repro_metadata = globals.repro_metadata_cache[crash_hash]
+        else:
+            # Meta data cache miss, fetch from API
             with FuzzCorpAPIClient(
                 api_origin=config.get_api_origin(),
                 token=config.get_token(),
@@ -476,110 +519,77 @@ def download_and_process(source):
                     project=config.get_project(),
                 )
 
-                if not repro_metadata.artifact_hashes:
-                    return {
-                        "success": False,
-                        "repro": f"{section_name}/{crash_hash}",
-                        "message": "Failed to process: no artifacts found",
-                    }
+        if not repro_metadata.artifact_hashes:
+            return {
+                "success": False,
+                "repro": f"{section_name}/{crash_hash}",
+                "message": "Failed to process: no artifacts found",
+            }
 
-                # Download and extract each artifact
-                fix_count = 0
-                num_artifacts = len(repro_metadata.artifact_hashes)
-                for idx, artifact_hash in enumerate(repro_metadata.artifact_hashes, 1):
+        # Log artifact count
+        num_artifacts = len(repro_metadata.artifact_hashes)
+
+        # Download and extract each artifact
+        fix_count = 0
+        skipped_downloads = 0
+
+        # Create artifact cache directory in output folder
+        artifact_cache_dir = globals.output_dir / ".artifact_cache"
+        artifact_cache_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create HTTP client for artifact downloads
+        with FuzzCorpAPIClient(
+            api_origin=config.get_api_origin(),
+            token=config.get_token(),
+            org=config.get_organization(),
+            project=config.get_project(),
+            http2=True,
+        ) as client:
+            for idx, artifact_hash in enumerate(repro_metadata.artifact_hashes, 1):
+                # Check if artifact ZIP already exists on disk
+                artifact_zip_path = artifact_cache_dir / f"{artifact_hash}.zip"
+
+                if artifact_zip_path.exists():
+                    # Use cached ZIP file
+                    skipped_downloads += 1
+                    with open(artifact_zip_path, "rb") as f:
+                        artifact_data = f.read()
+                else:
                     # Download artifact (ZIP file)
                     artifact_data = client.download_artifact_data(
                         artifact_hash, section_name
                     )
 
-                    # Save and extract ZIP
-                    with tempfile.NamedTemporaryFile(
-                        suffix=".zip", delete=False
-                    ) as tmp_zip:
-                        tmp_zip.write(artifact_data)
-                        tmp_zip_path = tmp_zip.name
+                    # Save to cache for future runs
+                    with open(artifact_zip_path, "wb") as f:
+                        f.write(artifact_data)
 
-                    try:
-                        with zipfile.ZipFile(tmp_zip_path) as z:
-                            # Extract all .fix files
-                            for member in z.namelist():
-                                if member.endswith(".fix"):
-                                    fix_content = z.read(member)
-                                    fix_name = Path(member).name
-                                    fix_path = globals.inputs_dir / fix_name
-                                    with open(fix_path, "wb") as f:
-                                        f.write(fix_content)
-                                    fix_count += 1
-                    finally:
-                        os.unlink(tmp_zip_path)
+                # Extract .fix files from the artifact ZIP
+                fix_count += extract_fix_files_from_zip(
+                    artifact_data, globals.inputs_dir, enable_deduplication=True
+                )
 
-            if fix_count == 0:
-                return {
-                    "success": False,
-                    "repro": f"{section_name}/{crash_hash}",
-                    "message": "Failed to process: no .fix files found in artifacts",
-                }
+                # Mark this artifact as processed (in-memory only, for this session)
+                with _download_cache_lock:
+                    _downloaded_artifact_hashes.add(artifact_hash)
 
-            # Return structured result with artifact count
-            return {
-                "success": True,
-                "repro": f"{section_name}/{crash_hash}",
-                "fixtures": fix_count,
-                "artifacts": num_artifacts,
-                "message": f"Processed {section_name}/{crash_hash} successfully ({fix_count} fixture(s) from {num_artifacts} artifact(s))",
-            }
+        # Log summary for this repro
+        downloaded_count = num_artifacts - skipped_downloads
 
-        else:
-            # Download ZIP file (legacy FuzzCorp mode)
-            zip_name = Path(source).name
-            dest_file = globals.output_dir / zip_name
-
-            # Check if we need FuzzCorp authentication
-            fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
-            cookies = {"s": fuzzcorp_cookie} if fuzzcorp_cookie else None
-
-            download_with_retries(source, dest_file, cookies=cookies)
-
-            # Extract ZIP
-            try:
-                with zipfile.ZipFile(f"{globals.output_dir}/{zip_name}") as z:
-                    z.extractall(globals.output_dir)
-            except zipfile.BadZipFile as e:
-                return f"Error processing {source}: invalid ZIP file - {str(e)}"
-
-            # Count and copy fixtures
-            fixtures = list((globals.output_dir / "repro_custom").glob("*.fix"))
-            if not fixtures:
-                return f"Failed to process {zip_name}: no .fix files found in ZIP"
-
-            for fix in fixtures:
-                shutil.copy2(fix, globals.inputs_dir)
-            return f"Processed {zip_name} successfully ({len(fixtures)} fixture(s))"
-
+        # Always return success if we processed artifacts (even if no new fixtures extracted)
+        # Not extracting new fixtures just means they already exist or artifacts don't contain .fix files
         return {
-            "success": False,
-            "repro": str(source),
-            "message": f"Unsupported source type",
-        }
-    except zipfile.BadZipFile as e:
-        repro_id = (
-            f"{section_name}/{crash_hash}"
-            if isinstance(source, (tuple, list)) and len(source) == 2
-            else str(source)
-        )
-        return {
-            "success": False,
-            "repro": repro_id,
-            "message": f"Error: invalid ZIP file - {str(e)}",
+            "success": True,
+            "repro": f"{section_name}/{crash_hash}",
+            "fixtures": fix_count,
+            "artifacts": num_artifacts,
+            "cached": skipped_downloads,
+            "downloaded": downloaded_count,
+            "message": f"Processed {section_name}/{crash_hash} successfully ({fix_count} new fixture(s) from {num_artifacts} artifact(s))",
         }
     except Exception as e:
-        repro_id = (
-            f"{section_name}/{crash_hash}"
-            if isinstance(source, (tuple, list)) and len(source) == 2
-            else str(source)
-        )
         return {
             "success": False,
-            "repro": repro_id,
+            "repro": f"{section_name}/{crash_hash}",
             "message": f"Error: {type(e).__name__}: {str(e)}",
         }

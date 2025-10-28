@@ -5,7 +5,6 @@ import ctypes
 import filecmp
 from glob import glob
 import itertools
-from multiprocessing import Pool
 from pathlib import Path
 import subprocess
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
@@ -45,6 +44,7 @@ import test_suite.features_utils as features_utils
 import traceback
 import httpx
 from test_suite.fuzzcorp_auth import get_fuzzcorp_auth, FuzzCorpAuth
+from test_suite.fuzzcorp_api_client import FuzzCorpAPIClient
 from test_suite.fuzzcorp_utils import fuzzcorp_api_call
 
 """
@@ -521,33 +521,29 @@ expected to use different amounts of compute units than the other. Note: Cannot 
     # Process the test results in parallel
     print("Running tests...")
     test_case_results = []
-    if num_processes > 1 and not debug_mode and not fail_early:
-        with Pool(
-            processes=num_processes,
+    if fail_early:
+        # Run tests sequentially and stop on first failure
+        initialize_process_output_buffers(randomize_output_buffer)
+        for test_case in tqdm.tqdm(test_cases, desc="Running tests"):
+            result = run_test(test_case)
+            test_case_results.append(result)
+            # Check if test failed
+            if len(result) >= 2 and result[1] == -1:
+                print(
+                    f"\nTest failed: {result[0]}. Stopping execution due to --fail-early option."
+                )
+                break
+    else:
+        # Use process_items utility for parallel/sequential processing
+        test_case_results = process_items(
+            items=test_cases,
+            process_func=run_test,
+            num_processes=num_processes,
+            debug_mode=debug_mode,
             initializer=initialize_process_output_buffers,
             initargs=(randomize_output_buffer,),
-        ) as pool:
-            for result in tqdm.tqdm(
-                pool.imap(run_test, test_cases),
-                total=num_test_cases,
-            ):
-                test_case_results.append(result)
-    else:
-        initialize_process_output_buffers(randomize_output_buffer)
-        if fail_early:
-            # Run tests sequentially and stop on first failure
-            for test_case in tqdm.tqdm(test_cases, desc="Running tests"):
-                result = run_test(test_case)
-                test_case_results.append(result)
-                # Check if test failed (status == -1)
-                if len(result) >= 2 and result[1] == -1:
-                    print(
-                        f"\nTest failed: {result[0]}. Stopping execution due to --fail-early option."
-                    )
-                    break
-        else:
-            for test_case in tqdm.tqdm(test_cases):
-                test_case_results.append(run_test(test_case))
+            desc="Running tests",
+        )
 
     print("Logging results...")
     passed, failed, skipped, target_log_files, failed_tests, skipped_tests = (
@@ -759,111 +755,65 @@ def list_repros(
 ):
     """List all repro lineages with their counts, or all repros in a specific lineage."""
 
-    if use_ng:
-        # Use FuzzCorp HTTP API directly with interactive configuration
-        # Get configuration (with interactive prompts if needed)
-        config = get_fuzzcorp_auth(interactive=interactive)
-        if not config:
+    # Use FuzzCorp HTTP API directly with interactive configuration
+    # Get configuration (with interactive prompts if needed)
+    config = get_fuzzcorp_auth(interactive=interactive)
+    if not config:
+        raise typer.Exit(code=1)
+
+    # Fetch repros using the API wrapper
+    print(f"Fetching repro index from {config.get_api_origin()}...")
+
+    def fetch_repros(client):
+        return client.list_repros()
+
+    response = fuzzcorp_api_call(config, fetch_repros, interactive=interactive)
+
+    # Display the results in a nice table format
+    print(f"\nBundle ID: {response.bundle_id}\n")
+
+    if lineage:
+        # Show all repros in the specified lineage
+        if lineage not in response.lineages:
+            print(f"[ERROR] Lineage '{lineage}' not found")
+            print(f"\nAvailable lineages:")
+            for name in sorted(response.lineages.keys()):
+                print(f"  - {name}")
             raise typer.Exit(code=1)
 
-        # Fetch repros using the API wrapper
-        print(f"Fetching repro index from {config.get_api_origin()}...")
+        repros = response.lineages[lineage]
+        print(f"Lineage: {lineage}")
+        print(f"Total repros: {len(repros)}\n")
 
-        def fetch_repros(client):
-            return client.list_repros()
+        # Print header
+        print(f"{'HASH':<70} {'COUNT':<8} {'VERIFIED':<10} {'CREATED':<20}")
+        print("─" * 110)
 
-        response = fuzzcorp_api_call(config, fetch_repros, interactive=interactive)
+        # Print each repro
+        for repro in sorted(repros, key=lambda r: r.created_at, reverse=True):
+            verified_str = "Yes" if repro.all_verified else "No"
+            created_str = (
+                repro.created_at.strftime("%Y-%m-%d %H:%M:%S")
+                if repro.created_at
+                else "N/A"
+            )
+            print(
+                f"{repro.hash:<70} {repro.count:<8} {verified_str:<10} {created_str:<20}"
+            )
 
-        # Display the results in a nice table format
-        print(f"\nBundle ID: {response.bundle_id}\n")
-
-        if lineage:
-            # Show all repros in the specified lineage
-            if lineage not in response.lineages:
-                print(f"[ERROR] Lineage '{lineage}' not found")
-                print(f"\nAvailable lineages:")
-                for name in sorted(response.lineages.keys()):
-                    print(f"  - {name}")
-                raise typer.Exit(code=1)
-
-            repros = response.lineages[lineage]
-            print(f"Lineage: {lineage}")
-            print(f"Total repros: {len(repros)}\n")
-
-            # Print header
-            print(f"{'HASH':<70} {'COUNT':<8} {'VERIFIED':<10} {'CREATED':<20}")
-            print("─" * 110)
-
-            # Print each repro
-            for repro in sorted(repros, key=lambda r: r.created_at, reverse=True):
-                verified_str = "Yes" if repro.all_verified else "No"
-                created_str = (
-                    repro.created_at.strftime("%Y-%m-%d %H:%M:%S")
-                    if repro.created_at
-                    else "N/A"
-                )
-                print(
-                    f"{repro.hash:<70} {repro.count:<8} {verified_str:<10} {created_str:<20}"
-                )
-
-            verified_count = sum(1 for r in repros if r.all_verified)
-            print(f"\nTotal: {len(repros)} repro(s), {verified_count} verified")
-        else:
-            # Print each lineage in a table
-            print(f"{'LINEAGE':<40} {'COUNT':<10} {'VERIFIED':<10}")
-            print("─" * 60)
-
-            for lineage_name, repros in sorted(response.lineages.items()):
-                total_count = sum(r.count for r in repros)
-                verified_count = sum(r.count for r in repros if r.all_verified)
-                print(f"{lineage_name:<40} {total_count:<10} {verified_count:<10}")
-
-            print(f"\nFound {len(response.lineages)} lineage(s).")
+        verified_count = sum(1 for r in repros if r.all_verified)
+        print(f"\nTotal: {len(repros)} repro(s), {verified_count} verified")
     else:
-        # Use web scraping
-        fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
-        if not fuzzcorp_cookie:
-            print("[ERROR] FUZZCORP_COOKIE environment variable not set")
-            raise typer.Exit(code=1)
+        # Print each lineage in a table
+        print(f"{'LINEAGE':<40} {'COUNT':<10} {'VERIFIED':<10}")
+        print("─" * 60)
 
-        page_content = fetch_with_retries(fuzzcorp_url, cookies={"s": fuzzcorp_cookie})
-        if page_content is None:
-            print(f"[ERROR] Failed to fetch page from {fuzzcorp_url}")
-            raise typer.Exit(code=1)
+        for lineage_name, repros in sorted(response.lineages.items()):
+            total_count = sum(r.count for r in repros)
+            verified_count = sum(r.count for r in repros if r.all_verified)
+            print(f"{lineage_name:<40} {total_count:<10} {verified_count:<10}")
 
-        soup = BeautifulSoup(page_content, "html.parser")
-
-        # Parse lineages from the HTML
-        lineages = []
-        lineage_items = soup.find_all("li", class_="lineage-item")
-
-        for item in lineage_items:
-            # Extract text like "sol_prog_generic_diff (17)"
-            text = item.get_text(strip=True)
-            # Parse lineage name and count using regex
-            import re
-
-            match = re.match(r"(.+?)\s*\((\d+)\)", text)
-            if match:
-                name = match.group(1).strip()
-                count = int(match.group(2))
-                lineages.append({"name": name, "count": count})
-
-        if not lineages:
-            print("[WARNING] No lineages found on the page")
-            return True
-
-        # Display results
-        print()
-        print(f"{'LINEAGE':<40} {'COUNT':<10}")
-        print("─" * 50)
-
-        for lineage in lineages:
-            name = lineage["name"]
-            count = lineage["count"]
-            print(f"{name:<40} {count:<10}")
-
-        print(f"\nFound {len(lineages)} entries.")
+        print(f"\nFound {len(response.lineages)} lineage(s).")
 
     return True
 
@@ -899,8 +849,6 @@ def download_repro(
 ):
     """Download a single repro by hash from FuzzCorp NG API."""
     # Create output directories
-    if output_dir.exists():
-        shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     inputs_dir = output_dir / "inputs"
@@ -996,8 +944,6 @@ def download_repros(
 ):
     """Download repros from FuzzCorp NG API."""
     # Create output directories
-    if output_dir.exists():
-        shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     inputs_dir = output_dir / "inputs"
@@ -1058,78 +1004,56 @@ def download_repros(
             print("\n[ERROR] No repros to download")
             raise typer.Exit(code=1)
 
-        print(f"\nDownloading {len(download_list)} repro(s)...\n")
+        # Prefetch all repro metadata using efficient single API call
+        print(f"\nFetching metadata for all repros...")
 
-        # Download in parallel with progress bar
-        if num_processes > 1:
-            with Pool(processes=num_processes) as pool:
-                results = []
-                total_artifacts = 0
-                total_fixtures = 0
-                with tqdm.tqdm(
-                    total=len(download_list), desc="Downloading", unit="repro"
-                ) as pbar:
-                    for result in pool.imap_unordered(
-                        download_and_process, download_list
-                    ):
-                        results.append(result)
-                        # Handle structured results
-                        if isinstance(result, dict):
-                            if result.get("success"):
-                                artifacts = result.get("artifacts", 0)
-                                fixtures = result.get("fixtures", 0)
-                                total_artifacts += artifacts
-                                total_fixtures += fixtures
-                                pbar.set_postfix(
-                                    {
-                                        "artifacts": total_artifacts,
-                                        "fixtures": total_fixtures,
-                                    }
-                                )
-                            else:
-                                pbar.write(
-                                    f"  [WARNING] {result['repro']}: {result['message']}"
-                                )
-                        else:
-                            # Legacy string result
-                            if result.startswith("Error") or result.startswith(
-                                "Failed"
-                            ):
-                                pbar.write(f"  [WARNING] {result}")
-                        pbar.update(1)
-        else:
-            # Sequential download with progress bar
-            results = []
-            total_artifacts = 0
-            total_fixtures = 0
-            with tqdm.tqdm(
-                total=len(download_list), desc="Downloading", unit="repro"
-            ) as pbar:
-                for item in download_list:
-                    result = download_and_process(item)
-                    results.append(result)
-                    # Handle structured results
-                    if isinstance(result, dict):
-                        if result.get("success"):
-                            artifacts = result.get("artifacts", 0)
-                            fixtures = result.get("fixtures", 0)
-                            total_artifacts += artifacts
-                            total_fixtures += fixtures
-                            pbar.set_postfix(
-                                {
-                                    "artifacts": total_artifacts,
-                                    "fixtures": total_fixtures,
-                                }
-                            )
-                        else:
-                            pbar.write(
-                                f"  [WARNING] {result['repro']}: {result['message']}"
-                            )
-                    else:
-                        # Legacy string result
-                        if result.startswith("Error") or result.startswith("Failed"):
-                            pbar.write(f"  [WARNING] {result}")
-                    pbar.update(1)
+        metadata_cache = {}
+        with FuzzCorpAPIClient(
+            api_origin=config.get_api_origin(),
+            token=config.get_token(),
+            org=config.get_organization(),
+            project=config.get_project(),
+            http2=True,
+        ) as client:
+            # ONE API call to get ALL repro metadata (hash, bundle, asset, artifact_hashes)
+            all_repros = client.list_repros_full()
+
+            # Build cache with only the repros we want to download
+            download_hashes = {hash_val for _, hash_val in download_list}
+            for repro in all_repros:
+                if repro.hash in download_hashes:
+                    metadata_cache[repro.hash] = repro
+
+        print(f"  Cached metadata for {len(metadata_cache)} repro(s)\n")
+
+        # Store metadata cache in globals so workers can access it
+        globals.repro_metadata_cache = metadata_cache
+
+        print(f"Downloading {len(download_list)} repro(s)...\n")
+
+        results = process_items(
+            items=download_list,
+            process_func=download_and_process,
+            num_processes=num_processes,
+            desc="Downloading",
+        )
+
+        total_artifacts = 0
+        total_fixtures = 0
+        total_downloaded = 0
+        total_cached = 0
+        for result in results:
+            if isinstance(result, dict):
+                if result.get("success"):
+                    total_artifacts += result.get("artifacts", 0)
+                    total_fixtures += result.get("fixtures", 0)
+                    total_downloaded += result.get("downloaded", 0)
+                    total_cached += result.get("cached", 0)
+                else:
+                    print(f"  [WARNING] {result['repro']}: {result['message']}")
+            else:
+                if result.startswith("Error") or result.startswith("Failed"):
+                    print(f"  [WARNING] {result}")
 
         # Count fixtures and summarize results
         actual_fixtures = len(list(inputs_dir.glob("*.fix")))
@@ -1142,7 +1066,9 @@ def download_repros(
         failed = len(results) - successful
 
         print(f"\nDownload complete!")
-        print(f"   Total artifacts: {total_artifacts}")
+        print(
+            f"   Total artifacts: {total_artifacts} ({total_downloaded} downloaded, {total_cached} cached)"
+        )
         print(f"   Total fixtures: {actual_fixtures}")
         print(f"   Successful: {successful}/{len(download_list)}")
         if failed > 0:
@@ -1245,15 +1171,9 @@ def debug_mismatches(
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
 
     globals.output_dir = output_dir
-
-    if globals.output_dir.exists():
-        shutil.rmtree(globals.output_dir)
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
     globals.inputs_dir = globals.output_dir / "inputs"
-
-    if globals.inputs_dir.exists():
-        shutil.rmtree(globals.inputs_dir)
     globals.inputs_dir.mkdir(parents=True, exist_ok=True)
 
     fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
@@ -1261,102 +1181,73 @@ def debug_mismatches(
     section_names_list = section_names.split(",") if section_names else []
 
     custom_data_urls = []
-    if use_ng:
-        # Use FuzzCorp HTTP API to list repros
-        # Get configuration (interactive if needed)
-        config = get_fuzzcorp_auth(interactive=True)
-        if not config:
-            print("[ERROR] Failed to authenticate with FuzzCorp API")
-            raise typer.Exit(code=1)
+    # Use FuzzCorp HTTP API to list repros
+    # Get configuration (interactive if needed)
+    config = get_fuzzcorp_auth(interactive=True)
+    if not config:
+        print("[ERROR] Failed to authenticate with FuzzCorp API")
+        raise typer.Exit(code=1)
 
-        # Fetch all repros using API wrapper
-        print(f"Fetching repro index from {config.get_api_origin()}...")
+    # Fetch all repros using API wrapper
+    print(f"Fetching repro index from {config.get_api_origin()}...")
 
-        def fetch_repros(client):
-            return client.list_repros()
+    def fetch_repros(client):
+        return client.list_repros()
 
-        response = fuzzcorp_api_call(config, fetch_repros, interactive=True)
+    response = fuzzcorp_api_call(config, fetch_repros, interactive=True)
 
-        # Process each requested lineage
-        for section_name in section_names_list:
-            print(f"Fetching crashes for lineage {section_name} ...")
+    # Process each requested lineage
+    for section_name in section_names_list:
+        print(f"Fetching crashes for lineage {section_name} ...")
 
-            # Get repros for this lineage
-            lineage_repros = response.lineages.get(section_name, [])
-            if not lineage_repros:
-                print(f"No repros found for lineage {section_name}")
-                continue
+        # Get repros for this lineage
+        lineage_repros = response.lineages.get(section_name, [])
+        if not lineage_repros:
+            print(f"No repros found for lineage {section_name}")
+            continue
 
-            # Filter to verified repros only
-            verified_repros = [r for r in lineage_repros if r.all_verified]
+        # Filter to verified repros only
+        verified_repros = [r for r in lineage_repros if r.all_verified]
 
-            if section_limit != 0:
-                verified_repros = verified_repros[:section_limit]
+        if section_limit != 0:
+            verified_repros = verified_repros[:section_limit]
 
-            if len(verified_repros) == 0:
-                print(f"No verified repros found for {section_name}")
-                continue
+        if len(verified_repros) == 0:
+            print(f"No verified repros found for {section_name}")
+            continue
 
-            # Add to download list
-            for repro in verified_repros:
-                custom_data_urls.append((section_name, repro.hash))
+        # Add to download list
+        for repro in verified_repros:
+            custom_data_urls.append((section_name, repro.hash))
 
-            print(f"Found {len(verified_repros)} verified repro(s) for {section_name}")
-    else:  # legacy FuzzCorp web page scraping
-        if len(section_names_list) != 0:
-            page_content = fetch_with_retries(
-                fuzzcorp_url, cookies={"s": fuzzcorp_cookie}
-            )
-            if page_content is None:
-                print(f"[ERROR] Failed to fetch page from {fuzzcorp_url}")
-                return False
-            soup = BeautifulSoup(page_content, "html.parser")
-            for section_name in section_names_list:
-                current_section_count = 0
-                print(f"Getting links from section {section_name}...")
-                lineage_div = soup.find("div", id=f"lin_{section_name}")
-
-                if lineage_div:
-                    tables = lineage_div.find_all("table")
-                    if len(tables) > 1:
-                        issues_table = tables[1]
-                        hrefs = [
-                            link["href"]
-                            for link in issues_table.find_all("a", href=True)
-                        ]
-                        for href in hrefs:
-                            if (
-                                section_limit != 0
-                                and current_section_count >= section_limit
-                            ):
-                                break
-                            repro_urls_list.append(urljoin(fuzzcorp_url, href))
-                            current_section_count += 1
-                    else:
-                        print(f"No bugs found for section {section_name}.")
-                else:
-                    print(f"Section {section_name} not found.")
-
-        for url in repro_urls_list:
-            bash_content = fetch_with_retries(
-                f"{url}.bash", cookies={"s": fuzzcorp_cookie}
-            )
-            if bash_content is None:
-                print(f"[WARNING] Failed to fetch bash script from {url}.bash")
-                continue
-            start_index = bash_content.find("REPRO_CUSTOM_URL=")
-            end_index = bash_content.find("\n", start_index)
-            custom_url = bash_content[
-                start_index + len("REPRO_CUSTOM_URL=") + 1 : end_index - 1
-            ].strip()
-            if custom_url == "":
-                print(f"Failed to get custom URL from {url}")
-                continue
-            custom_data_urls.append(custom_url)
+        print(f"Found {len(verified_repros)} verified repro(s) for {section_name}")
 
     ld_preload = os.environ.pop("LD_PRELOAD", None)
 
     num_test_cases = len(custom_data_urls)
+
+    if num_test_cases > 0:
+        print(f"Fetching metadata for all repros...")
+
+        metadata_cache = {}
+        with FuzzCorpAPIClient(
+            api_origin=config.get_api_origin(),
+            token=config.get_token(),
+            org=config.get_organization(),
+            project=config.get_project(),
+            http2=True,
+        ) as client:
+            all_repros = client.list_repros_full()
+
+            download_hashes = {hash_val for _, hash_val in custom_data_urls}
+            for repro in all_repros:
+                if repro.hash in download_hashes:
+                    metadata_cache[repro.hash] = repro
+
+        print(f"  Cached metadata for {len(metadata_cache)} repro(s)\n")
+
+        globals.repro_metadata_cache = metadata_cache
+
     print(f"Downloading {num_test_cases} tests...")
     results = process_items(
         custom_data_urls,
