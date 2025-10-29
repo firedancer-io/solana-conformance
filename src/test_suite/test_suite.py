@@ -818,8 +818,8 @@ def list_repros(
     return True
 
 
-@app.command(help="Download a single repro by hash from FuzzCorp NG.")
-def download_repro(
+@app.command(help="Download fixtures for a single repro hash from FuzzCorp NG.")
+def download_fixture(
     repro_hash: str = typer.Argument(
         ...,
         help="Hash of the repro to download",
@@ -847,7 +847,7 @@ def download_repro(
         help="(No-op, kept for compatibility)",
     ),
 ):
-    """Download a single repro by hash from FuzzCorp NG API."""
+    """Download and extract fixture(s) for a single repro hash from FuzzCorp NG API."""
     # Create output directories
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -865,7 +865,9 @@ def download_repro(
             print("[ERROR] Failed to authenticate with FuzzCorp API")
             raise typer.Exit(code=1)
 
-        print(f"\nDownloading repro {repro_hash} from lineage {lineage}...\n")
+        print(
+            f"\nDownloading fixture(s) for repro {repro_hash} from lineage {lineage}...\n"
+        )
 
         # Download the repro
         result = download_and_process((lineage, repro_hash))
@@ -900,13 +902,15 @@ def download_repro(
             print(f"[ERROR] Response: {e.response.text}")
         raise typer.Exit(code=1)
     except Exception as e:
-        print(f"[ERROR] Failed to download repro: {e}")
+        print(f"[ERROR] Failed to download fixtures: {e}")
         traceback.print_exc()
         raise typer.Exit(code=1)
 
 
-@app.command(help="Download repros from FuzzCorp NG for specified lineages.")
-def download_repros(
+@app.command(
+    help="Download fixtures for verified repros in specified lineages from FuzzCorp NG."
+)
+def download_fixtures(
     output_dir: Path = typer.Option(
         Path("./fuzzcorp_downloads"),
         "--output-dir",
@@ -942,7 +946,7 @@ def download_repros(
         help="Prompt for authentication if needed",
     ),
 ):
-    """Download repros from FuzzCorp NG API."""
+    """Download and extract fixtures for verified repros from FuzzCorp NG API."""
     # Create output directories
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1082,7 +1086,190 @@ def download_repros(
             print(f"[ERROR] Response: {e.response.text}")
         raise typer.Exit(code=1)
     except Exception as e:
-        print(f"[ERROR] Failed to download repros: {e}")
+        print(f"[ERROR] Failed to download fixtures: {e}")
+        traceback.print_exc()
+        raise typer.Exit(code=1)
+
+
+@app.command(help="Download a single .crash file by hash from FuzzCorp NG.")
+def download_crash(
+    repro_hash: str = typer.Argument(
+        ...,
+        help="Hash of the repro to download (.crash)",
+    ),
+    lineage: str = typer.Option(
+        ...,
+        "--lineage",
+        "-l",
+        help="Lineage name (e.g., sol_vm_syscall_cpi_rust_diff_hf)",
+    ),
+    output_dir: Path = typer.Option(
+        Path("./fuzzcorp_downloads"),
+        "--output-dir",
+        "-o",
+        help="Output directory for downloaded crash",
+    ),
+    interactive: bool = typer.Option(
+        True,
+        "--interactive/--no-interactive",
+        help="Prompt for authentication if needed",
+    ),
+):
+    """Download a single .crash (repro) file from FuzzCorp NG API."""
+    # Create output directories
+    output_dir.mkdir(parents=True, exist_ok=True)
+    crashes_dir = output_dir / "crashes" / lineage
+    crashes_dir.mkdir(parents=True, exist_ok=True)
+
+    # Auth/config
+    config = get_fuzzcorp_auth(interactive=interactive)
+    if not config:
+        print("[ERROR] Failed to authenticate with FuzzCorp API")
+        raise typer.Exit(code=1)
+
+    try:
+        with FuzzCorpAPIClient(
+            api_origin=config.get_api_origin(),
+            token=config.get_token(),
+            org=config.get_organization(),
+            project=config.get_project(),
+            http2=True,
+        ) as client:
+            print(f"Downloading crash {repro_hash} from lineage {lineage}...")
+            data = client.download_repro_data(repro_hash, lineage)
+            out_path = crashes_dir / f"{repro_hash}.crash"
+            with open(out_path, "wb") as f:
+                f.write(data)
+            print(f"Saved: {out_path}")
+    except httpx.HTTPError as e:
+        print(f"[ERROR] HTTP request failed: {e}")
+        if hasattr(e, "response") and e.response:
+            print(f"[ERROR] Response: {e.response.text}")
+        raise typer.Exit(code=1)
+    except Exception as e:
+        print(f"[ERROR] Failed to download crash: {e}")
+        traceback.print_exc()
+        raise typer.Exit(code=1)
+
+
+@app.command(help="Download .crash files for specified lineages from FuzzCorp NG.")
+def download_crashes(
+    output_dir: Path = typer.Option(
+        Path("./fuzzcorp_downloads"),
+        "--output-dir",
+        "-o",
+        help="Output directory for downloaded crashes",
+    ),
+    section_names: str = typer.Option(
+        ...,
+        "--section-names",
+        "-n",
+        help="Comma-delimited list of lineage names to download",
+    ),
+    section_limit: int = typer.Option(
+        0,
+        "--section-limit",
+        "-l",
+        help="Limit number of crashes per lineage (0 = all verified)",
+    ),
+    num_processes: int = typer.Option(
+        4,
+        "--num-processes",
+        "-p",
+        help="Number of parallel download processes",
+    ),
+    interactive: bool = typer.Option(
+        True,
+        "--interactive/--no-interactive",
+        help="Prompt for authentication if needed",
+    ),
+):
+    """Download raw .crash files (repros) for given lineages."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Auth/config
+    config = get_fuzzcorp_auth(interactive=interactive)
+    if not config:
+        print("[ERROR] Failed to authenticate with FuzzCorp API")
+        raise typer.Exit(code=1)
+
+    try:
+        # List all repros
+        print("Fetching repro index ...")
+
+        def fetch_repros(client):
+            return client.list_repros()
+
+        response = fuzzcorp_api_call(config, fetch_repros, interactive=interactive)
+
+        # Prepare worker globals and task list
+        globals.output_dir = output_dir
+        download_list = []
+        for lineage in [s.strip() for s in section_names.split(",") if s.strip()]:
+            lineage_repros = response.lineages.get(lineage, [])
+            if not lineage_repros:
+                print(f"[WARNING] No repros found for lineage {lineage}")
+                continue
+            verified = [r for r in lineage_repros if r.all_verified]
+            if section_limit > 0:
+                verified = verified[:section_limit]
+            if not verified:
+                print(f"[WARNING] No verified repros for {lineage}")
+                continue
+            for repro in verified:
+                download_list.append((lineage, repro.hash))
+
+        # Prefetch metadata for all selected hashes (for consistency and potential reuse)
+        if download_list:
+            print("\nFetching metadata for selected repros...")
+            from test_suite.fuzzcorp_api_client import FuzzCorpAPIClient as _FCA
+
+            metadata_cache = {}
+            with _FCA(
+                api_origin=config.get_api_origin(),
+                token=config.get_token(),
+                org=config.get_organization(),
+                project=config.get_project(),
+                http2=True,
+            ) as client:
+                all_repros = client.list_repros_full()
+                selection = {h for _, h in download_list}
+                for repro in all_repros:
+                    if repro.hash in selection:
+                        metadata_cache[repro.hash] = repro
+            globals.repro_metadata_cache = metadata_cache
+
+        from test_suite.multiprocessing_utils import download_single_crash
+
+        print(f"Downloading {len(download_list)} crash file(s) ...")
+        results = process_items(
+            items=download_list,
+            process_func=download_single_crash,
+            num_processes=num_processes,
+            debug_mode=False,
+            desc="Downloading crashes",
+        )
+
+        total = len(download_list)
+        saved = sum(
+            1 for r in results if isinstance(r, dict) and r.get("downloaded", 0) == 1
+        )
+        cached = sum(
+            1 for r in results if isinstance(r, dict) and r.get("cached", 0) == 1
+        )
+        failed = total - (saved + cached)
+
+        print(
+            f"\nDownload complete: saved {saved}, cached {cached}, failed {failed} (total {total})"
+        )
+        print(f"Output directory: {output_dir}")
+    except httpx.HTTPError as e:
+        print(f"[ERROR] HTTP request failed: {e}")
+        if hasattr(e, "response") and e.response:
+            print(f"[ERROR] Response: {e.response.text}")
+        raise typer.Exit(code=1)
+    except Exception as e:
+        print(f"[ERROR] Failed to download crashes: {e}")
         traceback.print_exc()
         raise typer.Exit(code=1)
 

@@ -593,3 +593,71 @@ def download_and_process(source):
             "repro": f"{section_name}/{crash_hash}",
             "message": f"Error: {type(e).__name__}: {str(e)}",
         }
+
+
+def download_single_crash(source):
+    try:
+        lineage, crash_hash = source
+
+        # Ensure output directory is set by caller
+        if not hasattr(globals, "output_dir") or globals.output_dir is None:
+            return {
+                "success": False,
+                "repro": f"{lineage}/{crash_hash}",
+                "message": "No output_dir configured",
+            }
+
+        # Prefer lineage from metadata cache if available
+        if hasattr(globals, "repro_metadata_cache") and crash_hash in getattr(
+            globals, "repro_metadata_cache", {}
+        ):
+            meta = globals.repro_metadata_cache[crash_hash]
+            if getattr(meta, "lineage", None):
+                lineage = meta.lineage
+
+        crashes_dir = globals.output_dir / "crashes" / lineage
+        crashes_dir.mkdir(parents=True, exist_ok=True)
+        out_path = crashes_dir / f"{crash_hash}.crash"
+
+        # Skip if already exists
+        if out_path.exists():
+            return {
+                "success": True,
+                "repro": f"{lineage}/{crash_hash}",
+                "cached": 1,
+                "downloaded": 0,
+                "path": str(out_path),
+            }
+
+        config = get_fuzzcorp_auth(interactive=False)
+        if not config:
+            return {
+                "success": False,
+                "repro": f"{lineage}/{crash_hash}",
+                "message": "Failed to download: no FuzzCorp config",
+            }
+
+        with FuzzCorpAPIClient(
+            api_origin=config.get_api_origin(),
+            token=config.get_token(),
+            org=config.get_organization(),
+            project=config.get_project(),
+            http2=True,
+        ) as client:
+            data = client.download_repro_data(crash_hash, lineage)
+            with open(out_path, "wb") as f:
+                f.write(data)
+
+        return {
+            "success": True,
+            "repro": f"{lineage}/{crash_hash}",
+            "cached": 0,
+            "downloaded": 1,
+            "path": str(out_path),
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "repro": f"{lineage}/{crash_hash}",
+            "message": f"Error: {type(e).__name__}: {str(e)}",
+        }
