@@ -278,3 +278,31 @@ class FuzzCorpAPIClient:
         with self.client.stream("GET", url, headers=headers) as response:
             response.raise_for_status()
             return response.read()
+
+    def download_repro_data(
+        self,
+        repro_hash: str,
+        lineage: str,
+        org: Optional[str] = None,
+        project: Optional[str] = None,
+    ) -> bytes:
+        data = {
+            "file_name": repro_hash,
+            "kind": "repro",
+            "organization": org or self.org,
+            "project": project or self.project,
+            "lineage": lineage,
+        }
+
+        url = self.api_origin + STORAGE_DATA_GET_PATH
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/octet-stream",
+        }
+
+        query_data = json.dumps(data)
+        url = f"{url}?arpc={urllib.parse.quote(query_data)}"
+
+        with self.client.stream("GET", url, headers=headers) as response:
+            response.raise_for_status()
+            return response.read()

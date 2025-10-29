@@ -22,8 +22,10 @@ $ solana-conformance [OPTIONS] COMMAND [ARGS]...
 * `debug-mismatch`: Debug a single repro by hash.
 * `debug-mismatches`: Run tests on a set of targets with a list...
 * `decode-protobufs`: Convert Context and/or Fixture messages to...
-* `download-repro`: Download a single repro by hash from...
-* `download-repros`: Download repros from FuzzCorp NG for...
+* `download-crash`: Download a single .crash file by hash from...
+* `download-crashes`: Download .crash files for specified...
+* `download-fixture`: Download fixtures for a single repro hash...
+* `download-fixtures`: Download fixtures for verified repros in...
 * `exec-fixtures`: Execute fixtures and check for correct...
 * `execute`: Execute Context or Fixture message(s) and...
 * `fix-to-ctx`: Extract Context messages from Fixtures.
@@ -185,14 +187,53 @@ $ solana-conformance decode-protobufs [OPTIONS]
 * `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
 * `--help`: Show this message and exit.
 
-## `solana-conformance download-repro`
+## `solana-conformance download-crash`
 
-Download a single repro by hash from FuzzCorp NG.
+Download a single .crash file by hash from FuzzCorp NG.
 
 **Usage**:
 
 ```console
-$ solana-conformance download-repro [OPTIONS] REPRO_HASH
+$ solana-conformance download-crash [OPTIONS] REPRO_HASH
+```
+
+**Arguments**:
+
+* `REPRO_HASH`: Hash of the repro to download (.crash)  [required]
+
+**Options**:
+
+* `-l, --lineage TEXT`: Lineage name (e.g., sol_vm_syscall_cpi_rust_diff_hf)  [required]
+* `-o, --output-dir PATH`: Output directory for downloaded crash  [default: fuzzcorp_downloads]
+* `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
+* `--help`: Show this message and exit.
+
+## `solana-conformance download-crashes`
+
+Download .crash files for specified lineages from FuzzCorp NG.
+
+**Usage**:
+
+```console
+$ solana-conformance download-crashes [OPTIONS]
+```
+
+**Options**:
+
+* `-o, --output-dir PATH`: Output directory for downloaded crashes  [default: fuzzcorp_downloads]
+* `-n, --section-names TEXT`: Comma-delimited list of lineage names to download  [required]
+* `-l, --section-limit INTEGER`: Limit number of crashes per lineage (0 = all verified)  [default: 0]
+* `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
+* `--help`: Show this message and exit.
+
+## `solana-conformance download-fixture`
+
+Download fixtures for a single repro hash from FuzzCorp NG.
+
+**Usage**:
+
+```console
+$ solana-conformance download-fixture [OPTIONS] REPRO_HASH
 ```
 
 **Arguments**:
@@ -207,14 +248,14 @@ $ solana-conformance download-repro [OPTIONS] REPRO_HASH
 * `--use-ng`: (No-op, kept for compatibility)  [default: True]
 * `--help`: Show this message and exit.
 
-## `solana-conformance download-repros`
+## `solana-conformance download-fixtures`
 
-Download repros from FuzzCorp NG for specified lineages.
+Download fixtures for verified repros in specified lineages from FuzzCorp NG.
 
 **Usage**:
 
 ```console
-$ solana-conformance download-repros [OPTIONS]
+$ solana-conformance download-fixtures [OPTIONS]
 ```
 
 **Options**:
