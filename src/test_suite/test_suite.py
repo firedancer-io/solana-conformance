@@ -1172,6 +1172,12 @@ def download_crashes(
         "-l",
         help="Limit number of crashes per lineage (0 = all verified)",
     ),
+    num_processes: int = typer.Option(
+        4,
+        "--num-processes",
+        "-p",
+        help="Number of parallel download processes",
+    ),
     interactive: bool = typer.Option(
         True,
         "--interactive/--no-interactive",
@@ -1196,44 +1202,66 @@ def download_crashes(
 
         response = fuzzcorp_api_call(config, fetch_repros, interactive=interactive)
 
-        total = 0
-        saved = 0
+        # Prepare worker globals and task list
+        globals.output_dir = output_dir
+        download_list = []
         for lineage in [s.strip() for s in section_names.split(",") if s.strip()]:
             lineage_repros = response.lineages.get(lineage, [])
             if not lineage_repros:
                 print(f"[WARNING] No repros found for lineage {lineage}")
                 continue
-
             verified = [r for r in lineage_repros if r.all_verified]
             if section_limit > 0:
                 verified = verified[:section_limit]
             if not verified:
                 print(f"[WARNING] No verified repros for {lineage}")
                 continue
+            for repro in verified:
+                download_list.append((lineage, repro.hash))
 
-            crashes_dir = output_dir / "crashes" / lineage
-            crashes_dir.mkdir(parents=True, exist_ok=True)
+        # Prefetch metadata for all selected hashes (for consistency and potential reuse)
+        if download_list:
+            print("\nFetching metadata for selected repros...")
+            from test_suite.fuzzcorp_api_client import FuzzCorpAPIClient as _FCA
 
-            with FuzzCorpAPIClient(
+            metadata_cache = {}
+            with _FCA(
                 api_origin=config.get_api_origin(),
                 token=config.get_token(),
                 org=config.get_organization(),
                 project=config.get_project(),
                 http2=True,
             ) as client:
-                for repro in verified:
-                    total += 1
-                    try:
-                        data = client.download_repro_data(repro.hash, lineage)
-                        out_path = crashes_dir / f"{repro.hash}.crash"
-                        if not out_path.exists():
-                            with open(out_path, "wb") as f:
-                                f.write(data)
-                            saved += 1
-                    except Exception as e:
-                        print(f"  [WARNING] {lineage}/{repro.hash}: {e}")
+                all_repros = client.list_repros_full()
+                selection = {h for _, h in download_list}
+                for repro in all_repros:
+                    if repro.hash in selection:
+                        metadata_cache[repro.hash] = repro
+            globals.repro_metadata_cache = metadata_cache
 
-        print(f"\nDownload complete: saved {saved}/{total} crash file(s)")
+        from test_suite.multiprocessing_utils import download_single_crash
+
+        print(f"Downloading {len(download_list)} crash file(s) ...")
+        results = process_items(
+            items=download_list,
+            process_func=download_single_crash,
+            num_processes=num_processes,
+            debug_mode=False,
+            desc="Downloading crashes",
+        )
+
+        total = len(download_list)
+        saved = sum(
+            1 for r in results if isinstance(r, dict) and r.get("downloaded", 0) == 1
+        )
+        cached = sum(
+            1 for r in results if isinstance(r, dict) and r.get("cached", 0) == 1
+        )
+        failed = total - (saved + cached)
+
+        print(
+            f"\nDownload complete: saved {saved}, cached {cached}, failed {failed} (total {total})"
+        )
         print(f"Output directory: {output_dir}")
     except httpx.HTTPError as e:
         print(f"[ERROR] HTTP request failed: {e}")

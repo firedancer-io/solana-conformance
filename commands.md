@@ -223,6 +223,7 @@ $ solana-conformance download-crashes [OPTIONS]
 * `-o, --output-dir PATH`: Output directory for downloaded crashes  [default: fuzzcorp_downloads]
 * `-n, --section-names TEXT`: Comma-delimited list of lineage names to download  [required]
 * `-l, --section-limit INTEGER`: Limit number of crashes per lineage (0 = all verified)  [default: 0]
+* `-p, --num-processes INTEGER`: Number of parallel download processes  [default: 4]
 * `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
 * `--help`: Show this message and exit.
 
