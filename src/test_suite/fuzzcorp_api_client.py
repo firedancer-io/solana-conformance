@@ -108,7 +108,7 @@ class FuzzCorpAPIClient:
         self.client = httpx.Client(
             verify=verify_ssl,
             http2=http2,
-            timeout=httpx.Timeout(timeout, connect=10.0),
+            timeout=httpx.Timeout(timeout, connect=10.0, read=timeout, write=timeout),
         )
 
         if token:
@@ -275,9 +275,16 @@ class FuzzCorpAPIClient:
         url = f"{url}?arpc={urllib.parse.quote(query_data)}"
 
         # Stream the response to handle large files
+        # Read in chunks to avoid memory issues and provide better timeout handling
         with self.client.stream("GET", url, headers=headers) as response:
             response.raise_for_status()
-            return response.read()
+            # Read the entire response into memory (needed for ZIP extraction)
+            # Using iter_bytes() and then joining is more memory-efficient than read()
+            chunks = []
+            for chunk in response.iter_bytes():
+                if chunk:
+                    chunks.append(chunk)
+            return b"".join(chunks)
 
     def download_repro_data(
         self,
@@ -305,4 +312,9 @@ class FuzzCorpAPIClient:
 
         with self.client.stream("GET", url, headers=headers) as response:
             response.raise_for_status()
-            return response.read()
+            # Read in chunks for better timeout handling
+            chunks = []
+            for chunk in response.iter_bytes():
+                if chunk:
+                    chunks.append(chunk)
+            return b"".join(chunks)

@@ -483,6 +483,9 @@ def execute_fixture(test_file: Path) -> tuple[str, int, dict | None]:
 def download_and_process(source):
     try:
         section_name, crash_hash = source
+        repro_id = f"{section_name}/{crash_hash}"
+
+        print(f"[INFO] Starting download: {repro_id}")
 
         out_dir = globals.inputs_dir / f"{section_name}_{crash_hash}"
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -492,7 +495,7 @@ def download_and_process(source):
         if not config:
             return {
                 "success": False,
-                "repro": f"{section_name}/{crash_hash}",
+                "repro": repro_id,
                 "message": "Failed to download: no FuzzCorp config",
             }
 
@@ -505,6 +508,7 @@ def download_and_process(source):
             repro_metadata = globals.repro_metadata_cache[crash_hash]
         else:
             # Meta data cache miss, fetch from API
+            print(f"[INFO] Fetching metadata for {repro_id}...")
             with FuzzCorpAPIClient(
                 api_origin=config.get_api_origin(),
                 token=config.get_token(),
@@ -522,16 +526,18 @@ def download_and_process(source):
         if not repro_metadata.artifact_hashes:
             return {
                 "success": False,
-                "repro": f"{section_name}/{crash_hash}",
+                "repro": repro_id,
                 "message": "Failed to process: no artifacts found",
             }
 
         # Log artifact count
         num_artifacts = len(repro_metadata.artifact_hashes)
+        print(f"[INFO] {repro_id}: Found {num_artifacts} artifact(s) to download")
 
         # Download and extract each artifact
         fix_count = 0
         skipped_downloads = 0
+        download_errors = []
 
         # Create artifact cache directory in output folder
         artifact_cache_dir = globals.output_dir / ".artifact_cache"
@@ -551,23 +557,57 @@ def download_and_process(source):
 
                 if artifact_zip_path.exists():
                     # Use cached ZIP file
+                    print(
+                        f"[INFO] {repro_id}: Artifact {idx}/{num_artifacts} ({artifact_hash[:16]}...): Using cached file"
+                    )
                     skipped_downloads += 1
-                    with open(artifact_zip_path, "rb") as f:
-                        artifact_data = f.read()
+                    try:
+                        with open(artifact_zip_path, "rb") as f:
+                            artifact_data = f.read()
+                    except Exception as e:
+                        download_errors.append(
+                            f"Failed to read cached artifact {artifact_hash}: {e}"
+                        )
+                        print(
+                            f"[WARNING] {repro_id}: Failed to read cached artifact {artifact_hash[:16]}...: {e}"
+                        )
+                        continue
                 else:
                     # Download artifact (ZIP file)
-                    artifact_data = client.download_artifact_data(
-                        artifact_hash, section_name
+                    print(
+                        f"[INFO] {repro_id}: Downloading artifact {idx}/{num_artifacts} ({artifact_hash[:16]}...)..."
                     )
-
-                    # Save to cache for future runs
-                    with open(artifact_zip_path, "wb") as f:
-                        f.write(artifact_data)
+                    try:
+                        artifact_data = client.download_artifact_data(
+                            artifact_hash, section_name
+                        )
+                        # Save to cache for future runs
+                        with open(artifact_zip_path, "wb") as f:
+                            f.write(artifact_data)
+                        print(
+                            f"[INFO] {repro_id}: Completed artifact {idx}/{num_artifacts} ({artifact_hash[:16]}...)"
+                        )
+                    except Exception as e:
+                        error_msg = f"Failed to download artifact {artifact_hash}: {type(e).__name__}: {str(e)}"
+                        download_errors.append(error_msg)
+                        print(f"[ERROR] {repro_id}: {error_msg}")
+                        continue
 
                 # Extract .fix files from the artifact ZIP
-                fix_count += extract_fix_files_from_zip(
-                    artifact_data, globals.inputs_dir, enable_deduplication=True
-                )
+                try:
+                    extracted_count = extract_fix_files_from_zip(
+                        artifact_data, globals.inputs_dir, enable_deduplication=True
+                    )
+                    fix_count += extracted_count
+                    if extracted_count > 0:
+                        print(
+                            f"[INFO] {repro_id}: Extracted {extracted_count} fixture(s) from artifact {idx}/{num_artifacts}"
+                        )
+                except Exception as e:
+                    error_msg = f"Failed to extract artifact {artifact_hash}: {type(e).__name__}: {str(e)}"
+                    download_errors.append(error_msg)
+                    print(f"[ERROR] {repro_id}: {error_msg}")
+                    continue
 
                 # Mark this artifact as processed (in-memory only, for this session)
                 with _download_cache_lock:
@@ -575,17 +615,30 @@ def download_and_process(source):
 
         # Log summary for this repro
         downloaded_count = num_artifacts - skipped_downloads
+        processed_count = num_artifacts - len(download_errors)
+        print(
+            f"[INFO] {repro_id}: Completed ({fix_count} fixture(s), {processed_count}/{num_artifacts} artifact(s) processed)"
+        )
 
-        # Always return success if we processed artifacts (even if no new fixtures extracted)
-        # Not extracting new fixtures just means they already exist or artifacts don't contain .fix files
+        # Return success if we processed at least some artifacts
+        # Include errors in message if any occurred
+        if download_errors:
+            error_msg = f"Processed {section_name}/{crash_hash} with {len(download_errors)} error(s): {'; '.join(download_errors)}"
+            success = processed_count > 0  # Success if at least one artifact processed
+        else:
+            error_msg = f"Processed {section_name}/{crash_hash} successfully ({fix_count} new fixture(s) from {num_artifacts} artifact(s))"
+            success = True
+
         return {
-            "success": True,
+            "success": success,
             "repro": f"{section_name}/{crash_hash}",
             "fixtures": fix_count,
             "artifacts": num_artifacts,
             "cached": skipped_downloads,
             "downloaded": downloaded_count,
-            "message": f"Processed {section_name}/{crash_hash} successfully ({fix_count} new fixture(s) from {num_artifacts} artifact(s))",
+            "processed": processed_count,
+            "errors": len(download_errors),
+            "message": error_msg,
         }
     except Exception as e:
         return {

@@ -1414,9 +1414,11 @@ def debug_mismatches(
     num_test_cases = len(custom_data_urls)
 
     if num_test_cases > 0:
-        print(f"Fetching metadata for all repros...")
+        print(f"Fetching metadata for {num_test_cases} repro(s)...")
 
         metadata_cache = {}
+        download_hashes = {hash_val for _, hash_val in custom_data_urls}
+
         with FuzzCorpAPIClient(
             api_origin=config.get_api_origin(),
             token=config.get_token(),
@@ -1424,18 +1426,36 @@ def debug_mismatches(
             project=config.get_project(),
             http2=True,
         ) as client:
-            all_repros = client.list_repros_full()
+            # Fetch metadata only for repros we need
+            for idx, repro_hash in enumerate(download_hashes, 1):
+                try:
+                    repro_metadata = client.get_repro_by_hash(
+                        repro_hash,
+                        org=config.get_organization(),
+                        project=config.get_project(),
+                    )
+                    metadata_cache[repro_hash] = repro_metadata
+                    if idx % 10 == 0 or idx == len(download_hashes):
+                        print(
+                            f"  Fetched {idx}/{len(download_hashes)} repro metadata...",
+                            end="\r",
+                        )
+                except Exception as e:
+                    print(
+                        f"\n  [WARNING] Failed to fetch metadata for {repro_hash}: {e}"
+                    )
+                    continue
 
-            download_hashes = {hash_val for _, hash_val in custom_data_urls}
-            for repro in all_repros:
-                if repro.hash in download_hashes:
-                    metadata_cache[repro.hash] = repro
-
-        print(f"  Cached metadata for {len(metadata_cache)} repro(s)\n")
+        print(f"\n  Cached metadata for {len(metadata_cache)} repro(s)\n")
 
         globals.repro_metadata_cache = metadata_cache
 
-    print(f"Downloading {num_test_cases} tests...")
+    print(f"Downloading {num_test_cases} repro(s)...")
+    print(
+        "  This may take a while for large artifacts. Progress bar shows completed downloads."
+    )
+    if not debug_mode:
+        print(f"  Running {num_processes} parallel download(s)")
     results = process_items(
         custom_data_urls,
         download_and_process,
@@ -1447,16 +1467,36 @@ def debug_mismatches(
     )
 
     # Print download results summary
-    successful_downloads = [r for r in results if r and "successfully" in r]
-    failed_downloads = [r for r in results if r and ("Failed" in r or "Error" in r)]
+    successful_downloads = [
+        r for r in results if r and isinstance(r, dict) and r.get("success")
+    ]
+    failed_downloads = [
+        r for r in results if r and (not isinstance(r, dict) or not r.get("success"))
+    ]
+
+    # Count fixtures and artifacts
+    total_fixtures = sum(
+        r.get("fixtures", 0) for r in successful_downloads if isinstance(r, dict)
+    )
+    total_artifacts = sum(
+        r.get("artifacts", 0) for r in successful_downloads if isinstance(r, dict)
+    )
+
     print(
         f"\nDownload summary: {len(successful_downloads)} succeeded, {len(failed_downloads)} failed"
     )
+    if successful_downloads:
+        print(f"  Total fixtures: {total_fixtures}, Total artifacts: {total_artifacts}")
 
     if failed_downloads:
         print(f"\n[WARNING] Failed downloads:")
         for failure in failed_downloads:
-            print(f"  - {failure}")
+            if isinstance(failure, dict):
+                print(
+                    f"  - {failure.get('repro', 'unknown')}: {failure.get('message', 'unknown error')}"
+                )
+            else:
+                print(f"  - {failure}")
 
     if ld_preload is not None:
         os.environ["LD_PRELOAD"] = ld_preload
