@@ -60,7 +60,7 @@ class ReproIndexResponse:
             lineages[lineage_name] = [LineageRepro.from_dict(r) for r in repros]
 
         return cls(
-            bundle_id=data["BundleID"],
+            bundle_id=data.get("BundleID", "00000000-0000-0000-0000-000000000000"),
             lineages=lineages,
         )
 
