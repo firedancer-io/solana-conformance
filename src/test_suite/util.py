@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 from typing import Optional, Dict, Callable, List, Any
 import httpx
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
 import tqdm
 
 
@@ -71,13 +71,20 @@ def process_items(
     initializer: Optional[Callable] = None,
     initargs: tuple = (),
     desc: str = "Processing",
+    use_processes: bool = False,
 ) -> List[Any]:
     results = []
     if num_processes > 1 and not debug_mode:
-        with ThreadPoolExecutor(max_workers=num_processes) as executor:
+        if use_processes:
+            executor = ProcessPoolExecutor(
+                max_workers=num_processes, initializer=initializer, initargs=initargs
+            )
+        else:
+            executor = ThreadPoolExecutor(max_workers=num_processes)
             if initializer:
                 initializer(*initargs)
 
+        with executor:
             future_to_item = {
                 executor.submit(process_func, item): item for item in items
             }
