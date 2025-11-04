@@ -61,6 +61,9 @@ def generic_transform(obj: message.Message) -> None:
 class HarnessCtx:
     fuzz_fn_name: str
     fixture_desc: InitVar[descriptor.Descriptor]
+    context_extension: (
+        str  # Required: File extension for context files (e.g. ".elfctx", ".txnctx")
+    )
     result_field_name: str | None = "result"
     diff_effect_fn: Callable[[EffectsType, EffectsType], bool] = generic_effects_diff
     consensus_diff_effect_fn: Callable[[EffectsType, EffectsType], bool] = (
