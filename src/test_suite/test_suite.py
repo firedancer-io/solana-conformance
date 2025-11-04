@@ -121,11 +121,13 @@ def execute(
     if input.is_file():
         files_to_exec = [input]
     else:
-        # Recursively find all files in the directory
+        # Recursively find all files in the directory with supported extensions
         files_to_exec = []
-        for file_path in input.rglob("*.fix"):
-            if file_path.is_file():
-                files_to_exec.append(file_path)
+        supported_extensions = get_all_supported_extensions()
+        for ext in supported_extensions:
+            for file_path in input.rglob(f"*{ext}"):
+                if file_path.is_file():
+                    files_to_exec.append(file_path)
     for file in files_to_exec:
         print(f"Handling {file}...")
         if file.suffix == ".fix":
@@ -207,11 +209,13 @@ def fix_to_ctx(
     if input.is_file():
         test_cases = [input]
     else:
-        # Recursively find all files in the directory
+        # Recursively find all files in the directory with supported extensions
         test_cases = []
-        for file_path in input.rglob("*.fix"):
-            if file_path.is_file():
-                test_cases.append(file_path)
+        supported_extensions = get_all_supported_extensions()
+        for ext in supported_extensions:
+            for file_path in input.rglob(f"*{ext}"):
+                if file_path.is_file():
+                    test_cases.append(file_path)
     num_test_cases = len(test_cases)
 
     print(f"Converting to Fixture messages...")
@@ -319,11 +323,13 @@ def create_fixtures(
     if input.is_file():
         test_cases = [input]
     else:
-        # Recursively find all files in the directory
+        # Recursively find all files in the directory with supported extensions
         test_cases = []
-        for file_path in input.rglob("*.fix"):
-            if file_path.is_file():
-                test_cases.append(file_path)
+        supported_extensions = get_all_supported_extensions()
+        for ext in supported_extensions:
+            for file_path in input.rglob(f"*{ext}"):
+                if file_path.is_file():
+                    test_cases.append(file_path)
     num_test_cases = len(test_cases)
 
     globals.default_harness_ctx = HARNESS_MAP[default_harness_ctx]
@@ -511,11 +517,13 @@ expected to use different amounts of compute units than the other. Note: Cannot 
     if input.is_file():
         test_cases = [input]
     else:
-        # Recursively find all files in the directory
+        # Recursively find all files in the directory with supported extensions
         test_cases = []
-        for file_path in input.rglob("*.fix"):
-            if file_path.is_file():
-                test_cases.append(file_path)
+        supported_extensions = get_all_supported_extensions()
+        for ext in supported_extensions:
+            for file_path in input.rglob(f"*{ext}"):
+                if file_path.is_file():
+                    test_cases.append(file_path)
 
     num_test_cases = len(test_cases)
 
@@ -632,11 +640,13 @@ def decode_protobufs(
     if input.is_file():
         test_cases = [input]
     else:
-        # Recursively find all files in the directory
+        # Recursively find all files in the directory with supported extensions
         test_cases = []
-        for file_path in input.rglob("*.fix"):
-            if file_path.is_file():
-                test_cases.append(file_path)
+        supported_extensions = get_all_supported_extensions()
+        for ext in supported_extensions:
+            for file_path in input.rglob(f"*{ext}"):
+                if file_path.is_file():
+                    test_cases.append(file_path)
     num_test_cases = len(test_cases)
 
     write_results = process_items(
@@ -893,7 +903,10 @@ def download_fixture(
                 print(f"{result}")
 
         # Show output location
-        actual_fixtures = len(list(inputs_dir.glob("*.fix")))
+        supported_extensions = get_all_supported_extensions()
+        actual_fixtures = sum(
+            len(list(inputs_dir.glob(f"*{ext}"))) for ext in supported_extensions
+        )
         print(f"   Total fixtures on disk: {actual_fixtures}")
         print(f"   Output directory: {output_dir}")
         print(f"   Fixtures directory: {inputs_dir}")
@@ -1062,7 +1075,10 @@ def download_fixtures(
                     print(f"  [WARNING] {result}")
 
         # Count fixtures and summarize results
-        actual_fixtures = len(list(inputs_dir.glob("*.fix")))
+        supported_extensions = get_all_supported_extensions()
+        actual_fixtures = sum(
+            len(list(inputs_dir.glob(f"*{ext}"))) for ext in supported_extensions
+        )
         successful = sum(
             1
             for r in results
@@ -1788,11 +1804,13 @@ def regenerate_fixtures(
     if input.is_file():
         test_cases = [input]
     else:
-        # Recursively find all files in the directory
+        # Recursively find all files in the directory with supported extensions
         test_cases = []
-        for file_path in input.rglob("*.fix"):
-            if file_path.is_file():
-                test_cases.append(file_path)
+        supported_extensions = get_all_supported_extensions()
+        for ext in supported_extensions:
+            for file_path in input.rglob(f"*{ext}"):
+                if file_path.is_file():
+                    test_cases.append(file_path)
     num_regenerated = 0
 
     globals.features_to_add = set(
@@ -2051,11 +2069,13 @@ def exec_fixtures(
     if input.is_file():
         test_cases = [input]
     else:
-        # Recursively find all files in the directory
+        # Recursively find all files in the directory with supported extensions
         test_cases = []
-        for file_path in input.rglob("*.fix"):
-            if file_path.is_file():
-                test_cases.append(file_path)
+        supported_extensions = get_all_supported_extensions()
+        for ext in supported_extensions:
+            for file_path in input.rglob(f"*{ext}"):
+                if file_path.is_file():
+                    test_cases.append(file_path)
     num_test_cases = len(test_cases)
     print("Running tests...")
     test_case_results = process_items(
