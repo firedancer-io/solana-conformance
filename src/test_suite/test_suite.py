@@ -337,6 +337,7 @@ def create_fixtures(
         debug_mode=debug_mode,
         initializer=initialize_process_output_buffers,
         desc="Creating fixtures",
+        use_processes=True,
     )
 
     # Clean up
@@ -543,6 +544,7 @@ expected to use different amounts of compute units than the other. Note: Cannot 
             initializer=initialize_process_output_buffers,
             initargs=(randomize_output_buffer,),
             desc="Running tests",
+            use_processes=True,
         )
 
     print("Logging results...")
@@ -2064,6 +2066,7 @@ def exec_fixtures(
         initializer=initialize_process_output_buffers,
         initargs=(randomize_output_buffer,),
         desc="Running tests",
+        use_processes=True,
     )
 
     print("Logging results...")
