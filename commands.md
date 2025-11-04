@@ -108,7 +108,7 @@ $ solana-conformance create-fixtures [OPTIONS]
 * `-k, --keep-passing`: Only keep passing test cases
 * `-g, --group-by-program`: Group fixture output by program type
 * `-l, --log-level INTEGER`: FD logging level  [default: 5]
-* `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
+* `-d, --debug-mode`: Enables debug mode, which spawns a single child process for easier debugging
 * `--help`: Show this message and exit.
 
 ## `solana-conformance debug-mismatch`
@@ -165,7 +165,7 @@ $ solana-conformance debug-mismatches [OPTIONS]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-l, --section-limit INTEGER`: Limit number of fixture per section  [default: 0]
 * `--use-ng`: Use fuzz NG CLI (fuzz list/download repro) instead of API scraping  [default: True]
-* `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
+* `-d, --debug-mode`: Enables debug mode, which spawns a single child process for easier debugging
 * `--help`: Show this message and exit.
 
 ## `solana-conformance decode-protobufs`
@@ -184,7 +184,7 @@ $ solana-conformance decode-protobufs [OPTIONS]
 * `-o, --output-dir PATH`: Output directory for base58-encoded, Context and/or Fixture human-readable messages  [required]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
-* `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
+* `-d, --debug-mode`: Enables debug mode, which spawns a single child process for easier debugging
 * `--help`: Show this message and exit.
 
 ## `solana-conformance download-crash`
@@ -290,7 +290,7 @@ $ solana-conformance exec-fixtures [OPTIONS]
 * `-f, --failures-only`: Only log failed test cases
 * `-sf, --save-failures`: Saves failed test cases to results directory
 * `-ss, --save-successes`: Saves successful test cases to results directory
-* `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
+* `-d, --debug-mode`: Enables debug mode, which spawns a single child process for easier debugging
 * `--help`: Show this message and exit.
 
 ## `solana-conformance execute`
@@ -329,7 +329,7 @@ $ solana-conformance fix-to-ctx [OPTIONS]
 * `-i, --input PATH`: Input Fixture file or directory of Fixture files  [required]
 * `-o, --output-dir PATH`: Output directory for messages  [required]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
-* `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
+* `-d, --debug-mode`: Enables debug mode, which spawns a single child process for easier debugging
 * `--help`: Show this message and exit.
 
 ## `solana-conformance fuzz`
@@ -426,7 +426,7 @@ $ solana-conformance regenerate-fixtures [OPTIONS]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-l, --log-level INTEGER`: FD logging level  [default: 5]
 * `-v, --verbose`: Verbose output: print filenames that will be regenerated
-* `--debug-mode`: Enables debug mode, which disables multiprocessing
+* `--debug-mode`: Enables debug mode, which spawns a single child process for easier debugging
 * `--help`: Show this message and exit.
 
 ## `solana-conformance run-tests`
@@ -459,6 +459,6 @@ $ solana-conformance run-tests [OPTIONS]
 * `-sf, --save-failures`: Saves failed test cases to results directory
 * `-ss, --save-successes`: Saves successful test cases to results directory
 * `-l, --log-level INTEGER`: FD logging level  [default: 5]
-* `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
+* `-d, --debug-mode`: Enables debug mode, which spawns a single child process for easier debugging
 * `-fe, --fail-early`: Stop test execution on the first failure
 * `--help`: Show this message and exit.

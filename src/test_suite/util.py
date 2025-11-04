@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Optional, Dict, Callable, List, Any
 import httpx
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
+from concurrent.futures.process import BrokenProcessPool
 import tqdm
 
 
@@ -74,7 +75,10 @@ def process_items(
     use_processes: bool = False,
 ) -> List[Any]:
     results = []
-    if num_processes > 1 and not debug_mode:
+    if debug_mode:
+        num_processes = 1
+
+    if num_processes > 1 or use_processes:
         if use_processes:
             executor = ProcessPoolExecutor(
                 max_workers=num_processes, initializer=initializer, initargs=initargs
@@ -83,23 +87,30 @@ def process_items(
             executor = ThreadPoolExecutor(max_workers=num_processes)
             if initializer:
                 initializer(*initargs)
+        try:
+            with executor:
+                future_to_item = {
+                    executor.submit(process_func, item): item for item in items
+                }
 
-        with executor:
-            future_to_item = {
-                executor.submit(process_func, item): item for item in items
-            }
-
-            with tqdm.tqdm(total=len(items), desc=desc) as pbar:
-                for future in as_completed(future_to_item):
-                    result = future.result()
-                    results.append(result)
-                    pbar.update(1)
+                with tqdm.tqdm(total=len(items), desc=desc) as pbar:
+                    for future in as_completed(future_to_item):
+                        result = future.result()
+                        results.append(result)
+                        pbar.update(1)
+        except BrokenProcessPool as e:
+            if not debug_mode:
+                print(f"[ERROR] Process pool broken: {e}")
+                raise
+            else:
+                # We assume a gdb/lldb session caused the pool to break; continue silently
+                print(
+                    f"[NOTICE] Process pool broken in debug mode. Silently continuing..."
+                )
     else:
-        if initializer:
-            initializer(*initargs)
         for item in tqdm.tqdm(items, desc=desc):
-            results.append(process_func(item))
-
+            result = process_func(item)
+            results.append(result)
     return results
 
 

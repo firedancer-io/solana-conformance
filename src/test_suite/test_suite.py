@@ -195,7 +195,7 @@ def fix_to_ctx(
         False,
         "--debug-mode",
         "-d",
-        help="Enables debug mode, which disables multiprocessing",
+        help="Enables debug mode, which spawns a single child process for easier debugging",
     ),
 ):
     # Specify globals
@@ -295,7 +295,7 @@ def create_fixtures(
         False,
         "--debug-mode",
         "-d",
-        help="Enables debug mode, which disables multiprocessing",
+        help="Enables debug mode, which spawns a single child process for easier debugging",
     ),
 ):
     # Add Solana library to shared libraries
@@ -466,7 +466,7 @@ expected to use different amounts of compute units than the other. Note: Cannot 
         False,
         "--debug-mode",
         "-d",
-        help="Enables debug mode, which disables multiprocessing",
+        help="Enables debug mode, which spawns a single child process for easier debugging",
     ),
     fail_early: bool = typer.Option(
         False,
@@ -626,7 +626,7 @@ def decode_protobufs(
         False,
         "--debug-mode",
         "-d",
-        help="Enables debug mode, which disables multiprocessing",
+        help="Enables debug mode, which spawns a single child process for easier debugging",
     ),
 ):
     globals.output_dir = output_dir
@@ -1370,7 +1370,7 @@ def debug_mismatches(
         False,
         "--debug-mode",
         "-d",
-        help="Enables debug mode, which disables multiprocessing",
+        help="Enables debug mode, which spawns a single child process for easier debugging",
     ),
 ):
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
@@ -1786,7 +1786,7 @@ def regenerate_fixtures(
     debug_mode: bool = typer.Option(
         False,
         "--debug-mode",
-        help="Enables debug mode, which disables multiprocessing",
+        help="Enables debug mode, which spawns a single child process for easier debugging",
     ),
 ):
     globals.output_dir = output_dir
@@ -2041,7 +2041,7 @@ def exec_fixtures(
         False,
         "--debug-mode",
         "-d",
-        help="Enables debug mode, which disables multiprocessing",
+        help="Enables debug mode, which spawns a single child process for easier debugging",
     ),
 ):
     # Specify globals
