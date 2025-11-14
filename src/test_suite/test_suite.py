@@ -1958,23 +1958,20 @@ def mass_regenerate_fixtures(
         print(
             f"Regenerating fixtures for {source_folder} with harness type {folder_harness_type}"
         )
-        if folder_harness_type in ["ElfLoaderHarness"]:
-            shutil.copytree(source_folder, output_folder, dirs_exist_ok=True)
-        else:
-            regenerate_fixtures(
-                input=Path(source_folder),
-                shared_library=shared_library,
-                output_dir=Path(output_folder),
-                dry_run=dry_run,
-                add_features=add_features,
-                remove_features=remove_features,
-                rekeyed_features=rekeyed_features,
-                regenerate_all=regenerate_all,
-                num_processes=num_processes,
-                verbose=verbose,
-                log_level=5,
-                debug_mode=debug_mode,
-            )
+        regenerate_fixtures(
+            input=Path(source_folder),
+            shared_library=shared_library,
+            output_dir=Path(output_folder),
+            dry_run=dry_run,
+            add_features=add_features,
+            remove_features=remove_features,
+            rekeyed_features=rekeyed_features,
+            regenerate_all=regenerate_all,
+            num_processes=num_processes,
+            verbose=verbose,
+            log_level=5,
+            debug_mode=debug_mode,
+        )
 
     print(f"Regenerated fixtures from {test_vectors} to {output_dir}")
     return True
