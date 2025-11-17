@@ -78,13 +78,19 @@ def process_items(
     if debug_mode:
         num_processes = 1
 
-    if num_processes > 1 or use_processes:
+    # Cap num_processes at the number of items to avoid creating unnecessary workers
+    effective_num_processes = min(num_processes, len(items)) if items else 1
+
+    # In debug mode, always run single-threaded in main process (no executor)
+    if not debug_mode and (effective_num_processes > 1 or use_processes):
         if use_processes:
             executor = ProcessPoolExecutor(
-                max_workers=num_processes, initializer=initializer, initargs=initargs
+                max_workers=effective_num_processes,
+                initializer=initializer,
+                initargs=initargs,
             )
         else:
-            executor = ThreadPoolExecutor(max_workers=num_processes)
+            executor = ThreadPoolExecutor(max_workers=effective_num_processes)
             if initializer:
                 initializer(*initargs)
         try:
@@ -108,6 +114,11 @@ def process_items(
                     f"[NOTICE] Process pool broken in debug mode. Silently continuing..."
                 )
     else:
+        # Single-threaded execution in main process
+        # Call initializer if provided
+        if initializer:
+            initializer(*initargs)
+
         for item in tqdm.tqdm(items, desc=desc):
             result = process_func(item)
             results.append(result)
