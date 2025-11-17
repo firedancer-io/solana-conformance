@@ -36,3 +36,9 @@ jobs:
         run: |
           source test_suite_env/bin/activate
           solana-conformance list-harness-types
+
+      - name: Run integration tests
+        run: |
+          source test_suite_env/bin/activate
+          pytest tests/test_integration.py -v --tb=short
+        continue-on-error: false

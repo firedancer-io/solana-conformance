@@ -231,6 +231,7 @@ def fix_to_ctx(
         initializer=initialize_process_globals_for_extraction,
         initargs=(output_dir,),
         desc="Converting",
+        use_processes=True,
     )
 
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
@@ -663,6 +664,7 @@ def decode_protobufs(
         initializer=initialize_process_globals_for_decoding,
         initargs=(output_dir, HARNESS_MAP[default_harness_ctx]),
         desc="Decoding",
+        use_processes=True,
     )
 
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
@@ -1861,6 +1863,7 @@ def regenerate_fixtures(
             verbose,
         ),
         desc="Regenerating",
+        use_processes=True,
     )
     num_regenerated = sum(results)
 
