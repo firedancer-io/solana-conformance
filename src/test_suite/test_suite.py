@@ -983,16 +983,30 @@ def download_fixtures(
         section_names_list = section_names.split(",")
         download_list = []
 
-        # Fetch all repros using API wrapper
-        print(f"Fetching repro index ...")
+        # Fetch all repros with metadata
+        if len(section_names_list) == 1:
+            print(
+                f"Fetching repro index with metadata for lineage '{section_names_list[0]}'..."
+            )
 
-        def fetch_repros(client):
-            return client.list_repros()
+            def fetch_repros(client):
+                return client.list_repros(
+                    lineage=section_names_list[0], include_full_metadata=True
+                )
+
+        else:
+            print(
+                f"Fetching repro index with metadata for {len(section_names_list)} lineages..."
+            )
+
+            def fetch_repros(client):
+                return client.list_repros(include_full_metadata=True)
 
         response = fuzzcorp_api_call(config, fetch_repros, interactive=interactive)
         print(f"Bundle ID: {response.bundle_id}\n")
 
-        # Process each requested lineage
+        # Build metadata cache from response
+        metadata_cache = {}
         for section_name in section_names_list:
             section_name = section_name.strip()
             print(f"Processing lineage: {section_name}")
@@ -1013,37 +1027,27 @@ def download_fixtures(
                 print(f"  [WARNING] No verified repros found for {section_name}")
                 continue
 
-            # Add to download list
+            # Add to download list and populate metadata cache
             for repro in verified_repros:
                 download_list.append((section_name, repro.hash))
+                # Convert LineageRepro to ReproMetadata format for cache
+                from test_suite.fuzzcorp_api_client import ReproMetadata
+
+                metadata_cache[repro.hash] = ReproMetadata(
+                    hash=repro.hash,
+                    bundle=response.bundle_id,
+                    lineage=section_name,
+                    asset=repro.asset,
+                    artifact_hashes=repro.artifact_hashes or [],
+                    summary=repro.summary or "",
+                    verified=repro.all_verified,
+                )
 
             print(f"  Found {len(verified_repros)} verified repro(s)")
 
         if not download_list:
             print("\n[ERROR] No repros to download")
             raise typer.Exit(code=1)
-
-        # Prefetch all repro metadata using efficient single API call
-        print(f"\nFetching metadata for all repros...")
-
-        metadata_cache = {}
-        with FuzzCorpAPIClient(
-            api_origin=config.get_api_origin(),
-            token=config.get_token(),
-            org=config.get_organization(),
-            project=config.get_project(),
-            http2=True,
-        ) as client:
-            # ONE API call to get ALL repro metadata (hash, bundle, asset, artifact_hashes)
-            all_repros = client.list_repros_full()
-
-            # Build cache with only the repros we want to download
-            download_hashes = {hash_val for _, hash_val in download_list}
-            for repro in all_repros:
-                if repro.hash in download_hashes:
-                    metadata_cache[repro.hash] = repro
-
-        print(f"  Cached metadata for {len(metadata_cache)} repro(s)\n")
 
         # Store metadata cache in globals so workers can access it
         globals.repro_metadata_cache = metadata_cache
@@ -1212,18 +1216,36 @@ def download_crashes(
         raise typer.Exit(code=1)
 
     try:
-        # List all repros
-        print("Fetching repro index ...")
+        # List all repros with metadata
+        section_names_list = [s.strip() for s in section_names.split(",") if s.strip()]
 
-        def fetch_repros(client):
-            return client.list_repros()
+        # Optimize: if only one lineage, filter server-side
+        if len(section_names_list) == 1:
+            print(
+                f"Fetching repro index with metadata for lineage '{section_names_list[0]}'..."
+            )
+
+            def fetch_repros(client):
+                return client.list_repros(
+                    lineage=section_names_list[0], include_full_metadata=True
+                )
+
+        else:
+            print(
+                f"Fetching repro index with metadata for {len(section_names_list)} lineages..."
+            )
+
+            def fetch_repros(client):
+                return client.list_repros(include_full_metadata=True)
 
         response = fuzzcorp_api_call(config, fetch_repros, interactive=interactive)
 
         # Prepare worker globals and task list
         globals.output_dir = output_dir
+        metadata_cache = {}
         download_list = []
-        for lineage in [s.strip() for s in section_names.split(",") if s.strip()]:
+
+        for lineage in section_names_list:
             lineage_repros = response.lineages.get(lineage, [])
             if not lineage_repros:
                 print(f"[WARNING] No repros found for lineage {lineage}")
@@ -1236,25 +1258,20 @@ def download_crashes(
                 continue
             for repro in verified:
                 download_list.append((lineage, repro.hash))
+                # Build metadata cache from response
+                from test_suite.fuzzcorp_api_client import ReproMetadata
 
-        # Prefetch metadata for all selected hashes (for consistency and potential reuse)
-        if download_list:
-            print("\nFetching metadata for selected repros...")
-            from test_suite.fuzzcorp_api_client import FuzzCorpAPIClient as _FCA
+                metadata_cache[repro.hash] = ReproMetadata(
+                    hash=repro.hash,
+                    bundle=response.bundle_id,
+                    lineage=lineage,
+                    asset=repro.asset,
+                    artifact_hashes=repro.artifact_hashes or [],
+                    summary=repro.summary or "",
+                    verified=repro.all_verified,
+                )
 
-            metadata_cache = {}
-            with _FCA(
-                api_origin=config.get_api_origin(),
-                token=config.get_token(),
-                org=config.get_organization(),
-                project=config.get_project(),
-                http2=True,
-            ) as client:
-                all_repros = client.list_repros_full()
-                selection = {h for _, h in download_list}
-                for repro in all_repros:
-                    if repro.hash in selection:
-                        metadata_cache[repro.hash] = repro
+        if metadata_cache:
             globals.repro_metadata_cache = metadata_cache
 
         from test_suite.multiprocessing_utils import download_single_crash
@@ -1442,12 +1459,12 @@ def debug_mismatches(
             project=config.get_project(),
             http2=True,
         ) as client:
-            all_repros = client.list_repros_full()
-
-            download_hashes = {hash_val for _, hash_val in custom_data_urls}
-            for repro in all_repros:
-                if repro.hash in download_hashes:
-                    metadata_cache[repro.hash] = repro
+            download_hashes = list({hash_val for _, hash_val in custom_data_urls})
+            try:
+                repros = client.get_repros_by_hashes(download_hashes)
+                metadata_cache = {repro.hash: repro for repro in repros}
+            except httpx.HTTPError as e:
+                print(f"  [WARNING] Failed to fetch metadata in bulk: {e}")
 
         print(f"  Cached metadata for {len(metadata_cache)} repro(s)\n")
 

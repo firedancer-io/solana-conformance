@@ -20,6 +20,7 @@ USER_DATA_PATH = USER_PREFIX + "data"
 REPRO_INDEX_PATH = STORAGE_PREFIX + "repro_index"
 REPRO_LIST_PATH = STORAGE_PREFIX + "repro_list"
 REPRO_BY_HASH_PATH = STORAGE_PREFIX + "repro_hash"
+REPRO_LIST_BY_HASHES_PATH = STORAGE_PREFIX + "repro_list_by_hashes"
 STORAGE_DATA_GET_PATH = STORAGE_PREFIX + "data_entry"
 
 # Session cookie name
@@ -32,6 +33,10 @@ class LineageRepro:
     created_at: datetime
     count: int
     all_verified: bool
+    # Full metadata fields (only present if include_full_metadata=True)
+    asset: Optional[str] = None
+    artifact_hashes: Optional[List[str]] = None
+    summary: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "LineageRepro":
@@ -45,6 +50,9 @@ class LineageRepro:
             created_at=datetime.fromisoformat(created_at_str),
             count=data["Count"],
             all_verified=data["AllVerified"],
+            asset=data.get("asset"),
+            artifact_hashes=data.get("artifact_hashes"),
+            summary=data.get("summary"),
         )
 
 
@@ -208,11 +216,23 @@ class FuzzCorpAPIClient:
         bundle_id: Optional[str] = None,
         org: Optional[str] = None,
         project: Optional[str] = None,
+        include_full_metadata: bool = False,
     ) -> ReproIndexResponse:
+        """
+        List repro index for a bundle.
+
+        Args:
+            bundle_id: Bundle ID to query (defaults to latest)
+            org: Organization (defaults to client org)
+            project: Project (defaults to client project)
+            include_full_metadata: If True, includes asset, artifacts, and summary
+                                   for each repro (eliminates need for second query)
+        """
         data = {
             "org": org or self.org,
             "prj": project or self.project,
             "BundleID": bundle_id or "00000000-0000-0000-0000-000000000000",
+            "IncludeFullMetadata": include_full_metadata,
         }
 
         response = self._make_request("GET", REPRO_INDEX_PATH, data, use_query=True)
@@ -223,12 +243,21 @@ class FuzzCorpAPIClient:
         bundle_id: Optional[str] = None,
         org: Optional[str] = None,
         project: Optional[str] = None,
+        lineage: Optional[str] = None,
     ) -> List[ReproMetadata]:
-        data = {
+        """
+        List repro metadata for a bundle, optionally filtered to a specific lineage.
+
+        If `lineage` is None or empty, all lineages for the bundle are returned.
+        """
+        data: Dict[str, Any] = {
             "org": org or self.org,
             "prj": project or self.project,
             "BundleID": bundle_id or "00000000-0000-0000-0000-000000000000",
         }
+        # Optional lineage filter – empty string means "all lineages" on the server side.
+        if lineage:
+            data["Lineage"] = lineage
 
         response = self._make_request("GET", REPRO_LIST_PATH, data, use_query=True)
         repros = response.get("repros", [])
@@ -248,6 +277,28 @@ class FuzzCorpAPIClient:
 
         response = self._make_request("GET", REPRO_BY_HASH_PATH, data, use_query=True)
         return ReproMetadata.from_dict(response["repros"])
+
+    def get_repros_by_hashes(
+        self,
+        repro_hashes: List[str],
+        org: Optional[str] = None,
+        project: Optional[str] = None,
+    ) -> List[ReproMetadata]:
+        """
+        Fetch metadata for multiple repros by their hashes in a single request.
+
+        This is more efficient than calling get_repro_by_hash multiple times.
+        Uses POST to avoid URL length limits, so it can handle thousands of hashes.
+        """
+        data = {
+            "Hashes": repro_hashes,
+            "org": org or self.org,
+            "prj": project or self.project,
+        }
+
+        response = self._make_request("POST", REPRO_LIST_BY_HASHES_PATH, data)
+        repros = response.get("repros", [])
+        return [ReproMetadata.from_dict(repro) for repro in repros]
 
     def download_artifact_data(
         self,
