@@ -105,14 +105,8 @@ def process_items(
                         results.append(result)
                         pbar.update(1)
         except BrokenProcessPool as e:
-            if not debug_mode:
-                print(f"[ERROR] Process pool broken: {e}")
-                raise
-            else:
-                # We assume a gdb/lldb session caused the pool to break; continue silently
-                print(
-                    f"[NOTICE] Process pool broken in debug mode. Silently continuing..."
-                )
+            print(f"[ERROR] Process pool broken: {e}")
+            raise
     else:
         # Single-threaded execution in main process
         # Call initializer if provided
