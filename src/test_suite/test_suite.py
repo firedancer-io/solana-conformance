@@ -971,6 +971,11 @@ def download_fixtures(
         "--interactive/--no-interactive",
         help="Prompt for authentication if needed",
     ),
+    all_artifacts: bool = typer.Option(
+        False,
+        "--all-artifacts",
+        help="Download all artifacts per repro (default: only latest)",
+    ),
 ):
     """Download and extract fixtures for verified repros from FuzzCorp NG API."""
     # Create output directories
@@ -982,6 +987,7 @@ def download_fixtures(
     # Set globals for download_and_process
     globals.output_dir = output_dir
     globals.inputs_dir = inputs_dir
+    globals.download_all_artifacts = all_artifacts
 
     try:
         # Get configuration
@@ -1413,6 +1419,11 @@ def debug_mismatches(
         "-d",
         help="Enables debug mode, which spawns a single child process for easier debugging",
     ),
+    all_artifacts: bool = typer.Option(
+        False,
+        "--all-artifacts",
+        help="Download all artifacts per repro (default: only latest)",
+    ),
 ):
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
 
@@ -1421,6 +1432,7 @@ def debug_mismatches(
 
     globals.inputs_dir = globals.output_dir / "inputs"
     globals.inputs_dir.mkdir(parents=True, exist_ok=True)
+    globals.download_all_artifacts = all_artifacts
 
     fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
     repro_urls_list = repro_urls.split(",") if repro_urls else []

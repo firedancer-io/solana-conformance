@@ -630,17 +630,25 @@ def download_and_process(source):
                 "message": "Failed to process: no artifacts found",
             }
 
-        # Take only the first (most recent) artifact hash
-        # The backend returns artifacts sorted by created_at DESC, so the first one is the latest
-        artifact_hash = repro_metadata.artifact_hashes[0]
+        # Determine which artifacts to download
+        download_all = getattr(globals, "download_all_artifacts", False)
+        if download_all:
+            artifacts_to_download = repro_metadata.artifact_hashes
+            print(
+                f"  [{section_name}/{crash_hash[:8]}] Downloading all {len(artifacts_to_download)} artifact(s)",
+                file=sys.stderr,
+                flush=True,
+            )
+        else:
+            # Take only the first artifact hash
+            artifacts_to_download = [repro_metadata.artifact_hashes[0]]
+            print(
+                f"  [{section_name}/{crash_hash[:8]}] Using first artifact: {artifacts_to_download[0][:16]}",
+                file=sys.stderr,
+                flush=True,
+            )
 
-        print(
-            f"  [{section_name}/{crash_hash[:8]}] Using latest artifact: {artifact_hash[:16]}",
-            file=sys.stderr,
-            flush=True,
-        )
-
-        # Download and extract the artifact
+        # Download and extract artifacts
         fix_count = 0
         was_cached = False
 
@@ -648,67 +656,83 @@ def download_and_process(source):
         artifact_cache_dir = globals.output_dir / ".artifact_cache"
         artifact_cache_dir.mkdir(parents=True, exist_ok=True)
 
-        # Check if artifact ZIP already exists on disk
-        artifact_zip_path = artifact_cache_dir / f"{artifact_hash}.zip"
+        for idx, artifact_hash in enumerate(artifacts_to_download, 1):
+            # Check if artifact ZIP already exists on disk
+            artifact_zip_path = artifact_cache_dir / f"{artifact_hash}.zip"
 
-        if artifact_zip_path.exists():
-            # Use cached ZIP file
-            was_cached = True
-            with open(artifact_zip_path, "rb") as f:
-                artifact_data = f.read()
-        else:
-            # Download artifact (ZIP file)
+            if artifact_zip_path.exists():
+                # Use cached ZIP file
+                was_cached = True
+                with open(artifact_zip_path, "rb") as f:
+                    artifact_data = f.read()
+            else:
+                # Download artifact (ZIP file)
 
-            # Create HTTP client for artifact download
-            with FuzzCorpAPIClient(
-                api_origin=config.get_api_origin(),
-                token=config.get_token(),
-                org=config.get_organization(),
-                project=config.get_project(),
-                http2=True,
-            ) as client:
-                # Track download time and speed
-                start_time = time.time()
-                artifact_data = client.download_artifact_data(
-                    artifact_hash,
-                    section_name,
-                    desc=f"Downloading artifact",
-                )
-                elapsed_time = time.time() - start_time
+                # Create HTTP client for artifact download
+                with FuzzCorpAPIClient(
+                    api_origin=config.get_api_origin(),
+                    token=config.get_token(),
+                    org=config.get_organization(),
+                    project=config.get_project(),
+                    http2=True,
+                ) as client:
+                    # Track download time and speed
+                    start_time = time.time()
+                    artifact_desc = (
+                        f"Downloading artifact {idx}/{len(artifacts_to_download)}"
+                        if len(artifacts_to_download) > 1
+                        else "Downloading artifact"
+                    )
+                    artifact_data = client.download_artifact_data(
+                        artifact_hash,
+                        section_name,
+                        desc=artifact_desc,
+                    )
+                    elapsed_time = time.time() - start_time
 
-                # Calculate and log download speed
-                size_bytes = len(artifact_data)
-                size_mib = size_bytes / (1024 * 1024)
-                speed_mibs = size_mib / elapsed_time if elapsed_time > 0 else 0
+                    # Calculate and log download speed
+                    size_bytes = len(artifact_data)
+                    size_mib = size_bytes / (1024 * 1024)
+                    speed_mibs = size_mib / elapsed_time if elapsed_time > 0 else 0
 
-                print(
-                    f"  [{section_name}/{crash_hash[:8]}] Artifact: "
-                    f"{size_mib:.2f} MiB @ {speed_mibs:.2f} MiB/s",
-                    file=sys.stderr,
-                    flush=True,
-                )
+                    artifact_label = (
+                        f"[{idx}/{len(artifacts_to_download)}]"
+                        if len(artifacts_to_download) > 1
+                        else ""
+                    )
+                    print(
+                        f"  [{section_name}/{crash_hash[:8]}] Artifact {artifact_label}: "
+                        f"{size_mib:.2f} MiB @ {speed_mibs:.2f} MiB/s",
+                        file=sys.stderr,
+                        flush=True,
+                    )
 
-                # Save to cache for future runs
-                with open(artifact_zip_path, "wb") as f:
-                    f.write(artifact_data)
+                    # Save to cache for future runs
+                    with open(artifact_zip_path, "wb") as f:
+                        f.write(artifact_data)
 
-        # Extract .fix files from the artifact ZIP
-        fix_count += extract_fix_files_from_zip(
-            artifact_data, globals.inputs_dir, enable_deduplication=True
-        )
+            # Extract .fix files from the artifact ZIP
+            fix_count += extract_fix_files_from_zip(
+                artifact_data, globals.inputs_dir, enable_deduplication=True
+            )
 
-        # Mark this artifact as processed (in-memory only, for this session)
-        with _download_cache_lock:
-            _downloaded_artifact_hashes.add(artifact_hash)
+            # Mark this artifact as processed (in-memory only, for this session)
+            with _download_cache_lock:
+                _downloaded_artifact_hashes.add(artifact_hash)
 
         # Always return success if we processed artifacts (even if no new fixtures extracted)
         # Not extracting new fixtures just means they already exist or artifacts don't contain .fix files
+        artifact_msg = (
+            f"{len(artifacts_to_download)} artifact(s)"
+            if len(artifacts_to_download) > 1
+            else "latest artifact"
+        )
         return {
             "success": True,
             "repro": f"{section_name}/{crash_hash}",
             "fixtures": fix_count,
             "cached": was_cached,
-            "message": f"Processed {section_name}/{crash_hash} successfully ({fix_count} new fixture(s) from latest artifact)",
+            "message": f"Processed {section_name}/{crash_hash} successfully ({fix_count} new fixture(s) from {artifact_msg})",
         }
     except Exception as e:
         return {

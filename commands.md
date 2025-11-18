@@ -166,6 +166,7 @@ $ solana-conformance debug-mismatches [OPTIONS]
 * `-l, --section-limit INTEGER`: Limit number of fixture per section  [default: 0]
 * `--use-ng`: Use fuzz NG CLI (fuzz list/download repro) instead of API scraping  [default: True]
 * `-d, --debug-mode`: Enables debug mode, which spawns a single child process for easier debugging
+* `--all-artifacts`: Download all artifacts per repro (default: only latest)
 * `--help`: Show this message and exit.
 
 ## `solana-conformance decode-protobufs`
@@ -267,6 +268,7 @@ $ solana-conformance download-fixtures [OPTIONS]
 * `-p, --num-processes INTEGER`: Number of parallel download processes  [default: 4]
 * `--use-ng`: Use fuzz NG CLI (fuzz list/download repro) instead of API scraping  [default: True]
 * `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
+* `--all-artifacts`: Download all artifacts per repro (default: only latest)
 * `--help`: Show this message and exit.
 
 ## `solana-conformance exec-fixtures`
