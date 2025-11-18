@@ -56,8 +56,9 @@ class ReproIndexResponse:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ReproIndexResponse":
         lineages = {}
-        for lineage_name, repros in data.get("Lineages", {}).items():
-            lineages[lineage_name] = [LineageRepro.from_dict(r) for r in repros]
+        lineages_data = data.get("Lineages") or {}
+        for lineage_name, repros in lineages_data.items():
+            lineages[lineage_name] = [LineageRepro.from_dict(r) for r in (repros or [])]
 
         return cls(
             bundle_id=data.get("BundleID", "00000000-0000-0000-0000-000000000000"),
@@ -82,8 +83,8 @@ class ReproMetadata:
             bundle=data["bundle"],
             lineage=data["lineage"],
             asset=data.get("asset"),
-            artifact_hashes=data.get("artifact_hashes", []),
-            summary=data.get("summary", ""),
+            artifact_hashes=data.get("artifact_hashes") or [],
+            summary=data.get("summary") or "",
             verified=data.get("verified", False),
         )
 
@@ -231,7 +232,7 @@ class FuzzCorpAPIClient:
         }
 
         response = self._make_request("GET", REPRO_LIST_PATH, data, use_query=True)
-        repros = response.get("repros", [])
+        repros = response.get("repros") or []
         return [ReproMetadata.from_dict(repro) for repro in repros]
 
     def get_repro_by_hash(
@@ -247,7 +248,10 @@ class FuzzCorpAPIClient:
         }
 
         response = self._make_request("GET", REPRO_BY_HASH_PATH, data, use_query=True)
-        return ReproMetadata.from_dict(response["repros"])
+        repro_data = response.get("repros")
+        if not repro_data:
+            raise ValueError(f"No repro found for hash: {repro_hash}")
+        return ReproMetadata.from_dict(repro_data)
 
     def download_artifact_data(
         self,

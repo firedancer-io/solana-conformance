@@ -1480,8 +1480,8 @@ def debug_mismatches(
     )
 
     # Print download results summary
-    successful_downloads = [r for r in results if r and "successfully" in r]
-    failed_downloads = [r for r in results if r and ("Failed" in r or "Error" in r)]
+    successful_downloads = [r for r in results if r and r.get("success")]
+    failed_downloads = [r for r in results if r and not r.get("success")]
     print(
         f"\nDownload summary: {len(successful_downloads)} succeeded, {len(failed_downloads)} failed"
     )
@@ -1489,7 +1489,9 @@ def debug_mismatches(
     if failed_downloads:
         print(f"\n[WARNING] Failed downloads:")
         for failure in failed_downloads:
-            print(f"  - {failure}")
+            print(
+                f"  - {failure.get('repro', 'unknown')}: {failure.get('message', 'unknown error')}"
+            )
 
     if ld_preload is not None:
         os.environ["LD_PRELOAD"] = ld_preload
@@ -1498,7 +1500,14 @@ def debug_mismatches(
     if repro_custom.exists():
         shutil.rmtree(repro_custom)
 
-    files = list(Path(globals.inputs_dir).iterdir())
+    # Count only actual files, not directories
+    files = [f for f in Path(globals.inputs_dir).iterdir() if f.is_file()]
+
+    if not files:
+        print(f"\n[ERROR] No fixtures were downloaded. Cannot proceed.")
+        print(f"This usually means the repros don't have artifacts attached yet.")
+        raise typer.Exit(code=1)
+
     print(f"Deduplicating {len(files)} downloaded fixture(s)...")
     num_duplicates = deduplicate_fixtures_by_hash(globals.inputs_dir)
     if num_duplicates > 0:
