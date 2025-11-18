@@ -9,7 +9,7 @@ permissions:
   contents: read
 jobs:
   build_and_list_harnesses:
-    runs-on: ubuntu-22.04-64-1
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -17,9 +17,10 @@ jobs:
         with:
           version: 1.50.0
 
-      - name: Install Python 3.11 and dev headers (Rocky 9)
+      - name: Install Python 3.11 and dev headers
         run: |
-          sudo dnf -y install python3.11 python3.11-devel pkgconf gcc make
+          sudo apt-get update
+          sudo apt-get install -y python3.11 python3.11-dev python3.11-venv pkg-config gcc make
 
       - name: Install dependencies
         env:
