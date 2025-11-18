@@ -466,7 +466,6 @@ def initialize_process_globals_for_regeneration(
     features_to_add,
     features_to_remove,
     rekey_features,
-    regenerate_all,
     regenerate_dry_run,
     regenerate_verbose,
 ):
@@ -481,7 +480,6 @@ def initialize_process_globals_for_regeneration(
         - features_to_add (set): Set of feature IDs to add.
         - features_to_remove (set): Set of feature IDs to remove.
         - rekey_features (list): List of (old, new) feature ID tuples.
-        - regenerate_all (bool): Whether to regenerate all fixtures.
         - regenerate_dry_run (bool): Whether to run in dry-run mode.
         - regenerate_verbose (bool): Whether to print verbose output.
     """
@@ -492,7 +490,6 @@ def initialize_process_globals_for_regeneration(
     globals.features_to_add = features_to_add
     globals.features_to_remove = features_to_remove
     globals.rekey_features = rekey_features
-    globals.regenerate_all = regenerate_all
     globals.regenerate_dry_run = regenerate_dry_run
     globals.regenerate_verbose = regenerate_verbose
 
