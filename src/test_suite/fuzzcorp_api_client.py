@@ -224,12 +224,17 @@ class FuzzCorpAPIClient:
         bundle_id: Optional[str] = None,
         org: Optional[str] = None,
         project: Optional[str] = None,
+        lineage: Optional[str] = None,
     ) -> List[ReproMetadata]:
         data = {
             "org": org or self.org,
             "prj": project or self.project,
             "BundleID": bundle_id or "00000000-0000-0000-0000-000000000000",
         }
+
+        # Add lineage filter if provided (filters server-side for efficiency)
+        if lineage:
+            data["Lineage"] = lineage
 
         response = self._make_request("GET", REPRO_LIST_PATH, data, use_query=True)
         repros = response.get("repros") or []
