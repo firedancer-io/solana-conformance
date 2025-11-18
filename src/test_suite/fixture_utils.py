@@ -226,35 +226,28 @@ def regenerate_fixture(test_file: Path) -> int:
             new_feature_set.remove(old_feature)
             new_feature_set.add(new_feature)
 
-    regenerate = globals.regenerate_all or (new_feature_set != original_feature_set)
+    if globals.regenerate_dry_run:
+        if globals.regenerate_verbose:
+            print(f"Would regenerate {test_file}")
+    else:
+        if globals.regenerate_verbose:
+            print(f"Regenerating {test_file}")
 
-    if regenerate:
-        if globals.regenerate_dry_run:
-            if globals.regenerate_verbose:
-                print(f"Would regenerate {test_file}")
-        else:
-            if globals.regenerate_verbose:
-                print(f"Regenerating {test_file}")
+        # Apply minimum compatible features
+        if features is not None:
+            features.features[:] = sorted(list(new_feature_set))
 
-            # Apply minimum compatible features
-            if features is not None:
-                features.features[:] = sorted(list(new_feature_set))
+        # Apply any custom transformations to the data
+        harness_ctx.regenerate_transformation_fn(fixture)
 
-            # Apply any custom transformations to the data
-            harness_ctx.regenerate_transformation_fn(fixture)
+        regenerated_fixture = create_fixture_from_context(harness_ctx, fixture.input)
 
-            regenerated_fixture = create_fixture_from_context(
-                harness_ctx, fixture.input
-            )
+        if regenerated_fixture is None:
+            return 0
 
-            if regenerated_fixture is None:
-                return 0
-
-            write_fixture_to_disk(
-                harness_ctx,
-                test_file.stem,
-                regenerated_fixture.SerializeToString(),
-            )
-        return 1
-
-    return 0
+        write_fixture_to_disk(
+            harness_ctx,
+            test_file.stem,
+            regenerated_fixture.SerializeToString(),
+        )
+    return 1
