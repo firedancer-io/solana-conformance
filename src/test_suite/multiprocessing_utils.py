@@ -604,8 +604,6 @@ def download_and_process(source):
             repro_metadata = globals.repro_metadata_cache[crash_hash]
         else:
             # Meta data cache miss, fetch from API
-            import sys
-
             print(
                 f"  Fetching metadata for {crash_hash[:16]}...",
                 file=sys.stderr,
@@ -660,7 +658,6 @@ def download_and_process(source):
                 artifact_data = f.read()
         else:
             # Download artifact (ZIP file)
-            import sys
 
             # Create HTTP client for artifact download
             with FuzzCorpAPIClient(
@@ -770,8 +767,6 @@ def download_single_crash(source):
             project=config.get_project(),
             http2=True,
         ) as client:
-            import sys
-
             # Track download time and speed
             start_time = time.time()
             data = client.download_repro_data(
