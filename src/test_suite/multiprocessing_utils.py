@@ -419,6 +419,96 @@ def initialize_process_output_buffers(randomize_output_buffer=False):
         )
 
 
+def initialize_process_globals_for_extraction(output_dir):
+    """
+    Initialize globals needed for fixture context extraction in worker processes.
+
+    Args:
+        - output_dir (Path): Output directory for extracted contexts.
+    """
+    globals.output_dir = output_dir
+
+
+def initialize_process_globals_for_decoding(output_dir, default_harness_ctx):
+    """
+    Initialize globals needed for protobuf decoding in worker processes.
+
+    Args:
+        - output_dir (Path): Output directory for decoded messages.
+        - default_harness_ctx: Default harness context for decoding.
+    """
+    globals.output_dir = output_dir
+    globals.default_harness_ctx = default_harness_ctx
+
+
+def initialize_process_globals_for_download(
+    output_dir, inputs_dir, repro_metadata_cache=None
+):
+    """
+    Initialize globals needed for downloading fixtures/crashes in worker processes.
+
+    Args:
+        - output_dir (Path): Base output directory.
+        - inputs_dir (Path): Directory for downloaded fixtures.
+        - repro_metadata_cache (dict, optional): Cache of repro metadata.
+    """
+    globals.output_dir = output_dir
+    globals.inputs_dir = inputs_dir
+    if repro_metadata_cache is not None:
+        globals.repro_metadata_cache = repro_metadata_cache
+
+
+def initialize_process_globals_for_regeneration(
+    output_dir,
+    reference_shared_library,
+    shared_library_path,
+    log_level,
+    features_to_add,
+    features_to_remove,
+    rekey_features,
+    regenerate_all,
+    regenerate_dry_run,
+    regenerate_verbose,
+):
+    """
+    Initialize globals needed for fixture regeneration in worker processes.
+
+    Args:
+        - output_dir (Path): Output directory for regenerated fixtures.
+        - reference_shared_library (Path): Path to reference shared library.
+        - shared_library_path (Path): Path to shared library to load.
+        - log_level (int): Logging level for the shared library.
+        - features_to_add (set): Set of feature IDs to add.
+        - features_to_remove (set): Set of feature IDs to remove.
+        - rekey_features (list): List of (old, new) feature ID tuples.
+        - regenerate_all (bool): Whether to regenerate all fixtures.
+        - regenerate_dry_run (bool): Whether to run in dry-run mode.
+        - regenerate_verbose (bool): Whether to print verbose output.
+    """
+    import test_suite.features_utils as features_utils
+
+    globals.output_dir = output_dir
+    globals.reference_shared_library = reference_shared_library
+    globals.features_to_add = features_to_add
+    globals.features_to_remove = features_to_remove
+    globals.rekey_features = rekey_features
+    globals.regenerate_all = regenerate_all
+    globals.regenerate_dry_run = regenerate_dry_run
+    globals.regenerate_verbose = regenerate_verbose
+
+    # Load the shared library in this worker process
+    lib = ctypes.CDLL(shared_library_path)
+    lib.sol_compat_init(log_level)
+    globals.target_libraries = {shared_library_path: lib}
+
+    # Get target features from the library in this worker process
+    # (must be done per-process as it involves ctypes calls)
+    globals.target_features = features_utils.get_sol_compat_features_t(lib)
+
+    # Initialize output buffers for regeneration
+    initialize_process_output_buffers()
+
+
 def run_test(test_file: Path) -> tuple[str, int, dict | None]:
     """
     Runs a single test from start to finish.

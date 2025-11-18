@@ -14,6 +14,9 @@ __pycache__/
 # C extensions
 *.so
 
+# Exception: Include test targets for integration testing
+!tests/targets/*.so
+
 # Distribution / packaging
 .Python
 build/

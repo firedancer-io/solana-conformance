@@ -9,23 +9,33 @@ permissions:
   contents: read
 jobs:
   build_and_list_harnesses:
-    runs-on: [self-hosted, Linux, x64]
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - uses: bufbuild/buf-setup-action@v1
         with:
           version: 1.50.0
 
-      - name: Install Python 3.11 and dev headers (Rocky 9)
+      - name: Install system dependencies
         run: |
-          sudo dnf -y install python3.11 python3.11-devel pkgconf gcc make
+          sudo apt-get update
+          sudo apt-get install -y pkg-config gcc make
 
-      - name: Install dependencies
-        env:
-          PYTHON: /usr/bin/python3.11
+      - name: Install Python dependencies
         run: |
-          ./install.sh
+          python -m venv test_suite_env
+          source test_suite_env/bin/activate
+          pip install --upgrade pip
+          pip install -e ".[dev]"
+          # Upgrade protobuf to match gencode version
+          pip install --upgrade protobuf
 
       - name: Activate venv and fetch/generate protos
         run: |
@@ -36,3 +46,9 @@ jobs:
         run: |
           source test_suite_env/bin/activate
           solana-conformance list-harness-types
+
+      - name: Run integration tests
+        run: |
+          source test_suite_env/bin/activate
+          pytest tests/test_integration.py -v --tb=short
+        continue-on-error: false

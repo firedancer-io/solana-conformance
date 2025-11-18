@@ -21,6 +21,10 @@ from test_suite.multiprocessing_utils import (
     extract_metadata,
     read_fixture,
     initialize_process_output_buffers,
+    initialize_process_globals_for_extraction,
+    initialize_process_globals_for_decoding,
+    initialize_process_globals_for_download,
+    initialize_process_globals_for_regeneration,
     process_target,
     run_test,
     read_context,
@@ -224,7 +228,10 @@ def fix_to_ctx(
         extract_context_from_fixture,
         num_processes=num_processes,
         debug_mode=debug_mode,
+        initializer=initialize_process_globals_for_extraction,
+        initargs=(output_dir,),
         desc="Converting",
+        use_processes=True,
     )
 
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
@@ -654,7 +661,10 @@ def decode_protobufs(
         decode_single_test_case,
         num_processes=num_processes,
         debug_mode=debug_mode,
+        initializer=initialize_process_globals_for_decoding,
+        initargs=(output_dir, HARNESS_MAP[default_harness_ctx]),
         desc="Decoding",
+        use_processes=True,
     )
 
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
@@ -1054,6 +1064,8 @@ def download_fixtures(
             items=download_list,
             process_func=download_and_process,
             num_processes=num_processes,
+            initializer=initialize_process_globals_for_download,
+            initargs=(output_dir, inputs_dir, metadata_cache),
             desc="Downloading",
         )
 
@@ -1265,6 +1277,8 @@ def download_crashes(
             process_func=download_single_crash,
             num_processes=num_processes,
             debug_mode=False,
+            initializer=initialize_process_globals_for_download,
+            initargs=(output_dir, None, metadata_cache),
             desc="Downloading crashes",
         )
 
@@ -1430,6 +1444,7 @@ def debug_mismatches(
     ld_preload = os.environ.pop("LD_PRELOAD", None)
 
     num_test_cases = len(custom_data_urls)
+    metadata_cache = None
 
     if num_test_cases > 0:
         print(f"Fetching metadata for all repros...")
@@ -1459,8 +1474,8 @@ def debug_mismatches(
         download_and_process,
         num_processes=num_processes,
         debug_mode=debug_mode,
-        initializer=initialize_process_output_buffers,
-        initargs=(randomize_output_buffer,),
+        initializer=initialize_process_globals_for_download,
+        initargs=(output_dir, globals.inputs_dir, metadata_cache),
         desc="Downloading",
     )
 
@@ -1834,8 +1849,21 @@ def regenerate_fixtures(
         regenerate_fixture,
         num_processes=num_processes,
         debug_mode=debug_mode,
-        initializer=initialize_process_output_buffers,
+        initializer=initialize_process_globals_for_regeneration,
+        initargs=(
+            output_dir,
+            shared_library,
+            shared_library,
+            log_level,
+            globals.features_to_add,
+            globals.features_to_remove,
+            globals.rekey_features,
+            regenerate_all,
+            dry_run,
+            verbose,
+        ),
         desc="Regenerating",
+        use_processes=True,
     )
     num_regenerated = sum(results)
 
