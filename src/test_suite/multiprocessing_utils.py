@@ -67,6 +67,35 @@ def extract_fix_files_from_zip(
     return fix_count
 
 
+def _download_with_timing(download_func, log_prefix: str):
+    """
+    Helper to execute a download function, time it, and log the speed.
+
+    Args:
+        download_func: Callable that returns the downloaded bytes
+        log_prefix: Prefix for the log message (e.g., "  [lineage/hash]")
+
+    Returns:
+        bytes: The downloaded data
+    """
+    start_time = time.time()
+    data = download_func()
+    elapsed_time = time.time() - start_time
+
+    # Calculate and log download speed
+    size_bytes = len(data)
+    size_mib = size_bytes / (1024 * 1024)
+    speed_mibs = size_mib / elapsed_time if elapsed_time > 0 else 0
+
+    print(
+        f"{log_prefix}: {size_mib:.2f} MiB @ {speed_mibs:.2f} MiB/s",
+        file=sys.stderr,
+        flush=True,
+    )
+
+    return data
+
+
 def process_target(
     harness_ctx: HarnessCtx, library: ctypes.CDLL, context: ContextType
 ) -> invoke_pb.InstrEffects | None:
@@ -676,35 +705,24 @@ def download_and_process(source):
                     project=config.get_project(),
                     http2=True,
                 ) as client:
-                    # Track download time and speed
-                    start_time = time.time()
                     artifact_desc = (
                         f"Downloading artifact {idx}/{len(artifacts_to_download)}"
                         if len(artifacts_to_download) > 1
                         else "Downloading artifact"
                     )
-                    artifact_data = client.download_artifact_data(
-                        artifact_hash,
-                        section_name,
-                        desc=artifact_desc,
-                    )
-                    elapsed_time = time.time() - start_time
-
-                    # Calculate and log download speed
-                    size_bytes = len(artifact_data)
-                    size_mib = size_bytes / (1024 * 1024)
-                    speed_mibs = size_mib / elapsed_time if elapsed_time > 0 else 0
-
                     artifact_label = (
                         f"[{idx}/{len(artifacts_to_download)}]"
                         if len(artifacts_to_download) > 1
                         else ""
                     )
-                    print(
-                        f"  [{section_name}/{crash_hash[:8]}] Artifact {artifact_label}: "
-                        f"{size_mib:.2f} MiB @ {speed_mibs:.2f} MiB/s",
-                        file=sys.stderr,
-                        flush=True,
+
+                    artifact_data = _download_with_timing(
+                        lambda: client.download_artifact_data(
+                            artifact_hash,
+                            section_name,
+                            desc=artifact_desc,
+                        ),
+                        f"  [{section_name}/{crash_hash[:8]}] Artifact {artifact_label}",
                     )
 
                     # Save to cache for future runs
@@ -791,25 +809,13 @@ def download_single_crash(source):
             project=config.get_project(),
             http2=True,
         ) as client:
-            # Track download time and speed
-            start_time = time.time()
-            data = client.download_repro_data(
-                crash_hash,
-                lineage,
-                desc=f"Downloading {crash_hash[:8]}.crash",
-            )
-            elapsed_time = time.time() - start_time
-
-            # Calculate and log download speed
-            size_bytes = len(data)
-            size_mib = size_bytes / (1024 * 1024)
-            speed_mibs = size_mib / elapsed_time if elapsed_time > 0 else 0
-
-            print(
-                f"  [{lineage}/{crash_hash[:8]}] Crash file: "
-                f"{size_mib:.2f} MiB @ {speed_mibs:.2f} MiB/s",
-                file=sys.stderr,
-                flush=True,
+            data = _download_with_timing(
+                lambda: client.download_repro_data(
+                    crash_hash,
+                    lineage,
+                    desc=f"Downloading {crash_hash[:8]}.crash",
+                ),
+                f"  [{lineage}/{crash_hash[:8]}] Crash file",
             )
 
             with open(out_path, "wb") as f:
