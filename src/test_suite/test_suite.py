@@ -1033,7 +1033,7 @@ def download_fixtures(
             print("\n[ERROR] No repros to download")
             raise typer.Exit(code=1)
 
-        # Prefetch all repro metadata using efficient single API call
+        # Prefetch all repro metadata per lineage (more efficient than global or per-hash)
         print(f"\nFetching metadata for all repros...")
 
         metadata_cache = {}
@@ -1044,14 +1044,15 @@ def download_fixtures(
             project=config.get_project(),
             http2=True,
         ) as client:
-            # ONE API call to get ALL repro metadata (hash, bundle, asset, artifact_hashes)
-            all_repros = client.list_repros_full()
-
-            # Build cache with only the repros we want to download
+            # Fetch metadata per lineage (server can efficiently filter per lineage)
             download_hashes = {hash_val for _, hash_val in download_list}
-            for repro in all_repros:
-                if repro.hash in download_hashes:
-                    metadata_cache[repro.hash] = repro
+            lineages_to_fetch = {lineage for lineage, _ in download_list}
+
+            for lineage in lineages_to_fetch:
+                lineage_repros = client.list_repros_full(lineage=lineage)
+                for repro in lineage_repros:
+                    if repro.hash in download_hashes:
+                        metadata_cache[repro.hash] = repro
 
         print(f"  Cached metadata for {len(metadata_cache)} repro(s)\n")
 
@@ -1249,7 +1250,7 @@ def download_crashes(
             for repro in verified:
                 download_list.append((lineage, repro.hash))
 
-        # Prefetch metadata for all selected hashes (for consistency and potential reuse)
+        # Prefetch metadata for all selected hashes per lineage (for consistency and potential reuse)
         if download_list:
             print("\nFetching metadata for selected repros...")
             from test_suite.fuzzcorp_api_client import FuzzCorpAPIClient as _FCA
@@ -1262,11 +1263,14 @@ def download_crashes(
                 project=config.get_project(),
                 http2=True,
             ) as client:
-                all_repros = client.list_repros_full()
                 selection = {h for _, h in download_list}
-                for repro in all_repros:
-                    if repro.hash in selection:
-                        metadata_cache[repro.hash] = repro
+                lineages_to_fetch = {lineage for lineage, _ in download_list}
+
+                for lineage in lineages_to_fetch:
+                    lineage_repros = client.list_repros_full(lineage=lineage)
+                    for repro in lineage_repros:
+                        if repro.hash in selection:
+                            metadata_cache[repro.hash] = repro
             globals.repro_metadata_cache = metadata_cache
 
         from test_suite.multiprocessing_utils import download_single_crash
@@ -1457,12 +1461,15 @@ def debug_mismatches(
             project=config.get_project(),
             http2=True,
         ) as client:
-            all_repros = client.list_repros_full()
-
+            # Fetch metadata per lineage (server can efficiently filter per lineage)
             download_hashes = {hash_val for _, hash_val in custom_data_urls}
-            for repro in all_repros:
-                if repro.hash in download_hashes:
-                    metadata_cache[repro.hash] = repro
+            lineages_to_fetch = {lineage for lineage, _ in custom_data_urls}
+
+            for lineage in lineages_to_fetch:
+                lineage_repros = client.list_repros_full(lineage=lineage)
+                for repro in lineage_repros:
+                    if repro.hash in download_hashes:
+                        metadata_cache[repro.hash] = repro
 
         print(f"  Cached metadata for {len(metadata_cache)} repro(s)")
 
