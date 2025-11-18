@@ -28,9 +28,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y pkg-config gcc make
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
-          ./install.sh
+          python -m venv test_suite_env
+          source test_suite_env/bin/activate
+          pip install --upgrade pip
+          pip install -e ".[dev]"
+          # Upgrade protobuf to match gencode version
+          pip install --upgrade protobuf
 
       - name: Activate venv and fetch/generate protos
         run: |
