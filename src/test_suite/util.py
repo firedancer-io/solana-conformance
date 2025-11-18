@@ -73,6 +73,7 @@ def process_items(
     initargs: tuple = (),
     desc: str = "Processing",
     use_processes: bool = False,
+    unit: str = "item",
 ) -> List[Any]:
     results = []
     if debug_mode:
@@ -99,7 +100,7 @@ def process_items(
                     executor.submit(process_func, item): item for item in items
                 }
 
-                with tqdm.tqdm(total=len(items), desc=desc) as pbar:
+                with tqdm.tqdm(total=len(items), desc=desc, unit=unit) as pbar:
                     for future in as_completed(future_to_item):
                         result = future.result()
                         results.append(result)
@@ -113,7 +114,7 @@ def process_items(
         if initializer:
             initializer(*initargs)
 
-        for item in tqdm.tqdm(items, desc=desc):
+        for item in tqdm.tqdm(items, desc=desc, unit=unit):
             result = process_func(item)
             results.append(result)
     return results

@@ -3,8 +3,9 @@ import os
 import urllib.parse
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Dict, List, Any
+from typing import Optional, Dict, List, Any, Callable
 import httpx
+import tqdm
 
 
 # API Constants (from fuzzcorp-ng/ui/endpoints*.go)
@@ -74,7 +75,7 @@ class ReproMetadata:
     asset: Optional[str]
     artifact_hashes: List[str]
     summary: str
-    verified: bool
+    flaky: bool
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ReproMetadata":
@@ -85,7 +86,7 @@ class ReproMetadata:
             asset=data.get("asset"),
             artifact_hashes=data.get("artifact_hashes") or [],
             summary=data.get("summary") or "",
-            verified=data.get("verified", False),
+            flaky=data.get("flaky", False),
         )
 
 
@@ -253,26 +254,17 @@ class FuzzCorpAPIClient:
         }
 
         response = self._make_request("GET", REPRO_BY_HASH_PATH, data, use_query=True)
-        repro_data = response.get("repros")
-        if not repro_data:
+        if not response:
             raise ValueError(f"No repro found for hash: {repro_hash}")
-        return ReproMetadata.from_dict(repro_data)
+        return ReproMetadata.from_dict(response)
 
-    def download_artifact_data(
+    def _download_with_progress(
         self,
-        artifact_hash: str,
-        lineage: str,
-        org: Optional[str] = None,
-        project: Optional[str] = None,
+        data: Dict[str, Any],
+        progress_callback: Optional[Callable[[int, int], None]] = None,
+        desc: Optional[str] = None,
     ) -> bytes:
-        data = {
-            "file_name": artifact_hash,
-            "kind": "artifact",
-            "organization": org or self.org,
-            "project": project or self.project,
-            "lineage": lineage,
-        }
-
+        """Helper method to download data with progress tracking."""
         url = self.api_origin + STORAGE_DATA_GET_PATH
         headers = {
             "Content-Type": "application/json",
@@ -286,7 +278,68 @@ class FuzzCorpAPIClient:
         # Stream the response to handle large files
         with self.client.stream("GET", url, headers=headers) as response:
             response.raise_for_status()
-            return response.read()
+
+            # Get content length from header if available
+            content_length = response.headers.get("Content-Length")
+            total_size = int(content_length) if content_length else None
+
+            # Download with progress tracking
+            chunks = []
+            downloaded = 0
+
+            # Create progress bar
+            pbar = None
+            if total_size:
+                pbar = tqdm.tqdm(
+                    total=total_size,
+                    unit="iB",
+                    unit_scale=True,
+                    unit_divisor=1024,
+                    desc=desc,
+                    miniters=1,
+                )
+
+            try:
+                for chunk in response.iter_bytes(chunk_size=8192):
+                    if chunk:
+                        chunks.append(chunk)
+                        downloaded += len(chunk)
+
+                        # Update progress bar
+                        if pbar:
+                            pbar.update(len(chunk))
+
+                        # Call progress callback
+                        if progress_callback and total_size:
+                            progress_callback(downloaded, total_size)
+            finally:
+                if pbar:
+                    pbar.close()
+
+            return b"".join(chunks)
+
+    def download_artifact_data(
+        self,
+        artifact_hash: str,
+        lineage: str,
+        org: Optional[str] = None,
+        project: Optional[str] = None,
+        progress_callback: Optional[Callable[[int, int], None]] = None,
+        desc: Optional[str] = None,
+    ) -> bytes:
+        data = {
+            "file_name": artifact_hash,
+            "kind": "artifact",
+            "organization": org or self.org,
+            "project": project or self.project,
+            "lineage": lineage,
+        }
+
+        return self._download_with_progress(
+            data=data,
+            progress_callback=progress_callback,
+            desc=desc or f"Downloading {artifact_hash[:8]}",
+        )
 
     def download_repro_data(
         self,
@@ -294,6 +347,8 @@ class FuzzCorpAPIClient:
         lineage: str,
         org: Optional[str] = None,
         project: Optional[str] = None,
+        progress_callback: Optional[Callable[[int, int], None]] = None,
+        desc: Optional[str] = None,
     ) -> bytes:
         data = {
             "file_name": repro_hash,
@@ -303,15 +358,8 @@ class FuzzCorpAPIClient:
             "lineage": lineage,
         }
 
-        url = self.api_origin + STORAGE_DATA_GET_PATH
-        headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/octet-stream",
-        }
-
-        query_data = json.dumps(data)
-        url = f"{url}?arpc={urllib.parse.quote(query_data)}"
-
-        with self.client.stream("GET", url, headers=headers) as response:
-            response.raise_for_status()
-            return response.read()
+        return self._download_with_progress(
+            data=data,
+            progress_callback=progress_callback,
+            desc=desc or f"Downloading {repro_hash[:8]}",
+        )

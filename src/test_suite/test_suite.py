@@ -1049,10 +1049,17 @@ def download_fixtures(
             lineages_to_fetch = {lineage for lineage, _ in download_list}
 
             for lineage in lineages_to_fetch:
-                lineage_repros = client.list_repros_full(lineage=lineage)
+                lineage_repros = client.list_repros_full(
+                    lineage=lineage,
+                )
+                print(f"  Fetched {len(lineage_repros)} repro(s) for lineage {lineage}")
                 for repro in lineage_repros:
                     if repro.hash in download_hashes:
                         metadata_cache[repro.hash] = repro
+                        # Log artifact count for this repro
+                        print(
+                            f"    Repro {repro.hash[:8]}: {len(repro.artifact_hashes)} artifact(s)"
+                        )
 
         print(f"  Cached metadata for {len(metadata_cache)} repro(s)\n")
 
@@ -1068,6 +1075,7 @@ def download_fixtures(
             initializer=initialize_process_globals_for_download,
             initargs=(output_dir, inputs_dir, metadata_cache),
             desc="Downloading",
+            unit="repro",
         )
 
         total_artifacts = 0
@@ -1167,7 +1175,11 @@ def download_crash(
             http2=True,
         ) as client:
             print(f"Downloading crash {repro_hash} from lineage {lineage}...")
-            data = client.download_repro_data(repro_hash, lineage)
+            data = client.download_repro_data(
+                repro_hash,
+                lineage,
+                desc=f"Downloading {repro_hash[:8]}.crash",
+            )
             out_path = crashes_dir / f"{repro_hash}.crash"
             with open(out_path, "wb") as f:
                 f.write(data)
@@ -1267,10 +1279,18 @@ def download_crashes(
                 lineages_to_fetch = {lineage for lineage, _ in download_list}
 
                 for lineage in lineages_to_fetch:
-                    lineage_repros = client.list_repros_full(lineage=lineage)
+                    lineage_repros = client.list_repros_full(
+                        lineage=lineage,
+                    )
+                    print(
+                        f"  Fetched {len(lineage_repros)} repro(s) for lineage {lineage}"
+                    )
                     for repro in lineage_repros:
                         if repro.hash in selection:
                             metadata_cache[repro.hash] = repro
+                            print(
+                                f"    Repro {repro.hash[:8]}: {len(repro.artifact_hashes)} artifact(s)"
+                            )
             globals.repro_metadata_cache = metadata_cache
 
         from test_suite.multiprocessing_utils import download_single_crash
@@ -1284,6 +1304,7 @@ def download_crashes(
             initializer=initialize_process_globals_for_download,
             initargs=(output_dir, None, metadata_cache),
             desc="Downloading crashes",
+            unit="crash",
         )
 
         total = len(download_list)
@@ -1466,10 +1487,16 @@ def debug_mismatches(
             lineages_to_fetch = {lineage for lineage, _ in custom_data_urls}
 
             for lineage in lineages_to_fetch:
-                lineage_repros = client.list_repros_full(lineage=lineage)
+                lineage_repros = client.list_repros_full(
+                    lineage=lineage,
+                )
+                print(f"  Fetched {len(lineage_repros)} repro(s) for lineage {lineage}")
                 for repro in lineage_repros:
                     if repro.hash in download_hashes:
                         metadata_cache[repro.hash] = repro
+                        print(
+                            f"    Repro {repro.hash[:8]}: {len(repro.artifact_hashes)} artifact(s)"
+                        )
 
         print(f"  Cached metadata for {len(metadata_cache)} repro(s)")
 
@@ -1493,6 +1520,7 @@ def debug_mismatches(
         initializer=initialize_process_globals_for_download,
         initargs=(output_dir, globals.inputs_dir, metadata_cache),
         desc="Downloading",
+        unit="repro",
     )
 
     # Print download results summary
