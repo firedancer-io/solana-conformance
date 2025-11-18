@@ -3,12 +3,61 @@ import os
 import subprocess
 import sys
 import time
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional, Dict, Callable, List, Any
 import httpx
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
 from concurrent.futures.process import BrokenProcessPool
+import test_suite.globals as globals
 import tqdm
+
+
+@contextmanager
+def _progress_bar_context(
+    shared_bar: Optional[tqdm.tqdm],
+    total: int,
+    desc: str = "Processing",
+    unit: str = "item",
+):
+    if shared_bar is not None:
+        yield shared_bar
+    else:
+        with tqdm.tqdm(total=total, desc=desc, unit=unit) as pbar:
+            yield pbar
+
+
+@contextmanager
+def download_progress_bars(
+    total_items: int, item_unit: str = "item", item_desc: str = None
+):
+    byte_pbar = tqdm.tqdm(
+        total=None,  # Indeterminate: we don't know total bytes yet
+        unit="iB",
+        unit_scale=True,
+        unit_divisor=1024,
+        desc="Downloaded",
+        position=0,
+        leave=True,
+    )
+    globals.download_progress_bar = byte_pbar
+
+    if item_desc is None:
+        item_desc = item_unit.capitalize()
+    item_pbar = tqdm.tqdm(
+        total=total_items,
+        desc=f"{item_desc:<10}",  # Left-align
+        unit=item_unit,
+        position=1,
+        leave=True,
+    )
+
+    try:
+        yield item_pbar
+    finally:
+        item_pbar.close()
+        byte_pbar.close()
+        globals.download_progress_bar = None
 
 
 def run_fuzz_command(
@@ -74,6 +123,7 @@ def process_items(
     desc: str = "Processing",
     use_processes: bool = False,
     unit: str = "item",
+    shared_progress_bar: Optional[tqdm.tqdm] = None,
 ) -> List[Any]:
     results = []
     if debug_mode:
@@ -100,7 +150,10 @@ def process_items(
                     executor.submit(process_func, item): item for item in items
                 }
 
-                with tqdm.tqdm(total=len(items), desc=desc, unit=unit) as pbar:
+                # Use shared progress bar if provided, otherwise create a new one
+                with _progress_bar_context(
+                    shared_progress_bar, len(items), desc, unit
+                ) as pbar:
                     for future in as_completed(future_to_item):
                         result = future.result()
                         results.append(result)
@@ -114,9 +167,12 @@ def process_items(
         if initializer:
             initializer(*initargs)
 
-        for item in tqdm.tqdm(items, desc=desc, unit=unit):
-            result = process_func(item)
-            results.append(result)
+        # Use shared progress bar if provided, otherwise create a new one
+        with _progress_bar_context(shared_progress_bar, len(items), desc, unit) as pbar:
+            for item in items:
+                result = process_func(item)
+                results.append(result)
+                pbar.update(1)
     return results
 
 

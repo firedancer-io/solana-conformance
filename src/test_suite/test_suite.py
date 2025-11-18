@@ -33,6 +33,7 @@ import test_suite.globals as globals
 from test_suite.util import (
     set_ld_preload_asan,
     deduplicate_fixtures_by_hash,
+    download_progress_bars,
     fetch_with_retries,
     process_items,
 )
@@ -1068,15 +1069,15 @@ def download_fixtures(
 
         print(f"Downloading {len(download_list)} repro(s)...\n")
 
-        results = process_items(
-            items=download_list,
-            process_func=download_and_process,
-            num_processes=num_processes,
-            initializer=initialize_process_globals_for_download,
-            initargs=(output_dir, inputs_dir, metadata_cache),
-            desc="Downloading",
-            unit="repro",
-        )
+        with download_progress_bars(len(download_list), "repro") as item_pbar:
+            results = process_items(
+                items=download_list,
+                process_func=download_and_process,
+                num_processes=num_processes,
+                initializer=initialize_process_globals_for_download,
+                initargs=(output_dir, inputs_dir, metadata_cache),
+                shared_progress_bar=item_pbar,
+            )
 
         total_artifacts = 0
         total_fixtures = 0
@@ -1296,16 +1297,17 @@ def download_crashes(
         from test_suite.multiprocessing_utils import download_single_crash
 
         print(f"Downloading {len(download_list)} crash file(s) ...")
-        results = process_items(
-            items=download_list,
-            process_func=download_single_crash,
-            num_processes=num_processes,
-            debug_mode=False,
-            initializer=initialize_process_globals_for_download,
-            initargs=(output_dir, None, metadata_cache),
-            desc="Downloading crashes",
-            unit="crash",
-        )
+
+        with download_progress_bars(len(download_list), "crash") as item_pbar:
+            results = process_items(
+                items=download_list,
+                process_func=download_single_crash,
+                num_processes=num_processes,
+                debug_mode=False,
+                initializer=initialize_process_globals_for_download,
+                initargs=(output_dir, None, metadata_cache),
+                shared_progress_bar=item_pbar,
+            )
 
         total = len(download_list)
         saved = sum(
@@ -1512,16 +1514,17 @@ def debug_mismatches(
         globals.repro_metadata_cache = metadata_cache
 
     print(f"Downloading {num_test_cases} tests...")
-    results = process_items(
-        custom_data_urls,
-        download_and_process,
-        num_processes=num_processes,
-        debug_mode=debug_mode,
-        initializer=initialize_process_globals_for_download,
-        initargs=(output_dir, globals.inputs_dir, metadata_cache),
-        desc="Downloading",
-        unit="repro",
-    )
+
+    with download_progress_bars(num_test_cases, "repro") as item_pbar:
+        results = process_items(
+            custom_data_urls,
+            download_and_process,
+            num_processes=num_processes,
+            debug_mode=debug_mode,
+            initializer=initialize_process_globals_for_download,
+            initargs=(output_dir, globals.inputs_dir, metadata_cache),
+            shared_progress_bar=item_pbar,
+        )
 
     # Print download results summary
     successful_downloads = [r for r in results if r and r.get("success")]

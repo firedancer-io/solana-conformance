@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Dict, List, Any, Callable
 import httpx
-import tqdm
 
 
 # API Constants (from fuzzcorp-ng/ui/endpoints*.go)
@@ -263,8 +262,8 @@ class FuzzCorpAPIClient:
         data: Dict[str, Any],
         progress_callback: Optional[Callable[[int, int], None]] = None,
         desc: Optional[str] = None,
+        update_shared_progress: bool = True,
     ) -> bytes:
-        """Helper method to download data with progress tracking."""
         url = self.api_origin + STORAGE_DATA_GET_PATH
         headers = {
             "Content-Type": "application/json",
@@ -284,37 +283,30 @@ class FuzzCorpAPIClient:
             total_size = int(content_length) if content_length else None
 
             # Download with progress tracking
+            # Note: We don't create a progress bar here to avoid nesting with
+            # top-level tqdm progress bars from process_items() in util.py
             chunks = []
             downloaded = 0
 
-            # Create progress bar
-            pbar = None
-            if total_size:
-                pbar = tqdm.tqdm(
-                    total=total_size,
-                    unit="iB",
-                    unit_scale=True,
-                    unit_divisor=1024,
-                    desc=desc,
-                    miniters=1,
-                )
+            for chunk in response.iter_bytes(chunk_size=8192):
+                if chunk:
+                    chunk_size_bytes = len(chunk)
+                    chunks.append(chunk)
+                    downloaded += chunk_size_bytes
 
-            try:
-                for chunk in response.iter_bytes(chunk_size=8192):
-                    if chunk:
-                        chunks.append(chunk)
-                        downloaded += len(chunk)
+                    # Update shared progress bar if available (thread-safe)
+                    if update_shared_progress:
+                        try:
+                            import test_suite.globals as globals
 
-                        # Update progress bar
-                        if pbar:
-                            pbar.update(len(chunk))
+                            if globals.download_progress_bar is not None:
+                                globals.download_progress_bar.update(chunk_size_bytes)
+                        except:
+                            pass  # Silently continue if progress bar not available
 
-                        # Call progress callback
-                        if progress_callback and total_size:
-                            progress_callback(downloaded, total_size)
-            finally:
-                if pbar:
-                    pbar.close()
+                    # Call progress callback if provided
+                    if progress_callback and total_size:
+                        progress_callback(downloaded, total_size)
 
             return b"".join(chunks)
 
