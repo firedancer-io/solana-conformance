@@ -590,11 +590,19 @@ def download_and_process(source):
         repro_metadata = None
         if (
             hasattr(globals, "repro_metadata_cache")
+            and globals.repro_metadata_cache is not None
             and crash_hash in globals.repro_metadata_cache
         ):
             repro_metadata = globals.repro_metadata_cache[crash_hash]
         else:
             # Meta data cache miss, fetch from API
+            import sys
+
+            print(
+                f"  Fetching metadata for {crash_hash[:16]}...",
+                file=sys.stderr,
+                flush=True,
+            )
             with FuzzCorpAPIClient(
                 api_origin=config.get_api_origin(),
                 token=config.get_token(),

@@ -1464,7 +1464,16 @@ def debug_mismatches(
                 if repro.hash in download_hashes:
                     metadata_cache[repro.hash] = repro
 
-        print(f"  Cached metadata for {len(metadata_cache)} repro(s)\n")
+        print(f"  Cached metadata for {len(metadata_cache)} repro(s)")
+
+        if len(metadata_cache) == 0 and num_test_cases > 0:
+            print(
+                f"  [WARNING] Failed to prefetch metadata. Will fetch individually per repro."
+            )
+            print(f"  [WARNING] This will be significantly slower and may timeout.")
+            print(f"  [WARNING] The FuzzCorp API may be in a degraded state.\n")
+        else:
+            print()
 
         globals.repro_metadata_cache = metadata_cache
 
