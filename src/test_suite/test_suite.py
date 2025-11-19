@@ -33,6 +33,7 @@ import test_suite.globals as globals
 from test_suite.util import (
     set_ld_preload_asan,
     deduplicate_fixtures_by_hash,
+    download_progress_bars,
     fetch_with_retries,
     process_items,
 )
@@ -970,6 +971,11 @@ def download_fixtures(
         "--interactive/--no-interactive",
         help="Prompt for authentication if needed",
     ),
+    all_artifacts: bool = typer.Option(
+        False,
+        "--all-artifacts",
+        help="Download all artifacts per repro (default: only latest)",
+    ),
 ):
     """Download and extract fixtures for verified repros from FuzzCorp NG API."""
     # Create output directories
@@ -981,6 +987,7 @@ def download_fixtures(
     # Set globals for download_and_process
     globals.output_dir = output_dir
     globals.inputs_dir = inputs_dir
+    globals.download_all_artifacts = all_artifacts
 
     try:
         # Get configuration
@@ -1049,10 +1056,17 @@ def download_fixtures(
             lineages_to_fetch = {lineage for lineage, _ in download_list}
 
             for lineage in lineages_to_fetch:
-                lineage_repros = client.list_repros_full(lineage=lineage)
+                lineage_repros = client.list_repros_full(
+                    lineage=lineage,
+                )
+                print(f"  Fetched {len(lineage_repros)} repro(s) for lineage {lineage}")
                 for repro in lineage_repros:
                     if repro.hash in download_hashes:
                         metadata_cache[repro.hash] = repro
+                        # Log artifact count for this repro
+                        print(
+                            f"    Repro {repro.hash[:8]}: {len(repro.artifact_hashes)} artifact(s)"
+                        )
 
         print(f"  Cached metadata for {len(metadata_cache)} repro(s)\n")
 
@@ -1061,14 +1075,15 @@ def download_fixtures(
 
         print(f"Downloading {len(download_list)} repro(s)...\n")
 
-        results = process_items(
-            items=download_list,
-            process_func=download_and_process,
-            num_processes=num_processes,
-            initializer=initialize_process_globals_for_download,
-            initargs=(output_dir, inputs_dir, metadata_cache),
-            desc="Downloading",
-        )
+        with download_progress_bars(len(download_list), "repro") as item_pbar:
+            results = process_items(
+                items=download_list,
+                process_func=download_and_process,
+                num_processes=num_processes,
+                initializer=initialize_process_globals_for_download,
+                initargs=(output_dir, inputs_dir, metadata_cache),
+                shared_progress_bar=item_pbar,
+            )
 
         total_artifacts = 0
         total_fixtures = 0
@@ -1167,7 +1182,11 @@ def download_crash(
             http2=True,
         ) as client:
             print(f"Downloading crash {repro_hash} from lineage {lineage}...")
-            data = client.download_repro_data(repro_hash, lineage)
+            data = client.download_repro_data(
+                repro_hash,
+                lineage,
+                desc=f"Downloading {repro_hash[:8]}.crash",
+            )
             out_path = crashes_dir / f"{repro_hash}.crash"
             with open(out_path, "wb") as f:
                 f.write(data)
@@ -1267,24 +1286,34 @@ def download_crashes(
                 lineages_to_fetch = {lineage for lineage, _ in download_list}
 
                 for lineage in lineages_to_fetch:
-                    lineage_repros = client.list_repros_full(lineage=lineage)
+                    lineage_repros = client.list_repros_full(
+                        lineage=lineage,
+                    )
+                    print(
+                        f"  Fetched {len(lineage_repros)} repro(s) for lineage {lineage}"
+                    )
                     for repro in lineage_repros:
                         if repro.hash in selection:
                             metadata_cache[repro.hash] = repro
+                            print(
+                                f"    Repro {repro.hash[:8]}: {len(repro.artifact_hashes)} artifact(s)"
+                            )
             globals.repro_metadata_cache = metadata_cache
 
         from test_suite.multiprocessing_utils import download_single_crash
 
         print(f"Downloading {len(download_list)} crash file(s) ...")
-        results = process_items(
-            items=download_list,
-            process_func=download_single_crash,
-            num_processes=num_processes,
-            debug_mode=False,
-            initializer=initialize_process_globals_for_download,
-            initargs=(output_dir, None, metadata_cache),
-            desc="Downloading crashes",
-        )
+
+        with download_progress_bars(len(download_list), "crash") as item_pbar:
+            results = process_items(
+                items=download_list,
+                process_func=download_single_crash,
+                num_processes=num_processes,
+                debug_mode=False,
+                initializer=initialize_process_globals_for_download,
+                initargs=(output_dir, None, metadata_cache),
+                shared_progress_bar=item_pbar,
+            )
 
         total = len(download_list)
         saved = sum(
@@ -1390,6 +1419,11 @@ def debug_mismatches(
         "-d",
         help="Enables debug mode, which spawns a single child process for easier debugging",
     ),
+    all_artifacts: bool = typer.Option(
+        False,
+        "--all-artifacts",
+        help="Download all artifacts per repro (default: only latest)",
+    ),
 ):
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
 
@@ -1398,6 +1432,7 @@ def debug_mismatches(
 
     globals.inputs_dir = globals.output_dir / "inputs"
     globals.inputs_dir.mkdir(parents=True, exist_ok=True)
+    globals.download_all_artifacts = all_artifacts
 
     fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
     repro_urls_list = repro_urls.split(",") if repro_urls else []
@@ -1466,10 +1501,16 @@ def debug_mismatches(
             lineages_to_fetch = {lineage for lineage, _ in custom_data_urls}
 
             for lineage in lineages_to_fetch:
-                lineage_repros = client.list_repros_full(lineage=lineage)
+                lineage_repros = client.list_repros_full(
+                    lineage=lineage,
+                )
+                print(f"  Fetched {len(lineage_repros)} repro(s) for lineage {lineage}")
                 for repro in lineage_repros:
                     if repro.hash in download_hashes:
                         metadata_cache[repro.hash] = repro
+                        print(
+                            f"    Repro {repro.hash[:8]}: {len(repro.artifact_hashes)} artifact(s)"
+                        )
 
         print(f"  Cached metadata for {len(metadata_cache)} repro(s)")
 
@@ -1485,15 +1526,17 @@ def debug_mismatches(
         globals.repro_metadata_cache = metadata_cache
 
     print(f"Downloading {num_test_cases} tests...")
-    results = process_items(
-        custom_data_urls,
-        download_and_process,
-        num_processes=num_processes,
-        debug_mode=debug_mode,
-        initializer=initialize_process_globals_for_download,
-        initargs=(output_dir, globals.inputs_dir, metadata_cache),
-        desc="Downloading",
-    )
+
+    with download_progress_bars(num_test_cases, "repro") as item_pbar:
+        results = process_items(
+            custom_data_urls,
+            download_and_process,
+            num_processes=num_processes,
+            debug_mode=debug_mode,
+            initializer=initialize_process_globals_for_download,
+            initargs=(output_dir, globals.inputs_dir, metadata_cache),
+            shared_progress_bar=item_pbar,
+        )
 
     # Print download results summary
     successful_downloads = [r for r in results if r and r.get("success")]

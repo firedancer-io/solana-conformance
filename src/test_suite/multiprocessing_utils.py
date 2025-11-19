@@ -15,6 +15,7 @@ from google.protobuf import text_format, message
 from google.protobuf.internal.decoder import _DecodeVarint
 import os
 import re
+import sys
 import time
 import zipfile
 import threading
@@ -43,11 +44,18 @@ def extract_fix_files_from_zip(
 
                 if enable_deduplication:
                     with _download_cache_lock:
+                        # Skip if fixture already exists on disk (never overwrite)
                         if fix_path.exists():
                             existing_size = fix_path.stat().st_size
-                            if existing_size == len(fix_content):
-                                continue
+                            new_size = len(fix_content)
+                            print(
+                                f"  WARNING: Skipping {fix_name} (exists on disk: {existing_size} bytes, new: {new_size} bytes)",
+                                file=sys.stderr,
+                                flush=True,
+                            )
+                            continue
 
+                        # Skip if we've already extracted this fixture in this session
                         if fix_name in _extracted_fixtures:
                             continue
                         _extracted_fixtures.add(fix_name)
@@ -57,6 +65,35 @@ def extract_fix_files_from_zip(
                 fix_count += 1
 
     return fix_count
+
+
+def _download_with_timing(download_func, log_prefix: str):
+    """
+    Helper to execute a download function, time it, and log the speed.
+
+    Args:
+        download_func: Callable that returns the downloaded bytes
+        log_prefix: Prefix for the log message (e.g., "  [lineage/hash]")
+
+    Returns:
+        bytes: The downloaded data
+    """
+    start_time = time.time()
+    data = download_func()
+    elapsed_time = time.time() - start_time
+
+    # Calculate and log download speed
+    size_bytes = len(data)
+    size_mib = size_bytes / (1024 * 1024)
+    speed_mibs = size_mib / elapsed_time if elapsed_time > 0 else 0
+
+    print(
+        f"{log_prefix}: {size_mib:.2f} MiB @ {speed_mibs:.2f} MiB/s",
+        file=sys.stderr,
+        flush=True,
+    )
+
+    return data
 
 
 def process_target(
@@ -593,8 +630,6 @@ def download_and_process(source):
             repro_metadata = globals.repro_metadata_cache[crash_hash]
         else:
             # Meta data cache miss, fetch from API
-            import sys
-
             print(
                 f"  Fetching metadata for {crash_hash[:16]}...",
                 file=sys.stderr,
@@ -621,66 +656,98 @@ def download_and_process(source):
                 "message": "Failed to process: no artifacts found",
             }
 
-        # Log artifact count
-        num_artifacts = len(repro_metadata.artifact_hashes)
+        # Determine which artifacts to download
+        download_all = getattr(globals, "download_all_artifacts", False)
+        if download_all:
+            artifacts_to_download = repro_metadata.artifact_hashes
+            print(
+                f"  [{section_name}/{crash_hash[:8]}] Downloading all {len(artifacts_to_download)} artifact(s)",
+                file=sys.stderr,
+                flush=True,
+            )
+        else:
+            # Take only the first artifact hash
+            artifacts_to_download = [repro_metadata.artifact_hashes[0]]
+            print(
+                f"  [{section_name}/{crash_hash[:8]}] Using first artifact: {artifacts_to_download[0][:16]}",
+                file=sys.stderr,
+                flush=True,
+            )
 
-        # Download and extract each artifact
+        # Download and extract artifacts
         fix_count = 0
-        skipped_downloads = 0
+        was_cached = False
 
         # Create artifact cache directory in output folder
         artifact_cache_dir = globals.output_dir / ".artifact_cache"
         artifact_cache_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create HTTP client for artifact downloads
-        with FuzzCorpAPIClient(
-            api_origin=config.get_api_origin(),
-            token=config.get_token(),
-            org=config.get_organization(),
-            project=config.get_project(),
-            http2=True,
-        ) as client:
-            for idx, artifact_hash in enumerate(repro_metadata.artifact_hashes, 1):
-                # Check if artifact ZIP already exists on disk
-                artifact_zip_path = artifact_cache_dir / f"{artifact_hash}.zip"
+        for idx, artifact_hash in enumerate(artifacts_to_download, 1):
+            # Check if artifact ZIP already exists on disk
+            artifact_zip_path = artifact_cache_dir / f"{artifact_hash}.zip"
 
-                if artifact_zip_path.exists():
-                    # Use cached ZIP file
-                    skipped_downloads += 1
-                    with open(artifact_zip_path, "rb") as f:
-                        artifact_data = f.read()
-                else:
-                    # Download artifact (ZIP file)
-                    artifact_data = client.download_artifact_data(
-                        artifact_hash, section_name
+            if artifact_zip_path.exists():
+                # Use cached ZIP file
+                was_cached = True
+                with open(artifact_zip_path, "rb") as f:
+                    artifact_data = f.read()
+            else:
+                # Download artifact (ZIP file)
+
+                # Create HTTP client for artifact download
+                with FuzzCorpAPIClient(
+                    api_origin=config.get_api_origin(),
+                    token=config.get_token(),
+                    org=config.get_organization(),
+                    project=config.get_project(),
+                    http2=True,
+                ) as client:
+                    artifact_desc = (
+                        f"Downloading artifact {idx}/{len(artifacts_to_download)}"
+                        if len(artifacts_to_download) > 1
+                        else "Downloading artifact"
+                    )
+                    artifact_label = (
+                        f"[{idx}/{len(artifacts_to_download)}]"
+                        if len(artifacts_to_download) > 1
+                        else ""
+                    )
+
+                    artifact_data = _download_with_timing(
+                        lambda: client.download_artifact_data(
+                            artifact_hash,
+                            section_name,
+                            desc=artifact_desc,
+                        ),
+                        f"  [{section_name}/{crash_hash[:8]}] Artifact {artifact_label}",
                     )
 
                     # Save to cache for future runs
                     with open(artifact_zip_path, "wb") as f:
                         f.write(artifact_data)
 
-                # Extract .fix files from the artifact ZIP
-                fix_count += extract_fix_files_from_zip(
-                    artifact_data, globals.inputs_dir, enable_deduplication=True
-                )
+            # Extract .fix files from the artifact ZIP
+            fix_count += extract_fix_files_from_zip(
+                artifact_data, globals.inputs_dir, enable_deduplication=True
+            )
 
-                # Mark this artifact as processed (in-memory only, for this session)
-                with _download_cache_lock:
-                    _downloaded_artifact_hashes.add(artifact_hash)
-
-        # Log summary for this repro
-        downloaded_count = num_artifacts - skipped_downloads
+            # Mark this artifact as processed (in-memory only, for this session)
+            with _download_cache_lock:
+                _downloaded_artifact_hashes.add(artifact_hash)
 
         # Always return success if we processed artifacts (even if no new fixtures extracted)
         # Not extracting new fixtures just means they already exist or artifacts don't contain .fix files
+        artifact_msg = (
+            f"{len(artifacts_to_download)} artifact(s)"
+            if len(artifacts_to_download) > 1
+            else "latest artifact"
+        )
         return {
             "success": True,
             "repro": f"{section_name}/{crash_hash}",
             "fixtures": fix_count,
-            "artifacts": num_artifacts,
-            "cached": skipped_downloads,
-            "downloaded": downloaded_count,
-            "message": f"Processed {section_name}/{crash_hash} successfully ({fix_count} new fixture(s) from {num_artifacts} artifact(s))",
+            "cached": was_cached,
+            "message": f"Processed {section_name}/{crash_hash} successfully ({fix_count} new fixture(s) from {artifact_msg})",
         }
     except Exception as e:
         return {
@@ -739,7 +806,15 @@ def download_single_crash(source):
             project=config.get_project(),
             http2=True,
         ) as client:
-            data = client.download_repro_data(crash_hash, lineage)
+            data = _download_with_timing(
+                lambda: client.download_repro_data(
+                    crash_hash,
+                    lineage,
+                    desc=f"Downloading {crash_hash[:8]}.crash",
+                ),
+                f"  [{lineage}/{crash_hash[:8]}] Crash file",
+            )
+
             with open(out_path, "wb") as f:
                 f.write(data)
 

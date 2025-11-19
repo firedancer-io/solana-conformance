@@ -50,3 +50,9 @@ rekey_features: list[tuple[int, ...]] = []
 target_features: TargetFeaturePool = None
 regenerate_dry_run: bool = False
 regenerate_verbose: bool = False
+
+# For download progress tracking (shared across threads)
+download_progress_bar = None
+
+# For downloads: whether to download all artifacts or only the latest
+download_all_artifacts: bool = False
