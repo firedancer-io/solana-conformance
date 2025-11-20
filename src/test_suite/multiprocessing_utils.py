@@ -12,9 +12,7 @@ import subprocess
 from pathlib import Path
 import test_suite.globals as globals
 from google.protobuf import text_format, message
-from google.protobuf.internal.decoder import _DecodeVarint
 import os
-import re
 import sys
 import time
 import zipfile
@@ -158,34 +156,18 @@ def extract_metadata(fixture_file: Path) -> str | None:
     Returns:
         - str | None: Metadata from the fixture file.
     """
-
-    if fixture_file.suffix == ".txt":
-        with open(fixture_file, "r") as f:
-            fixture_txt = f.read()
-            metadata_txt = re.search(r"metadata\s*\{(.*?)\}", fixture_txt, re.DOTALL)
-            if not metadata_txt:
-                raise ValueError("No 'metadata { ... }' block found!")
-            metadata_body = metadata_txt.group(1).strip()
-            fixture_metadata = metadata_pb2.FixtureMetadata()
-            text_format.Parse(metadata_body, fixture_metadata)
-            return fixture_metadata
-
-    with open(fixture_file, "rb") as f:
-        proto_bytes = f.read()
-        try:
-            metadata = metadata_pb2.FixtureMetadata()
-            pos = 0
-            while pos < len(proto_bytes):
-                tag, pos = _DecodeVarint(proto_bytes, pos)
-                if (tag >> 3) == 1:
-                    length, pos = _DecodeVarint(proto_bytes, pos)
-                    metadata.ParseFromString(proto_bytes[pos : pos + length])
-                    return metadata
-                pos += _DecodeVarint(proto_bytes, pos)[0]
-            raise message.DecodeError("No 'metadata' found")
-        except message.DecodeError as e:
-            print(f"Failed to parse 'metadata': {e}")
-            return None
+    try:
+        fixture = invoke_pb.InstrFixture()
+        if fixture_file.suffix == ".txt":
+            with open(fixture_file, "r") as f:
+                text_format.Parse(f.read(), fixture)
+        else:
+            with open(fixture_file, "rb") as f:
+                fixture.ParseFromString(f.read())
+        return fixture.metadata
+    except Exception as e:
+        print(f"Failed to parse fixture metadata: {e}")
+        return None
 
 
 def read_context(harness_ctx: HarnessCtx, test_file: Path) -> message.Message | None:
