@@ -11,7 +11,13 @@ import shutil
 import subprocess
 from pathlib import Path
 import test_suite.globals as globals
-from google.protobuf import text_format, message
+from google.protobuf import (
+    text_format,
+    message,
+    descriptor_pool,
+    message_factory,
+    descriptor_pb2,
+)
 import os
 import sys
 import time
@@ -26,6 +32,49 @@ from test_suite.fuzzcorp_api_client import FuzzCorpAPIClient
 _download_cache_lock = threading.Lock()
 _extracted_fixtures = set()
 _downloaded_artifact_hashes = set()
+
+
+# Create a minimal protobuf message that only extracts field 1 (metadata)
+def _create_metadata_only_fixture():
+    """
+    Create a minimal fixture message class that only parses the metadata field (field 1).
+    Protobuf will gracefully skip any other fields (input, output, etc).
+
+    This is equivalent to:
+        message MetadataOnlyFixture {
+            FixtureMetadata metadata = 1;
+        }
+    """
+    # Build file descriptor proto
+    file_proto = descriptor_pb2.FileDescriptorProto()
+    file_proto.name = "metadata_only.proto"
+    file_proto.package = "org.solana.sealevel.v1"
+    file_proto.syntax = "proto3"
+    file_proto.dependency.append("metadata.proto")
+
+    # Define the message
+    msg = file_proto.message_type.add()
+    msg.name = "MetadataOnlyFixture"
+
+    # Add metadata field
+    field = msg.field.add()
+    field.name = "metadata"
+    field.number = 1
+    field.label = descriptor_pb2.FieldDescriptorProto.LABEL_OPTIONAL
+    field.type = descriptor_pb2.FieldDescriptorProto.TYPE_MESSAGE
+    field.type_name = ".org.solana.sealevel.v1.FixtureMetadata"
+
+    # Add to the default descriptor pool (which already has metadata.proto)
+    descriptor_pool.Default().AddSerializedFile(file_proto.SerializeToString())
+
+    # Get the message descriptor and create the class
+    msg_descriptor = descriptor_pool.Default().FindMessageTypeByName(
+        "org.solana.sealevel.v1.MetadataOnlyFixture"
+    )
+    return message_factory.GetMessageClass(msg_descriptor)
+
+
+_MetadataOnlyFixture = _create_metadata_only_fixture()
 
 
 def extract_fix_files_from_zip(
@@ -157,13 +206,17 @@ def extract_metadata(fixture_file: Path) -> str | None:
         - str | None: Metadata from the fixture file.
     """
     try:
-        fixture = invoke_pb.InstrFixture()
+        # Use minimal fixture that only parses field 1 (metadata)
+        # Works for all fixture types since they all have metadata as field 1
+        fixture = _MetadataOnlyFixture()
+
         if fixture_file.suffix == ".txt":
             with open(fixture_file, "r") as f:
                 text_format.Parse(f.read(), fixture)
         else:
             with open(fixture_file, "rb") as f:
                 fixture.ParseFromString(f.read())
+
         return fixture.metadata
     except Exception as e:
         print(f"Failed to parse fixture metadata: {e}")
