@@ -7,6 +7,7 @@ from glob import glob
 import itertools
 from pathlib import Path
 import subprocess
+from concurrent.futures.process import BrokenProcessPool
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
 from test_suite.fixture_utils import (
     create_fixture,
@@ -224,16 +225,21 @@ def fix_to_ctx(
     num_test_cases = len(test_cases)
 
     print(f"Converting to Fixture messages...")
-    results = process_items(
-        test_cases,
-        extract_context_from_fixture,
-        num_processes=num_processes,
-        debug_mode=debug_mode,
-        initializer=initialize_process_globals_for_extraction,
-        initargs=(output_dir,),
-        desc="Converting",
-        use_processes=True,
-    )
+    try:
+        results = process_items(
+            test_cases,
+            extract_context_from_fixture,
+            num_processes=num_processes,
+            debug_mode=debug_mode,
+            initializer=initialize_process_globals_for_extraction,
+            initargs=(output_dir,),
+            desc="Converting",
+            use_processes=True,
+        )
+    except BrokenProcessPool:
+        # Detailed crash information is already printed in util.process_items.
+        # Exit cleanly without a full Python traceback.
+        raise typer.Exit(code=1)
 
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
     print(f"{len(results)} total files seen")
@@ -344,15 +350,19 @@ def create_fixtures(
 
     # Generate the test cases in parallel from files on disk
     print(f"Creating fixtures...")
-    write_results = process_items(
-        test_cases,
-        create_fixture,
-        num_processes=num_processes,
-        debug_mode=debug_mode,
-        initializer=initialize_process_output_buffers,
-        desc="Creating fixtures",
-        use_processes=True,
-    )
+    try:
+        write_results = process_items(
+            test_cases,
+            create_fixture,
+            num_processes=num_processes,
+            debug_mode=debug_mode,
+            initializer=initialize_process_output_buffers,
+            desc="Creating fixtures",
+            use_processes=True,
+        )
+    except BrokenProcessPool:
+        # util.process_items has already logged a clear explanation.
+        raise typer.Exit(code=1)
 
     # Clean up
     print("Cleaning up...")
@@ -552,16 +562,20 @@ expected to use different amounts of compute units than the other. Note: Cannot 
                 break
     else:
         # Use process_items utility for parallel/sequential processing
-        test_case_results = process_items(
-            items=test_cases,
-            process_func=run_test,
-            num_processes=num_processes,
-            debug_mode=debug_mode,
-            initializer=initialize_process_output_buffers,
-            initargs=(randomize_output_buffer,),
-            desc="Running tests",
-            use_processes=True,
-        )
+        try:
+            test_case_results = process_items(
+                items=test_cases,
+                process_func=run_test,
+                num_processes=num_processes,
+                debug_mode=debug_mode,
+                initializer=initialize_process_output_buffers,
+                initargs=(randomize_output_buffer,),
+                desc="Running tests",
+                use_processes=True,
+            )
+        except BrokenProcessPool:
+            # Harness/shared-library crash already reported by util.process_items.
+            raise typer.Exit(code=1)
 
     print("Logging results...")
     passed, failed, skipped, target_log_files, failed_tests, skipped_tests = (
@@ -657,16 +671,20 @@ def decode_protobufs(
                     test_cases.append(file_path)
     num_test_cases = len(test_cases)
 
-    write_results = process_items(
-        test_cases,
-        decode_single_test_case,
-        num_processes=num_processes,
-        debug_mode=debug_mode,
-        initializer=initialize_process_globals_for_decoding,
-        initargs=(output_dir, HARNESS_MAP[default_harness_ctx]),
-        desc="Decoding",
-        use_processes=True,
-    )
+    try:
+        write_results = process_items(
+            test_cases,
+            decode_single_test_case,
+            num_processes=num_processes,
+            debug_mode=debug_mode,
+            initializer=initialize_process_globals_for_decoding,
+            initargs=(output_dir, HARNESS_MAP[default_harness_ctx]),
+            desc="Decoding",
+            use_processes=True,
+        )
+    except BrokenProcessPool:
+        # Worker crash already described; exit without a verbose traceback.
+        raise typer.Exit(code=1)
 
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
     print(f"{len(write_results)} total files seen")
@@ -927,6 +945,9 @@ def download_fixture(
         if hasattr(e, "response") and e.response:
             print(f"[ERROR] Response: {e.response.text}")
         raise typer.Exit(code=1)
+    except typer.Exit:
+        # Allow clean exits (e.g., from process_items) without extra tracebacks.
+        raise
     except Exception as e:
         print(f"[ERROR] Failed to download fixtures: {e}")
         traceback.print_exc()
@@ -974,7 +995,7 @@ def download_fixtures(
     all_artifacts: bool = typer.Option(
         False,
         "--all-artifacts",
-        help="Download all artifacts per repro (default: only latest)",
+        help="(Deprecated, all artifacts are now always downloaded)",
     ),
 ):
     """Download and extract fixtures for verified repros from FuzzCorp NG API."""
@@ -1131,6 +1152,8 @@ def download_fixtures(
         if hasattr(e, "response") and e.response:
             print(f"[ERROR] Response: {e.response.text}")
         raise typer.Exit(code=1)
+    except typer.Exit:
+        raise
     except Exception as e:
         print(f"[ERROR] Failed to download fixtures: {e}")
         traceback.print_exc()
@@ -1196,6 +1219,8 @@ def download_crash(
         if hasattr(e, "response") and e.response:
             print(f"[ERROR] Response: {e.response.text}")
         raise typer.Exit(code=1)
+    except typer.Exit:
+        raise
     except Exception as e:
         print(f"[ERROR] Failed to download crash: {e}")
         traceback.print_exc()
@@ -1333,6 +1358,8 @@ def download_crashes(
         if hasattr(e, "response") and e.response:
             print(f"[ERROR] Response: {e.response.text}")
         raise typer.Exit(code=1)
+    except typer.Exit:
+        raise
     except Exception as e:
         print(f"[ERROR] Failed to download crashes: {e}")
         traceback.print_exc()
@@ -1422,7 +1449,7 @@ def debug_mismatches(
     all_artifacts: bool = typer.Option(
         False,
         "--all-artifacts",
-        help="Download all artifacts per repro (default: only latest)",
+        help="(Deprecated, all artifacts are now always downloaded)",
     ),
 ):
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
@@ -1905,26 +1932,29 @@ def regenerate_fixtures(
     globals.regenerate_dry_run = dry_run
     globals.regenerate_verbose = verbose
 
-    results = process_items(
-        test_cases,
-        regenerate_fixture,
-        num_processes=num_processes,
-        debug_mode=debug_mode,
-        initializer=initialize_process_globals_for_regeneration,
-        initargs=(
-            output_dir,
-            shared_library,
-            shared_library,
-            log_level,
-            globals.features_to_add,
-            globals.features_to_remove,
-            globals.rekey_features,
-            dry_run,
-            verbose,
-        ),
-        desc="Regenerating",
-        use_processes=True,
-    )
+    try:
+        results = process_items(
+            test_cases,
+            regenerate_fixture,
+            num_processes=num_processes,
+            debug_mode=debug_mode,
+            initializer=initialize_process_globals_for_regeneration,
+            initargs=(
+                output_dir,
+                shared_library,
+                shared_library,
+                log_level,
+                globals.features_to_add,
+                globals.features_to_remove,
+                globals.rekey_features,
+                dry_run,
+                verbose,
+            ),
+            desc="Regenerating",
+            use_processes=True,
+        )
+    except BrokenProcessPool:
+        raise typer.Exit(code=1)
     num_regenerated = sum(results)
 
     lib.sol_compat_fini()
@@ -2156,16 +2186,19 @@ def exec_fixtures(
                     test_cases.append(file_path)
     num_test_cases = len(test_cases)
     print("Running tests...")
-    test_case_results = process_items(
-        test_cases,
-        execute_fixture,
-        num_processes=num_processes,
-        debug_mode=debug_mode,
-        initializer=initialize_process_output_buffers,
-        initargs=(randomize_output_buffer,),
-        desc="Running tests",
-        use_processes=True,
-    )
+    try:
+        test_case_results = process_items(
+            test_cases,
+            execute_fixture,
+            num_processes=num_processes,
+            debug_mode=debug_mode,
+            initializer=initialize_process_output_buffers,
+            initargs=(randomize_output_buffer,),
+            desc="Running tests",
+            use_processes=True,
+        )
+    except BrokenProcessPool:
+        raise typer.Exit(code=1)
 
     print("Logging results...")
     passed, failed, skipped, target_log_files, failed_tests, skipped_tests = (
