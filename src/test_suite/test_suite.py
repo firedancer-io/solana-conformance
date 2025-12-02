@@ -683,7 +683,7 @@ def decode_protobufs(
             use_processes=True,
         )
     except BrokenProcessPool:
-        # Worker crash already described; exit without a verbose traceback.
+        # Worker crash already described: exit without a verbose traceback.
         raise typer.Exit(code=1)
 
     print("-" * LOG_FILE_SEPARATOR_LENGTH)
@@ -946,7 +946,7 @@ def download_fixture(
             print(f"[ERROR] Response: {e.response.text}")
         raise typer.Exit(code=1)
     except typer.Exit:
-        # Allow clean exits (e.g., from process_items) without extra tracebacks.
+        # Allow clean exits (e.g. from process_items) without extra tracebacks.
         raise
     except Exception as e:
         print(f"[ERROR] Failed to download fixtures: {e}")

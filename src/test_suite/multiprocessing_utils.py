@@ -684,8 +684,8 @@ def download_and_process(source):
                     project=config.get_project(),
                 )
 
-        # Require at least one artifact hash; if none are present, there is
-        # nothing we can download or convert into fixtures.
+        # Require at least one artifact hash. If none are present, there is
+        # nothing we can download or convert into fixtures...
         if not repro_metadata.artifact_hashes:
             return {
                 "success": False,
@@ -693,8 +693,8 @@ def download_and_process(source):
                 "message": "Failed to process: no artifacts found",
             }
 
-        # Determine which artifacts to download: always process all available
-        # artifacts for this repro. Any duplicates will be naturally deduplicated
+        # Determine which artifacts to download: Always process all available
+        # artifacts for this repro. Any duplicates will be naturally deduped
         # later at the fixture level by hash.
         artifacts_to_download = repro_metadata.artifact_hashes
         print(

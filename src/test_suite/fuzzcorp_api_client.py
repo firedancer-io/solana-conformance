@@ -43,7 +43,7 @@ class LineageRepro:
         if not hash_value:
             raise KeyError("Hash")
 
-        # CreatedAt is present in both schemas; normalise if available
+        # CreatedAt is present in both schemas, normalize if available
         created_at_str = data.get("CreatedAt") or data.get("created_at")
         if created_at_str:
             # Handle both RFC3339 formats
@@ -55,9 +55,9 @@ class LineageRepro:
             created_at = datetime.min
 
         # Count:
-        #   - prefer explicit Count from legacy schema
-        #   - otherwise derive from ConfigIndices (one count per config index)
-        #   - final fallback is a single repro
+        # - prefer explicit Count from legacy schema
+        # - otherwise derive from ConfigIndices (one count per config index)
+        # - final fallback is a single repro
         if "Count" in data:
             count = int(data["Count"])
         else:
@@ -65,12 +65,12 @@ class LineageRepro:
             if isinstance(cfg_indices, list):
                 count = max(len(cfg_indices), 1) if cfg_indices else 1
             else:
-                # Unexpected shape; treat as a single repro
+                # Unexpected shape: treat as a single repro
                 count = 1
 
         # AllVerified:
-        #   - legacy AllVerified flag if present
-        #   - otherwise fall back to the newer Verified flag
+        # - legacy AllVerified flag if present
+        # - otherwise fall back to the newer Verified flag
         if "AllVerified" in data:
             all_verified = bool(data["AllVerified"])
         else:
@@ -103,8 +103,8 @@ class ReproIndexResponse:
             lineages[lineage_name] = [LineageRepro.from_dict(r) for r in (repros or [])]
 
         # Bundle ID:
-        #   - legacy compat: top-level "BundleID"
-        #   - current NG API: "Bundle" object with "id" field
+        # - legacy compat: top-level "BundleID"
+        # - current NG API: "Bundle" object with "id" field
         bundle_id = data.get("BundleID")
         if not bundle_id:
             bundle = data.get("Bundle") or data.get("bundle")
