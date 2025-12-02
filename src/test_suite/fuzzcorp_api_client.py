@@ -32,19 +32,60 @@ class LineageRepro:
     created_at: datetime
     count: int
     all_verified: bool
+    # Optional extra metadata available on newer APIs
+    drivers: Optional[List[str]] = None
+    config_indices: Optional[List[int]] = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "LineageRepro":
-        created_at_str = data["CreatedAt"]
-        # Handle both RFC3339 formats
-        if created_at_str.endswith("Z"):
-            created_at_str = created_at_str[:-1] + "+00:00"
+        # Hash is required in all known schemas
+        hash_value = data.get("Hash") or data.get("hash")
+        if not hash_value:
+            raise KeyError("Hash")
+
+        # CreatedAt is present in both schemas, normalize if available
+        created_at_str = data.get("CreatedAt") or data.get("created_at")
+        if created_at_str:
+            # Handle both RFC3339 formats
+            if created_at_str.endswith("Z"):
+                created_at_str = created_at_str[:-1] + "+00:00"
+            created_at = datetime.fromisoformat(created_at_str)
+        else:
+            # Fallback to a stable value so sorting still works
+            created_at = datetime.min
+
+        # Count:
+        # - prefer explicit Count from legacy schema
+        # - otherwise derive from ConfigIndices (one count per config index)
+        # - final fallback is a single repro
+        if "Count" in data:
+            count = int(data["Count"])
+        else:
+            cfg_indices = data.get("ConfigIndices") or data.get("config_indices") or []
+            if isinstance(cfg_indices, list):
+                count = max(len(cfg_indices), 1) if cfg_indices else 1
+            else:
+                # Unexpected shape: treat as a single repro
+                count = 1
+
+        # AllVerified:
+        # - legacy AllVerified flag if present
+        # - otherwise fall back to the newer Verified flag
+        if "AllVerified" in data:
+            all_verified = bool(data["AllVerified"])
+        else:
+            all_verified = bool(data.get("Verified") or data.get("verified") or False)
+
+        drivers = data.get("Drivers") or data.get("drivers")
+        cfg_indices_val = data.get("ConfigIndices") or data.get("config_indices")
 
         return cls(
-            hash=data["Hash"],
-            created_at=datetime.fromisoformat(created_at_str),
-            count=data["Count"],
-            all_verified=data["AllVerified"],
+            hash=hash_value,
+            created_at=created_at,
+            count=count,
+            all_verified=all_verified,
+            drivers=drivers,
+            config_indices=cfg_indices_val,
         )
 
 
@@ -56,14 +97,23 @@ class ReproIndexResponse:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ReproIndexResponse":
         lineages = {}
-        lineages_data = data.get("Lineages") or {}
+        # Support both legacy "Lineages" and potential future "lineages"
+        lineages_data = data.get("Lineages") or data.get("lineages") or {}
         for lineage_name, repros in lineages_data.items():
             lineages[lineage_name] = [LineageRepro.from_dict(r) for r in (repros or [])]
 
-        return cls(
-            bundle_id=data.get("BundleID", "00000000-0000-0000-0000-000000000000"),
-            lineages=lineages,
-        )
+        # Bundle ID:
+        # - legacy compat: top-level "BundleID"
+        # - current NG API: "Bundle" object with "id" field
+        bundle_id = data.get("BundleID")
+        if not bundle_id:
+            bundle = data.get("Bundle") or data.get("bundle")
+            if isinstance(bundle, dict):
+                bundle_id = bundle.get("id") or bundle.get("ID")
+        if not bundle_id:
+            bundle_id = data.get("bundle_id", "00000000-0000-0000-0000-000000000000")
+
+        return cls(bundle_id=bundle_id, lineages=lineages)
 
 
 @dataclass
@@ -78,14 +128,40 @@ class ReproMetadata:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ReproMetadata":
+        if "repros" in data and isinstance(data["repros"], dict):
+            inner = data["repros"]
+        else:
+            inner = data
+
+        # Core identifiers
+        hash_val = inner.get("hash") or inner.get("Hash")
+        if not hash_val:
+            raise KeyError("hash")
+
+        bundle_val = inner.get("bundle") or inner.get("Bundle")
+        lineage_val = inner.get("lineage") or inner.get("Lineage")
+        asset_val = inner.get("asset") or inner.get("Asset")
+
+        # Artifact hashes:
+        artifact_hashes_val: List[str]
+        raw_hashes = inner.get("artifact_hashes")
+        if raw_hashes:
+            artifact_hashes_val = list(raw_hashes)
+        else:
+            single_hash = inner.get("artifact_hash") or inner.get("ArtifactHash")
+            if single_hash:
+                artifact_hashes_val = [single_hash]
+            else:
+                artifact_hashes_val = []
+
         return cls(
-            hash=data["hash"],
-            bundle=data["bundle"],
-            lineage=data["lineage"],
-            asset=data.get("asset"),
-            artifact_hashes=data.get("artifact_hashes") or [],
-            summary=data.get("summary") or "",
-            flaky=data.get("flaky", False),
+            hash=hash_val,
+            bundle=str(bundle_val) if bundle_val is not None else "",
+            lineage=lineage_val or "",
+            asset=asset_val,
+            artifact_hashes=artifact_hashes_val,
+            summary=inner.get("summary") or "",
+            flaky=bool(inner.get("flaky", False)),
         )
 
 

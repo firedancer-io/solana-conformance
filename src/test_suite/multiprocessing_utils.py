@@ -684,6 +684,8 @@ def download_and_process(source):
                     project=config.get_project(),
                 )
 
+        # Require at least one artifact hash. If none are present, there is
+        # nothing we can download or convert into fixtures...
         if not repro_metadata.artifact_hashes:
             return {
                 "success": False,
@@ -691,23 +693,15 @@ def download_and_process(source):
                 "message": "Failed to process: no artifacts found",
             }
 
-        # Determine which artifacts to download
-        download_all = getattr(globals, "download_all_artifacts", False)
-        if download_all:
-            artifacts_to_download = repro_metadata.artifact_hashes
-            print(
-                f"  [{section_name}/{crash_hash[:8]}] Downloading all {len(artifacts_to_download)} artifact(s)",
-                file=sys.stderr,
-                flush=True,
-            )
-        else:
-            # Take only the first artifact hash
-            artifacts_to_download = [repro_metadata.artifact_hashes[0]]
-            print(
-                f"  [{section_name}/{crash_hash[:8]}] Using first artifact: {artifacts_to_download[0][:16]}",
-                file=sys.stderr,
-                flush=True,
-            )
+        # Determine which artifacts to download: Always process all available
+        # artifacts for this repro. Any duplicates will be naturally deduped
+        # later at the fixture level by hash.
+        artifacts_to_download = repro_metadata.artifact_hashes
+        print(
+            f"  [{section_name}/{crash_hash[:8]}] Downloading {len(artifacts_to_download)} artifact(s)",
+            file=sys.stderr,
+            flush=True,
+        )
 
         # Download and extract artifacts
         fix_count = 0
@@ -772,11 +766,7 @@ def download_and_process(source):
 
         # Always return success if we processed artifacts (even if no new fixtures extracted)
         # Not extracting new fixtures just means they already exist or artifacts don't contain .fix files
-        artifact_msg = (
-            f"{len(artifacts_to_download)} artifact(s)"
-            if len(artifacts_to_download) > 1
-            else "latest artifact"
-        )
+        artifact_msg = f"{len(artifacts_to_download)} artifact(s)"
         return {
             "success": True,
             "repro": f"{section_name}/{crash_hash}",

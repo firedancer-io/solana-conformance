@@ -159,7 +159,29 @@ def process_items(
                         results.append(result)
                         pbar.update(1)
         except BrokenProcessPool as e:
-            print(f"[ERROR] Process pool broken: {e}")
+            # This usually means the child process running the harness/shared library
+            # crashed (e.g. SIGSEGV, abort, ASAN), not that the Python code itself
+            # failed in a normal way. Give the user a clearer, domain-specific hint
+            # before letting the exception propagate.
+            print(
+                "\n[ERROR] A worker process in the process pool crashed while processing items."
+            )
+            if use_processes:
+                print(
+                    "        This is typically caused by a crash in the underlying "
+                    "shared library or harness (segfault/abort/ASAN), rather than in "
+                    "the Python test harness itself."
+                )
+            else:
+                print(
+                    "        The worker crashed unexpectedly. This is unlikely to be "
+                    "a pure Python error."
+                )
+            print(
+                "        You can try re-running with '--debug-mode' to force single-"
+                "process execution for easier debugging."
+            )
+            print(f"\n[DETAIL] Original process pool error: {e}\n")
             raise
     else:
         # Single-threaded execution in main process
