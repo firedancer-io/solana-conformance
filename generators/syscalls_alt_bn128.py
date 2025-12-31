@@ -1,6 +1,8 @@
+import fd58
 import base64
 import hashlib
 import test_suite.protos.vm_pb2 as vm_pb
+import test_suite.protos.context_pb2 as context_pb
 
 OUTPUT_DIR = "./test-vectors/syscall/tests/alt_bn128"
 HEAP_START = 0x300000000
@@ -8,6 +10,7 @@ CU_BASE = 542
 CU_PER_ELEM = 61
 CU_MEM_OP = 10
 
+LITTLE_ENDIAN = 0x80
 ADD_OP = 0
 ADD_SZ = 64 + 64
 ADD_CU = 334
@@ -329,6 +332,15 @@ def _into_key_data(key_prefix, test_vectors):
     return [(key_prefix + str(j), data) for j, data in enumerate(test_vectors)]
 
 
+def to_little_endian_g1(input):
+    chunk_size = 32
+    result = bytearray()
+    for i in range(0, len(input), chunk_size):
+        chunk = input[i : i + chunk_size]
+        result.extend(chunk[::-1])
+    return result
+
+
 test_vectors_add = [
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1547
     # invalid op
@@ -477,7 +489,22 @@ for test in add_inputs:
             "cu_avail": ADD_CU,
         }
     )
-
+    # little endian
+    test_vectors_add.append(
+        {
+            "heap_prefix": bytes([0] * 64) + to_little_endian_g1(input),
+            "op": ADD_OP | LITTLE_ENDIAN,
+            "input_addr": HEAP_START + 64,
+            "input_size": len(input),
+            "result_addr": HEAP_START,
+            "cu_avail": ADD_CU,
+            "little_endian": True,
+        }
+    )
+# include one test invoking little endian op, with feature disabled
+last_test = test_vectors_add[-1].copy()
+last_test["little_endian"] = False
+test_vectors_add.append(last_test)
 
 test_vectors_mul = [
     # https://github.com/anza-xyz/agave/blob/v1.18.12/programs/bpf_loader/src/syscalls/mod.rs#L1551
@@ -1196,7 +1223,96 @@ features = [
     0xAAEF1EDEB6C5BF85,  # enable_alt_bn128_syscall
     0x9BB55B5DF1C396C5,  # enable_alt_bn128_compression_syscall
     0x8BA9E9038D9FDCFF,  # simplify_alt_bn128_syscall_error_codes
+    0x54C5C5132EAAE808,  # fix_alt_bn128_multiplication_input_length
 ]
+extra_features = [
+    0xF08A42C3C040E908,  # fix_alt_bn128_pairing_length_check
+    0x1B4ADDDC131EE908,  # alt_bn128_little_endian
+]
+
+
+def add_solfuzz_agave_context(syscall_ctx):
+    syscall_ctx.instr_ctx.program_id = bytes([0] * 32)
+    syscall_ctx.instr_ctx.slot_context.slot = 10
+
+    account = context_pb.AcctState()
+    account.address = bytes([0] * 32)
+    account.lamports = 123456789
+    account.data = bytes([0] * 100)
+    account.executable = True
+    account.owner = fd58.dec32(
+        bytes("BPFLoaderUpgradeab1e11111111111111111111111", "utf-8")
+    )
+    syscall_ctx.instr_ctx.accounts.append(account)
+
+    account = context_pb.AcctState()
+    account.address = fd58.dec32(
+        bytes("SysvarC1ock11111111111111111111111111111111", "utf-8")
+    )
+    account.lamports = 1
+    account.data = bytes.fromhex("0a000000000000000000000000000000") + bytes([0] * 24)
+    account.owner = fd58.dec32(
+        bytes("Sysvar1111111111111111111111111111111111111", "utf-8")
+    )
+    syscall_ctx.instr_ctx.accounts.append(account)
+
+    account = context_pb.AcctState()
+    account.address = fd58.dec32(
+        bytes("SysvarEpochSchedu1e111111111111111111111111", "utf-8")
+    )
+    account.lamports = 1
+    account.data = bytes.fromhex(
+        "80970600000000008097060000000000010e00000000000000e0ff070000000000"
+    )
+    account.owner = fd58.dec32(
+        bytes("Sysvar1111111111111111111111111111111111111", "utf-8")
+    )
+    syscall_ctx.instr_ctx.accounts.append(account)
+
+    account = context_pb.AcctState()
+    account.address = fd58.dec32(
+        bytes("SysvarRent111111111111111111111111111111111", "utf-8")
+    )
+    account.lamports = 1
+    account.data = bytes.fromhex("980d000000000000000000000000004032")
+    account.owner = fd58.dec32(
+        bytes("Sysvar1111111111111111111111111111111111111", "utf-8")
+    )
+    syscall_ctx.instr_ctx.accounts.append(account)
+
+    account = context_pb.AcctState()
+    account.address = fd58.dec32(
+        bytes("SysvarLastRestartS1ot1111111111111111111111", "utf-8")
+    )
+    account.lamports = 1
+    account.data = bytes.fromhex("8813000000000000")
+    account.owner = fd58.dec32(
+        bytes("Sysvar1111111111111111111111111111111111111", "utf-8")
+    )
+    syscall_ctx.instr_ctx.accounts.append(account)
+
+    account = context_pb.AcctState()
+    account.address = fd58.dec32(
+        bytes("SysvarRecentB1ockHashes11111111111111111111", "utf-8")
+    )
+    account.lamports = 1
+    account.data = bytes.fromhex("96000000000000000000000000000000") + bytes([0] * 5992)
+    account.owner = fd58.dec32(
+        bytes("Sysvar1111111111111111111111111111111111111", "utf-8")
+    )
+    syscall_ctx.instr_ctx.accounts.append(account)
+
+    account = context_pb.AcctState()
+    account.address = fd58.dec32(
+        bytes("SysvarS1otHashes111111111111111111111111111", "utf-8")
+    )
+    account.lamports = 1
+    account.data = bytes([0] * 20488)
+    account.owner = fd58.dec32(
+        bytes("Sysvar1111111111111111111111111111111111111", "utf-8")
+    )
+    syscall_ctx.instr_ctx.accounts.append(account)
+
 
 if __name__ == "__main__":
     print("Generating syscall alt_bn128 tests...")
@@ -1211,16 +1327,18 @@ if __name__ == "__main__":
         syscall_ctx.vm_ctx.r2 = test.get("input_addr", 0)
         syscall_ctx.vm_ctx.r3 = test.get("input_size", 0)
         syscall_ctx.vm_ctx.r4 = test.get("result_addr", 0)
-        syscall_ctx.instr_ctx.cu_avail = test.get("cu_avail", 0)
-        syscall_ctx.instr_ctx.program_id = bytes(
-            [0] * 32
-        )  # solfuzz-agave expectes a program_id
 
+        syscall_ctx.instr_ctx.cu_avail = test.get("cu_avail", 0)
         syscall_ctx.instr_ctx.epoch_context.features.features.extend(features)
+        if test.get("little_endian"):
+            syscall_ctx.instr_ctx.epoch_context.features.features.extend(extra_features)
+
+        # required by solfuzz-agave
+        add_solfuzz_agave_context(syscall_ctx)
 
         serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
         filename = str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
-        with open(f"{OUTPUT_DIR}/{filename}.bin", "wb") as f:
+        with open(f"{OUTPUT_DIR}/{filename}.syscallctx", "wb") as f:
             f.write(serialized_instr)
 
     print("done!")
@@ -1236,16 +1354,16 @@ if __name__ == "__main__":
         syscall_ctx.vm_ctx.r2 = test.get("input_addr", 0)
         syscall_ctx.vm_ctx.r3 = test.get("input_size", 0)
         syscall_ctx.vm_ctx.r4 = test.get("result_addr", 0)
-        syscall_ctx.instr_ctx.cu_avail = test.get("cu_avail", 0)
-        syscall_ctx.instr_ctx.program_id = bytes(
-            [0] * 32
-        )  # solfuzz-agave expectes a program_id
 
+        syscall_ctx.instr_ctx.cu_avail = test.get("cu_avail", 0)
         syscall_ctx.instr_ctx.epoch_context.features.features.extend(features)
+
+        # required by solfuzz-agave
+        add_solfuzz_agave_context(syscall_ctx)
 
         serialized_instr = syscall_ctx.SerializeToString(deterministic=True)
         filename = str(key) + "_" + hashlib.sha3_256(serialized_instr).hexdigest()[:16]
-        with open(f"{OUTPUT_DIR}/{filename}.bin", "wb") as f:
+        with open(f"{OUTPUT_DIR}/{filename}.syscallctx", "wb") as f:
             f.write(serialized_instr)
 
     print("done!")
