@@ -27,6 +27,8 @@ import io
 from datetime import datetime
 from test_suite.fuzzcorp_auth import get_fuzzcorp_auth
 from test_suite.fuzzcorp_api_client import FuzzCorpAPIClient
+from test_suite.octane_api_client import OctaneAPIClient
+from test_suite.octane_utils import get_octane_api_origin
 
 # Thread-safe deduplication variables
 _download_cache_lock = threading.Lock()
@@ -639,6 +641,44 @@ def execute_fixture(test_file: Path) -> tuple[str, int, dict | None]:
     )
 
 
+def _get_api_client():
+    """
+    Get the appropriate API client based on globals.use_octane flag.
+
+    Returns:
+        Tuple of (client_context_manager, is_octane)
+        The client_context_manager should be used with 'with' statement.
+        is_octane is True if using Octane API, False for FuzzCorp NG.
+    """
+    if getattr(globals, "use_octane", False):
+        # Use Octane API
+        api_origin = (
+            getattr(globals, "octane_api_origin", None) or get_octane_api_origin()
+        )
+        return (
+            OctaneAPIClient(
+                api_origin=api_origin,
+                http2=True,
+            ),
+            True,
+        )
+    else:
+        # Use FuzzCorp NG API
+        config = get_fuzzcorp_auth(interactive=False)
+        if not config:
+            return None, False
+        return (
+            FuzzCorpAPIClient(
+                api_origin=config.get_api_origin(),
+                token=config.get_token(),
+                org=config.get_organization(),
+                project=config.get_project(),
+                http2=True,
+            ),
+            False,
+        )
+
+
 def download_and_process(source):
     try:
         section_name, crash_hash = source
@@ -646,14 +686,23 @@ def download_and_process(source):
         out_dir = globals.inputs_dir / f"{section_name}_{crash_hash}"
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        # Use FuzzCorp HTTP API to download repro
-        config = get_fuzzcorp_auth(interactive=False)
-        if not config:
-            return {
-                "success": False,
-                "repro": f"{section_name}/{crash_hash}",
-                "message": "Failed to download: no FuzzCorp config",
-            }
+        # Check if using Octane or FuzzCorp NG
+        use_octane = getattr(globals, "use_octane", False)
+
+        if use_octane:
+            # Using Octane API - no auth required
+            api_origin = (
+                getattr(globals, "octane_api_origin", None) or get_octane_api_origin()
+            )
+        else:
+            # Using FuzzCorp NG API
+            config = get_fuzzcorp_auth(interactive=False)
+            if not config:
+                return {
+                    "success": False,
+                    "repro": f"{section_name}/{crash_hash}",
+                    "message": "Failed to download: no FuzzCorp config",
+                }
 
         # Check if metadata is cached (to avoid slow API calls)
         repro_metadata = None
@@ -670,19 +719,26 @@ def download_and_process(source):
                 file=sys.stderr,
                 flush=True,
             )
-            with FuzzCorpAPIClient(
-                api_origin=config.get_api_origin(),
-                token=config.get_token(),
-                org=config.get_organization(),
-                project=config.get_project(),
-                http2=True,
-            ) as client:
-                # Get repro metadata to find artifact hashes
-                repro_metadata = client.get_repro_by_hash(
-                    crash_hash,
+            if use_octane:
+                with OctaneAPIClient(
+                    api_origin=api_origin,
+                    http2=True,
+                ) as client:
+                    repro_metadata = client.get_repro_by_hash(crash_hash)
+            else:
+                with FuzzCorpAPIClient(
+                    api_origin=config.get_api_origin(),
+                    token=config.get_token(),
                     org=config.get_organization(),
                     project=config.get_project(),
-                )
+                    http2=True,
+                ) as client:
+                    # Get repro metadata to find artifact hashes
+                    repro_metadata = client.get_repro_by_hash(
+                        crash_hash,
+                        org=config.get_organization(),
+                        project=config.get_project(),
+                    )
 
         # Require at least one artifact hash. If none are present, there is
         # nothing we can download or convert into fixtures...
@@ -722,38 +778,51 @@ def download_and_process(source):
                     artifact_data = f.read()
             else:
                 # Download artifact (ZIP file)
+                artifact_desc = (
+                    f"Downloading artifact {idx}/{len(artifacts_to_download)}"
+                    if len(artifacts_to_download) > 1
+                    else "Downloading artifact"
+                )
+                artifact_label = (
+                    f"[{idx}/{len(artifacts_to_download)}]"
+                    if len(artifacts_to_download) > 1
+                    else ""
+                )
 
                 # Create HTTP client for artifact download
-                with FuzzCorpAPIClient(
-                    api_origin=config.get_api_origin(),
-                    token=config.get_token(),
-                    org=config.get_organization(),
-                    project=config.get_project(),
-                    http2=True,
-                ) as client:
-                    artifact_desc = (
-                        f"Downloading artifact {idx}/{len(artifacts_to_download)}"
-                        if len(artifacts_to_download) > 1
-                        else "Downloading artifact"
-                    )
-                    artifact_label = (
-                        f"[{idx}/{len(artifacts_to_download)}]"
-                        if len(artifacts_to_download) > 1
-                        else ""
-                    )
+                if use_octane:
+                    with OctaneAPIClient(
+                        api_origin=api_origin,
+                        http2=True,
+                    ) as client:
+                        artifact_data = _download_with_timing(
+                            lambda: client.download_artifact_data(
+                                artifact_hash,
+                                section_name,
+                                desc=artifact_desc,
+                            ),
+                            f"  [{section_name}/{crash_hash[:8]}] Artifact {artifact_label}",
+                        )
+                else:
+                    with FuzzCorpAPIClient(
+                        api_origin=config.get_api_origin(),
+                        token=config.get_token(),
+                        org=config.get_organization(),
+                        project=config.get_project(),
+                        http2=True,
+                    ) as client:
+                        artifact_data = _download_with_timing(
+                            lambda: client.download_artifact_data(
+                                artifact_hash,
+                                section_name,
+                                desc=artifact_desc,
+                            ),
+                            f"  [{section_name}/{crash_hash[:8]}] Artifact {artifact_label}",
+                        )
 
-                    artifact_data = _download_with_timing(
-                        lambda: client.download_artifact_data(
-                            artifact_hash,
-                            section_name,
-                            desc=artifact_desc,
-                        ),
-                        f"  [{section_name}/{crash_hash[:8]}] Artifact {artifact_label}",
-                    )
-
-                    # Save to cache for future runs
-                    with open(artifact_zip_path, "wb") as f:
-                        f.write(artifact_data)
+                # Save to cache for future runs
+                with open(artifact_zip_path, "wb") as f:
+                    f.write(artifact_data)
 
             # Extract .fix files from the artifact ZIP
             fix_count += extract_fix_files_from_zip(
@@ -816,32 +885,54 @@ def download_single_crash(source):
                 "path": str(out_path),
             }
 
-        config = get_fuzzcorp_auth(interactive=False)
-        if not config:
-            return {
-                "success": False,
-                "repro": f"{lineage}/{crash_hash}",
-                "message": "Failed to download: no FuzzCorp config",
-            }
+        # Check if using Octane or FuzzCorp NG
+        use_octane = getattr(globals, "use_octane", False)
 
-        with FuzzCorpAPIClient(
-            api_origin=config.get_api_origin(),
-            token=config.get_token(),
-            org=config.get_organization(),
-            project=config.get_project(),
-            http2=True,
-        ) as client:
-            data = _download_with_timing(
-                lambda: client.download_repro_data(
-                    crash_hash,
-                    lineage,
-                    desc=f"Downloading {crash_hash[:8]}.crash",
-                ),
-                f"  [{lineage}/{crash_hash[:8]}] Crash file",
+        if use_octane:
+            # Using Octane API - no auth required
+            api_origin = (
+                getattr(globals, "octane_api_origin", None) or get_octane_api_origin()
             )
+            with OctaneAPIClient(
+                api_origin=api_origin,
+                http2=True,
+            ) as client:
+                data = _download_with_timing(
+                    lambda: client.download_repro_data(
+                        crash_hash,
+                        lineage,
+                        desc=f"Downloading {crash_hash[:8]}.crash",
+                    ),
+                    f"  [{lineage}/{crash_hash[:8]}] Crash file",
+                )
+        else:
+            # Using FuzzCorp NG API
+            config = get_fuzzcorp_auth(interactive=False)
+            if not config:
+                return {
+                    "success": False,
+                    "repro": f"{lineage}/{crash_hash}",
+                    "message": "Failed to download: no FuzzCorp config",
+                }
 
-            with open(out_path, "wb") as f:
-                f.write(data)
+            with FuzzCorpAPIClient(
+                api_origin=config.get_api_origin(),
+                token=config.get_token(),
+                org=config.get_organization(),
+                project=config.get_project(),
+                http2=True,
+            ) as client:
+                data = _download_with_timing(
+                    lambda: client.download_repro_data(
+                        crash_hash,
+                        lineage,
+                        desc=f"Downloading {crash_hash[:8]}.crash",
+                    ),
+                    f"  [{lineage}/{crash_hash[:8]}] Crash file",
+                )
+
+        with open(out_path, "wb") as f:
+            f.write(data)
 
         return {
             "success": True,

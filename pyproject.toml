@@ -25,6 +25,11 @@ dependencies = [
 solana-conformance = "test_suite.test_suite:app"
 
 [project.optional-dependencies]
+octane = [
+  "google-cloud-storage>=2.0.0",
+  "boto3>=1.26.0",
+]
+
 test = [
   "pytest-clarity>=1.0.1",
   "pytest-cov>=4.0.0",
