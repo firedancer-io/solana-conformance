@@ -322,8 +322,12 @@ class OctaneAPIClient:
     This client uses the native Octane API endpoints (/api/bugs, etc.)
     instead of the FuzzCorp NG compatibility layer.
 
-    The client supports downloading artifacts directly from GCS/S3 URLs
-    stored in the bug metadata.
+    IMPORTANT: All artifact downloads are performed directly from cloud storage
+    (GCS/S3). The Octane API only provides metadata and download URLs, it never
+    proxies artifact bytes.
+
+    Requires google-cloud-storage and/or boto3 for direct cloud downloads.
+    Install with: pip install "solana-conformance[octane]"
     """
 
     def __init__(
@@ -635,45 +639,37 @@ class OctaneAPIClient:
 
         Args:
             bundle_id: Optional bundle ID to filter by.
-            lineage: Optional lineage to filter by.
+            lineage: Optional lineage to filter by (server-side filtering).
 
         Returns:
             List of ReproMetadata objects.
         """
-        bugs_response = self.get_reproducible_bugs(bundle_id=bundle_id)
-
-        repros = []
-        for bug in bugs_response.bugs:
-            # Filter by lineage if specified
-            if lineage and bug.lineage != lineage:
-                continue
-            repros.append(ReproMetadata.from_bug_record(bug))
-
-        return repros
+        # Use server-side lineage filtering for efficiency
+        bugs_response = self.get_reproducible_bugs(bundle_id=bundle_id, lineage=lineage)
+        return [ReproMetadata.from_bug_record(bug) for bug in bugs_response.bugs]
 
     def get_repro_by_hash(
         self,
         repro_hash: str,
         bundle_id: Optional[str] = None,
+        lineage: Optional[str] = None,
     ) -> ReproMetadata:
         """
         Get metadata for a specific repro by hash.
 
+        Uses the native /api/bugs/<hash> endpoint for efficient single-bug lookup.
+
         Args:
             repro_hash: Hash of the repro to retrieve.
             bundle_id: Optional bundle ID.
+            lineage: Optional lineage filter.
 
         Returns:
             ReproMetadata for the repro.
         """
-        # Get all bugs and find the matching one
-        bugs_response = self.get_bugs(bundle_id=bundle_id, include_fixed=True)
-
-        for bug in bugs_response.bugs:
-            if bug.hash == repro_hash:
-                return ReproMetadata.from_bug_record(bug)
-
-        raise ValueError(f"No repro found for hash: {repro_hash}")
+        # Use native endpoint for efficient single-bug lookup
+        bug = self.get_bug_by_hash(repro_hash, bundle_id=bundle_id, lineage=lineage)
+        return ReproMetadata.from_bug_record(bug)
 
     # ========================================================================
     # Direct GCS/S3 download methods
@@ -851,8 +847,9 @@ class OctaneAPIClient:
         """
         Download artifact data by hash.
 
-        This method tries the native /api/bugs/<hash>/artifact endpoint first,
-        then falls back to direct cloud storage downloads if available.
+        Downloads directly from cloud storage (GCS/S3), never proxied through Octane.
+        Uses the /api/bugs/<hash>/artifact endpoint to get download URLs, then
+        downloads directly from the cloud.
 
         Args:
             artifact_hash: Hash of the artifact (bug hash) to download.
@@ -864,7 +861,7 @@ class OctaneAPIClient:
         Returns:
             Artifact data as bytes.
         """
-        # Try native endpoint first (preferred)
+        # Primary: Get URLs from API, download directly from cloud
         try:
             return self.download_bug_artifact_native(
                 bug_hash=artifact_hash,
@@ -875,12 +872,12 @@ class OctaneAPIClient:
         except httpx.HTTPStatusError as e:
             if e.response.status_code != 404:
                 raise
-            # Fall through to try direct download from cloud URLs
+            # Fall through to try getting URLs from bug metadata
         except Exception:
-            # Fall through to try direct download from cloud URLs
+            # Fall through to try getting URLs from bug metadata
             pass
 
-        # Fallback: Get bug metadata and try direct cloud download
+        # Fallback: Get bug metadata and download directly from cloud URLs
         try:
             bug = self.get_bug_by_hash(
                 artifact_hash, bundle_id=bundle_id, lineage=lineage

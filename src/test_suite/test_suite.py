@@ -1125,7 +1125,7 @@ def download_fixtures(
             print("\n[ERROR] No repros to download")
             raise typer.Exit(code=1)
 
-        # Prefetch all repro metadata per lineage (more efficient than global or per-hash)
+        # Prefetch repro metadata
         print(f"\nFetching metadata for all repros...")
 
         metadata_cache = {}
@@ -1138,17 +1138,20 @@ def download_fixtures(
                 api_origin=api_origin,
                 http2=True,
             ) as client:
-                for lineage in lineages_to_fetch:
-                    lineage_repros = client.list_repros_full(lineage=lineage)
-                    print(
-                        f"  Fetched {len(lineage_repros)} repro(s) for lineage {lineage}"
-                    )
-                    for repro in lineage_repros:
-                        if repro.hash in download_hashes:
-                            metadata_cache[repro.hash] = repro
-                            print(
-                                f"    Repro {repro.hash[:8]}: {len(repro.artifact_hashes)} artifact(s)"
-                            )
+                # Single bulk fetch - Octane API supports fetching all bugs without lineage filter
+                all_repros = client.list_repros_full()
+                print(f"  Fetched {len(all_repros)} total repro(s) from Octane")
+
+                for repro in all_repros:
+                    # Filter to requested lineages and hashes
+                    if (
+                        repro.lineage in lineages_to_fetch
+                        and repro.hash in download_hashes
+                    ):
+                        metadata_cache[repro.hash] = repro
+                        print(
+                            f"    Repro {repro.hash[:8]} ({repro.lineage}): {len(repro.artifact_hashes)} artifact(s)"
+                        )
         else:
             with FuzzCorpAPIClient(
                 api_origin=config.get_api_origin(),
@@ -1435,7 +1438,7 @@ def download_crashes(
             for repro in verified:
                 download_list.append((lineage, repro.hash))
 
-        # Prefetch metadata for all selected hashes per lineage (for consistency and potential reuse)
+        # Prefetch metadata for all selected hashes
         if download_list:
             print("\nFetching metadata for selected repros...")
 
@@ -1449,17 +1452,20 @@ def download_crashes(
                     api_origin=api_origin,
                     http2=True,
                 ) as client:
-                    for lineage in lineages_to_fetch:
-                        lineage_repros = client.list_repros_full(lineage=lineage)
-                        print(
-                            f"  Fetched {len(lineage_repros)} repro(s) for lineage {lineage}"
-                        )
-                        for repro in lineage_repros:
-                            if repro.hash in selection:
-                                metadata_cache[repro.hash] = repro
-                                print(
-                                    f"    Repro {repro.hash[:8]}: {len(repro.artifact_hashes)} artifact(s)"
-                                )
+                    # Single bulk fetch - Octane API supports fetching all bugs without lineage filter
+                    all_repros = client.list_repros_full()
+                    print(f"  Fetched {len(all_repros)} total repro(s) from Octane")
+
+                    for repro in all_repros:
+                        # Filter to requested lineages and hashes
+                        if (
+                            repro.lineage in lineages_to_fetch
+                            and repro.hash in selection
+                        ):
+                            metadata_cache[repro.hash] = repro
+                            print(
+                                f"    Repro {repro.hash[:8]} ({repro.lineage}): {len(repro.artifact_hashes)} artifact(s)"
+                            )
             else:
                 from test_suite.fuzzcorp_api_client import FuzzCorpAPIClient as _FCA
 
@@ -1709,17 +1715,20 @@ def debug_mismatches(
                 api_origin=api_origin,
                 http2=True,
             ) as client:
-                for lineage in lineages_to_fetch:
-                    lineage_repros = client.list_repros_full(lineage=lineage)
-                    print(
-                        f"  Fetched {len(lineage_repros)} repro(s) for lineage {lineage}"
-                    )
-                    for repro in lineage_repros:
-                        if repro.hash in download_hashes:
-                            metadata_cache[repro.hash] = repro
-                            print(
-                                f"    Repro {repro.hash[:8]}: {len(repro.artifact_hashes)} artifact(s)"
-                            )
+                # Single bulk fetch - Octane API supports fetching all bugs without lineage filter
+                all_repros = client.list_repros_full()
+                print(f"  Fetched {len(all_repros)} total repro(s) from Octane")
+
+                for repro in all_repros:
+                    # Filter to requested lineages and hashes
+                    if (
+                        repro.lineage in lineages_to_fetch
+                        and repro.hash in download_hashes
+                    ):
+                        metadata_cache[repro.hash] = repro
+                        print(
+                            f"    Repro {repro.hash[:8]} ({repro.lineage}): {len(repro.artifact_hashes)} artifact(s)"
+                        )
         else:
             with FuzzCorpAPIClient(
                 api_origin=config.get_api_origin(),
