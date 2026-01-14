@@ -22,8 +22,8 @@ $ solana-conformance [OPTIONS] COMMAND [ARGS]...
 * `debug-mismatch`: Debug a single repro by hash.
 * `debug-mismatches`: Run tests on a set of targets with a list...
 * `decode-protobufs`: Convert Context and/or Fixture messages to...
-* `download-crash`: Download a single .crash file by hash from...
-* `download-crashes`: Download .crash files for specified...
+* `download-crash`: Download a single crash file by hash from...
+* `download-crashes`: Download crash files for specified...
 * `download-fixture`: Download fixtures for a single repro hash...
 * `download-fixtures`: Download fixtures for verified repros in...
 * `exec-fixtures`: Execute fixtures and check for correct...
@@ -137,6 +137,7 @@ $ solana-conformance debug-mismatch [OPTIONS] REPRO_HASH
 * `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
 * `-d, --debug`: Enable debug mode for detailed output
 * `--use-ng`: (No-op, kept for compatibility)  [default: True]
+* `--use-octane`: Use Octane API instead of FuzzCorp NG (default endpoint: http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000)
 * `--help`: Show this message and exit.
 
 ## `solana-conformance debug-mismatches`
@@ -167,6 +168,7 @@ $ solana-conformance debug-mismatches [OPTIONS]
 * `--use-ng`: Use fuzz NG CLI (fuzz list/download repro) instead of API scraping  [default: True]
 * `-d, --debug-mode`: Enables debug mode, which spawns a single child process for easier debugging
 * `--all-artifacts`: (Deprecated, all artifacts are now always downloaded)
+* `--use-octane`: Use Octane API instead of FuzzCorp NG (default endpoint: http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000)
 * `--help`: Show this message and exit.
 
 ## `solana-conformance decode-protobufs`
@@ -190,7 +192,7 @@ $ solana-conformance decode-protobufs [OPTIONS]
 
 ## `solana-conformance download-crash`
 
-Download a single .crash file by hash from FuzzCorp NG.
+Download a single crash file by hash from FuzzCorp NG or Octane.
 
 **Usage**:
 
@@ -200,18 +202,19 @@ $ solana-conformance download-crash [OPTIONS] REPRO_HASH
 
 **Arguments**:
 
-* `REPRO_HASH`: Hash of the repro to download (.crash)  [required]
+* `REPRO_HASH`: Hash of the repro to download (crash)  [required]
 
 **Options**:
 
 * `-l, --lineage TEXT`: Lineage name (e.g., sol_vm_syscall_cpi_rust_diff_hf)  [required]
 * `-o, --output-dir PATH`: Output directory for downloaded crash  [default: fuzzcorp_downloads]
 * `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
+* `--use-octane`: Use Octane API instead of FuzzCorp NG (default endpoint: http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000)
 * `--help`: Show this message and exit.
 
 ## `solana-conformance download-crashes`
 
-Download .crash files for specified lineages from FuzzCorp NG.
+Download crash files for specified lineages from FuzzCorp NG or Octane.
 
 **Usage**:
 
@@ -226,11 +229,12 @@ $ solana-conformance download-crashes [OPTIONS]
 * `-l, --section-limit INTEGER`: Limit number of crashes per lineage (0 = all verified)  [default: 0]
 * `-p, --num-processes INTEGER`: Number of parallel download processes  [default: 4]
 * `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
+* `--use-octane`: Use Octane API instead of FuzzCorp NG (default endpoint: http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000)
 * `--help`: Show this message and exit.
 
 ## `solana-conformance download-fixture`
 
-Download fixtures for a single repro hash from FuzzCorp NG.
+Download fixtures for a single repro hash from FuzzCorp NG or Octane.
 
 **Usage**:
 
@@ -248,11 +252,12 @@ $ solana-conformance download-fixture [OPTIONS] REPRO_HASH
 * `-o, --output-dir PATH`: Output directory for downloaded repro  [default: fuzzcorp_downloads]
 * `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
 * `--use-ng`: (No-op, kept for compatibility)  [default: True]
+* `--use-octane`: Use Octane API instead of FuzzCorp NG (default endpoint: http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000)
 * `--help`: Show this message and exit.
 
 ## `solana-conformance download-fixtures`
 
-Download fixtures for verified repros in specified lineages from FuzzCorp NG.
+Download fixtures for verified repros in specified lineages from FuzzCorp NG or Octane.
 
 **Usage**:
 
@@ -269,6 +274,7 @@ $ solana-conformance download-fixtures [OPTIONS]
 * `--use-ng`: Use fuzz NG CLI (fuzz list/download repro) instead of API scraping  [default: True]
 * `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
 * `--all-artifacts`: (Deprecated, all artifacts are now always downloaded)
+* `--use-octane`: Use Octane API instead of FuzzCorp NG (default endpoint: http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000)
 * `--help`: Show this message and exit.
 
 ## `solana-conformance exec-fixtures`
@@ -374,7 +380,8 @@ $ solana-conformance list-repros [OPTIONS]
 
 **Options**:
 
-* `--use-ng`: Use fuzz NG API instead of web scraping  [default: True]
+* `--use-ng`: Use fuzz NG API instead of web scraping (deprecated, use --use-octane for Octane)  [default: True]
+* `--use-octane`: Use Octane API instead of FuzzCorp NG (default endpoint: http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000)
 * `-l, --lineage TEXT`: Filter to specific lineage (shows all repros in that lineage)
 * `--interactive / --no-interactive`: Enable interactive configuration prompts if credentials are missing  [default: interactive]
 * `-f, --fuzzcorp-url TEXT`: FuzzCorp URL for web scraping (used when --use-ng is not set)  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
