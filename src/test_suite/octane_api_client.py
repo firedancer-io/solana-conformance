@@ -534,6 +534,46 @@ class OctaneAPIClient:
                 raise ValueError(f"No bug found for hash: {bug_hash}")
             raise
 
+    def get_bugs_bulk(
+        self,
+        hashes: Optional[List[str]] = None,
+        lineages: Optional[List[str]] = None,
+        bundle_id: Optional[str] = None,
+        include_artifacts: bool = False,
+    ) -> BugsResponse:
+        """
+        Bulk fetch bug metadata for multiple hashes and/or lineages.
+
+        This is more efficient than fetching all bugs or making N separate requests.
+
+        Args:
+            hashes: List of bug hashes to fetch.
+            lineages: List of lineages to filter by.
+            bundle_id: Optional bundle ID filter.
+            include_artifacts: If true, include artifact download URLs.
+
+        Returns:
+            BugsResponse with the requested bugs.
+
+        Raises:
+            ValueError: If neither hashes nor lineages are provided.
+        """
+        if not hashes and not lineages:
+            raise ValueError("At least one of 'hashes' or 'lineages' must be provided")
+
+        payload: Dict[str, Any] = {}
+        if hashes:
+            payload["hashes"] = hashes
+        if lineages:
+            payload["lineages"] = lineages
+        if bundle_id or self.bundle_id:
+            payload["bundle_id"] = bundle_id or self.bundle_id
+        if include_artifacts:
+            payload["include_artifacts"] = True
+
+        response = self._make_request("POST", f"{BUGS_PATH}/bulk", json_data=payload)
+        return BugsResponse.from_dict(response)
+
     def get_artifact_download_urls(
         self,
         bug_hash: str,
