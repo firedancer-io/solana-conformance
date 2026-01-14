@@ -1054,11 +1054,6 @@ def download_fixtures(
         "--octane-api-origin",
         help="Octane API origin URL (only used with --use-octane)",
     ),
-    hashes: str = typer.Option(
-        "",
-        "--hashes",
-        help="Comma-delimited list of specific repro hashes to download (skips listing step if provided)",
-    ),
 ):
     """Download and extract fixtures for verified repros from FuzzCorp NG or Octane API."""
     # Create output directories
@@ -1077,30 +1072,16 @@ def download_fixtures(
     try:
         # Create HTTP client and fetch repros
         section_names_list = section_names.split(",")
-        hashes_list = (
-            [h.strip() for h in hashes.split(",") if h.strip()] if hashes else []
-        )
         download_list = []
 
         if use_octane:
             # Use Octane API
             api_origin = octane_api_origin or get_octane_api_origin()
             print(f"Using Octane API at {api_origin}")
+            print(f"Fetching repro index...")
 
-            if hashes_list:
-                # If specific hashes provided, use bulk filtering for efficiency
-                print(f"Fetching {len(hashes_list)} specific repro(s) by hash...")
-
-                def fetch_repros(client):
-                    return client.list_repros(
-                        hashes=hashes_list, lineages=section_names_list
-                    )
-
-            else:
-                print(f"Fetching repro index...")
-
-                def fetch_repros(client):
-                    return client.list_repros(lineages=section_names_list)
+            def fetch_repros(client):
+                return client.list_repros(lineages=section_names_list)
 
             response = octane_api_call(fetch_repros, api_origin=api_origin)
         else:
@@ -1406,11 +1387,6 @@ def download_crashes(
         "--octane-api-origin",
         help="Octane API origin URL (only used with --use-octane)",
     ),
-    hashes: str = typer.Option(
-        "",
-        "--hashes",
-        help="Comma-delimited list of specific repro hashes to download (skips listing step if provided)",
-    ),
 ):
     """Download raw .crash files (repros) for given lineages."""
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -1421,32 +1397,17 @@ def download_crashes(
 
     try:
         section_names_list = [s.strip() for s in section_names.split(",") if s.strip()]
-        hashes_list = (
-            [h.strip() for h in hashes.split(",") if h.strip()] if hashes else []
-        )
 
         # Fetch repros
         if use_octane:
             api_origin = octane_api_origin or get_octane_api_origin()
             print(f"Using Octane API at {api_origin}")
+            print(f"Fetching repro index...")
 
-            if hashes_list:
-                # If specific hashes provided, use bulk filtering for efficiency
-                print(f"Fetching {len(hashes_list)} specific repro(s) by hash...")
-
-                def fetch_repros(client):
-                    return client.list_repros(
-                        hashes=hashes_list,
-                        lineages=section_names_list if section_names_list else None,
-                    )
-
-            else:
-                print(f"Fetching repro index...")
-
-                def fetch_repros(client):
-                    return client.list_repros(
-                        lineages=section_names_list if section_names_list else None
-                    )
+            def fetch_repros(client):
+                return client.list_repros(
+                    lineages=section_names_list if section_names_list else None
+                )
 
             response = octane_api_call(fetch_repros, api_origin=api_origin)
         else:
@@ -1660,11 +1621,6 @@ def debug_mismatches(
         "--octane-api-origin",
         help="Octane API origin URL (only used with --use-octane)",
     ),
-    hashes: str = typer.Option(
-        "",
-        "--hashes",
-        help="Comma-delimited list of specific repro hashes to debug (skips listing step if provided)",
-    ),
 ):
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
 
@@ -1680,7 +1636,6 @@ def debug_mismatches(
     fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
     repro_urls_list = repro_urls.split(",") if repro_urls else []
     section_names_list = section_names.split(",") if section_names else []
-    hashes_list = [h.strip() for h in hashes.split(",") if h.strip()] if hashes else []
 
     custom_data_urls = []
 
@@ -1688,24 +1643,12 @@ def debug_mismatches(
     if use_octane:
         api_origin = octane_api_origin or get_octane_api_origin()
         print(f"Using Octane API at {api_origin}")
+        print(f"Fetching repro index...")
 
-        if hashes_list:
-            # If specific hashes provided, use bulk filtering for efficiency
-            print(f"Fetching {len(hashes_list)} specific repro(s) by hash...")
-
-            def fetch_repros(client):
-                return client.list_repros(
-                    hashes=hashes_list,
-                    lineages=section_names_list if section_names_list else None,
-                )
-
-        else:
-            print(f"Fetching repro index...")
-
-            def fetch_repros(client):
-                return client.list_repros(
-                    lineages=section_names_list if section_names_list else None
-                )
+        def fetch_repros(client):
+            return client.list_repros(
+                lineages=section_names_list if section_names_list else None
+            )
 
         response = octane_api_call(fetch_repros, api_origin=api_origin)
         config = None  # Not needed for Octane

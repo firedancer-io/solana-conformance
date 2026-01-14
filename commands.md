@@ -171,7 +171,6 @@ $ solana-conformance debug-mismatches [OPTIONS]
 * `--all-artifacts`: (Deprecated, all artifacts are now always downloaded)
 * `--use-octane`: Use Octane API instead of FuzzCorp NG (default endpoint: http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000)
 * `--octane-api-origin TEXT`: Octane API origin URL (only used with --use-octane)
-* `--hashes TEXT`: Comma-delimited list of specific repro hashes to debug (skips listing step if provided)
 * `--help`: Show this message and exit.
 
 ## `solana-conformance decode-protobufs`
@@ -235,7 +234,6 @@ $ solana-conformance download-crashes [OPTIONS]
 * `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
 * `--use-octane`: Use Octane API instead of FuzzCorp NG (default endpoint: http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000)
 * `--octane-api-origin TEXT`: Octane API origin URL (only used with --use-octane)
-* `--hashes TEXT`: Comma-delimited list of specific repro hashes to download (skips listing step if provided)
 * `--help`: Show this message and exit.
 
 ## `solana-conformance download-fixture`
@@ -283,7 +281,6 @@ $ solana-conformance download-fixtures [OPTIONS]
 * `--all-artifacts`: (Deprecated, all artifacts are now always downloaded)
 * `--use-octane`: Use Octane API instead of FuzzCorp NG (default endpoint: http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000)
 * `--octane-api-origin TEXT`: Octane API origin URL (only used with --use-octane)
-* `--hashes TEXT`: Comma-delimited list of specific repro hashes to download (skips listing step if provided)
 * `--help`: Show this message and exit.
 
 ## `solana-conformance exec-fixtures`
