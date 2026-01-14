@@ -653,9 +653,7 @@ def download_and_process(source):
 
         if use_octane:
             # Using Octane API - no auth required
-            api_origin = (
-                getattr(globals, "octane_api_origin", None) or get_octane_api_origin()
-            )
+            api_origin = get_octane_api_origin()
         else:
             # Using FuzzCorp NG API
             config = get_fuzzcorp_auth(interactive=False)
@@ -855,9 +853,7 @@ def download_single_crash(source):
 
         if use_octane:
             # Using Octane API - no auth required
-            api_origin = (
-                getattr(globals, "octane_api_origin", None) or get_octane_api_origin()
-            )
+            api_origin = get_octane_api_origin()
             with OctaneAPIClient(
                 api_origin=api_origin,
                 http2=True,

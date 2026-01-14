@@ -780,11 +780,6 @@ def list_repros(
         "--use-octane",
         help=f"Use Octane API instead of FuzzCorp NG (default endpoint: {DEFAULT_OCTANE_API_ORIGIN})",
     ),
-    octane_api_origin: str = typer.Option(
-        None,
-        "--octane-api-origin",
-        help="Octane API origin URL (only used with --use-octane)",
-    ),
     lineage: str = typer.Option(
         None,
         "--lineage",
@@ -810,7 +805,7 @@ def list_repros(
 
     if use_octane:
         # Use Octane API
-        api_origin = octane_api_origin or get_octane_api_origin()
+        api_origin = get_octane_api_origin()
         if lineage:
             print(
                 f"Fetching repros for lineage '{lineage}' from Octane at {api_origin}..."
@@ -923,11 +918,6 @@ def download_fixture(
         "--use-octane",
         help=f"Use Octane API instead of FuzzCorp NG (default endpoint: {DEFAULT_OCTANE_API_ORIGIN})",
     ),
-    octane_api_origin: str = typer.Option(
-        None,
-        "--octane-api-origin",
-        help="Octane API origin URL (only used with --use-octane)",
-    ),
 ):
     """Download and extract fixture(s) for a single repro hash from FuzzCorp NG or Octane API."""
     # Create output directories
@@ -940,11 +930,10 @@ def download_fixture(
     globals.output_dir = output_dir
     globals.inputs_dir = inputs_dir
     globals.use_octane = use_octane
-    globals.octane_api_origin = octane_api_origin
 
     try:
         if use_octane:
-            api_origin = octane_api_origin or get_octane_api_origin()
+            api_origin = get_octane_api_origin()
             print(f"\nUsing Octane API at {api_origin}")
         else:
             # Get configuration
@@ -1049,11 +1038,6 @@ def download_fixtures(
         "--use-octane",
         help=f"Use Octane API instead of FuzzCorp NG (default endpoint: {DEFAULT_OCTANE_API_ORIGIN})",
     ),
-    octane_api_origin: str = typer.Option(
-        None,
-        "--octane-api-origin",
-        help="Octane API origin URL (only used with --use-octane)",
-    ),
 ):
     """Download and extract fixtures for verified repros from FuzzCorp NG or Octane API."""
     # Create output directories
@@ -1067,7 +1051,6 @@ def download_fixtures(
     globals.inputs_dir = inputs_dir
     globals.download_all_artifacts = all_artifacts
     globals.use_octane = use_octane
-    globals.octane_api_origin = octane_api_origin
 
     try:
         # Create HTTP client and fetch repros
@@ -1076,7 +1059,7 @@ def download_fixtures(
 
         if use_octane:
             # Use Octane API
-            api_origin = octane_api_origin or get_octane_api_origin()
+            api_origin = get_octane_api_origin()
             print(f"Using Octane API at {api_origin}")
             print(f"Fetching repro index...")
 
@@ -1245,11 +1228,11 @@ def download_fixtures(
         raise typer.Exit(code=1)
 
 
-@app.command(help="Download a single .crash file by hash from FuzzCorp NG or Octane.")
+@app.command(help="Download a single crash file by hash from FuzzCorp NG or Octane.")
 def download_crash(
     repro_hash: str = typer.Argument(
         ...,
-        help="Hash of the repro to download (.crash)",
+        help="Hash of the repro to download (crash)",
     ),
     lineage: str = typer.Option(
         ...,
@@ -1273,13 +1256,8 @@ def download_crash(
         "--use-octane",
         help=f"Use Octane API instead of FuzzCorp NG (default endpoint: {DEFAULT_OCTANE_API_ORIGIN})",
     ),
-    octane_api_origin: str = typer.Option(
-        None,
-        "--octane-api-origin",
-        help="Octane API origin URL (only used with --use-octane)",
-    ),
 ):
-    """Download a single .crash (repro) file from FuzzCorp NG or Octane API."""
+    """Download a single crash (repro) file from FuzzCorp NG or Octane API."""
     # Create output directories
     output_dir.mkdir(parents=True, exist_ok=True)
     crashes_dir = output_dir / "crashes" / lineage
@@ -1287,11 +1265,10 @@ def download_crash(
 
     # Set globals
     globals.use_octane = use_octane
-    globals.octane_api_origin = octane_api_origin
 
     try:
         if use_octane:
-            api_origin = octane_api_origin or get_octane_api_origin()
+            api_origin = get_octane_api_origin()
             print(f"Using Octane API at {api_origin}")
             with OctaneAPIClient(
                 api_origin=api_origin,
@@ -1345,7 +1322,7 @@ def download_crash(
 
 
 @app.command(
-    help="Download .crash files for specified lineages from FuzzCorp NG or Octane."
+    help="Download crash files for specified lineages from FuzzCorp NG or Octane."
 )
 def download_crashes(
     output_dir: Path = typer.Option(
@@ -1382,25 +1359,19 @@ def download_crashes(
         "--use-octane",
         help=f"Use Octane API instead of FuzzCorp NG (default endpoint: {DEFAULT_OCTANE_API_ORIGIN})",
     ),
-    octane_api_origin: str = typer.Option(
-        None,
-        "--octane-api-origin",
-        help="Octane API origin URL (only used with --use-octane)",
-    ),
 ):
-    """Download raw .crash files (repros) for given lineages."""
+    """Download raw crash files (repros) for given lineages."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Set globals
     globals.use_octane = use_octane
-    globals.octane_api_origin = octane_api_origin
 
     try:
         section_names_list = [s.strip() for s in section_names.split(",") if s.strip()]
 
         # Fetch repros
         if use_octane:
-            api_origin = octane_api_origin or get_octane_api_origin()
+            api_origin = get_octane_api_origin()
             print(f"Using Octane API at {api_origin}")
             print(f"Fetching repro index...")
 
@@ -1616,11 +1587,6 @@ def debug_mismatches(
         "--use-octane",
         help=f"Use Octane API instead of FuzzCorp NG (default endpoint: {DEFAULT_OCTANE_API_ORIGIN})",
     ),
-    octane_api_origin: str = typer.Option(
-        None,
-        "--octane-api-origin",
-        help="Octane API origin URL (only used with --use-octane)",
-    ),
 ):
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
 
@@ -1631,7 +1597,6 @@ def debug_mismatches(
     globals.inputs_dir.mkdir(parents=True, exist_ok=True)
     globals.download_all_artifacts = all_artifacts
     globals.use_octane = use_octane
-    globals.octane_api_origin = octane_api_origin
 
     fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
     repro_urls_list = repro_urls.split(",") if repro_urls else []
@@ -1641,7 +1606,7 @@ def debug_mismatches(
 
     # Use Octane or FuzzCorp HTTP API to list repros
     if use_octane:
-        api_origin = octane_api_origin or get_octane_api_origin()
+        api_origin = get_octane_api_origin()
         print(f"Using Octane API at {api_origin}")
         print(f"Fetching repro index...")
 
@@ -1914,18 +1879,12 @@ def debug_mismatch(
         "--use-octane",
         help=f"Use Octane API instead of FuzzCorp NG (default endpoint: {DEFAULT_OCTANE_API_ORIGIN})",
     ),
-    octane_api_origin: str = typer.Option(
-        None,
-        "--octane-api-origin",
-        help="Octane API origin URL (only used with --use-octane)",
-    ),
 ):
     """Debug a single repro by downloading and testing it."""
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
 
     globals.output_dir = output_dir
     globals.use_octane = use_octane
-    globals.octane_api_origin = octane_api_origin
 
     if globals.output_dir.exists():
         shutil.rmtree(globals.output_dir)
@@ -1938,7 +1897,7 @@ def debug_mismatch(
 
     try:
         if use_octane:
-            api_origin = octane_api_origin or get_octane_api_origin()
+            api_origin = get_octane_api_origin()
             print(f"\nUsing Octane API at {api_origin}")
         else:
             # Get configuration
