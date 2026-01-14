@@ -203,6 +203,7 @@ class BugsResponse:
     # Additional metadata
     run_id_filter: Optional[str] = None
     total_bugs_scope: Optional[str] = None
+    active_lineages: List[str] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "BugsResponse":
@@ -218,6 +219,7 @@ class BugsResponse:
             filtered=data.get("filtered", False),
             run_id_filter=data.get("run_id_filter"),
             total_bugs_scope=data.get("total_bugs_scope"),
+            active_lineages=data.get("active_lineages") or [],
         )
 
     def get_lineages(self) -> Dict[str, List[BugRecord]]:
@@ -227,6 +229,27 @@ class BugsResponse:
             if bug.lineage not in lineages:
                 lineages[bug.lineage] = []
             lineages[bug.lineage].append(bug)
+        return lineages
+
+    def get_all_lineages(self) -> Dict[str, List[BugRecord]]:
+        """
+        Get all lineages including ones with zero bugs.
+
+        Returns a dict where keys are lineage names from active_lineages
+        and values are lists of bugs (empty list if no bugs for that lineage).
+        """
+        lineages: Dict[str, List[BugRecord]] = {}
+
+        # First, add all active lineages with empty lists
+        for lineage in self.active_lineages:
+            lineages[lineage] = []
+
+        # Then, populate with actual bugs
+        for bug in self.bugs:
+            if bug.lineage not in lineages:
+                lineages[bug.lineage] = []
+            lineages[bug.lineage].append(bug)
+
         return lineages
 
 
@@ -276,9 +299,18 @@ class ReproIndexResponse:
 
     @classmethod
     def from_bugs_response(cls, response: BugsResponse) -> "ReproIndexResponse":
-        """Create a ReproIndexResponse from a BugsResponse."""
+        """
+        Create a ReproIndexResponse from a BugsResponse.
+
+        Includes all active lineages from the API, even those with zero bugs.
+        """
         lineages: Dict[str, List[LineageRepro]] = {}
 
+        # First, add all active lineages with empty lists
+        for lineage in response.active_lineages:
+            lineages[lineage] = []
+
+        # Then, populate with actual bugs
         for bug in response.bugs:
             if bug.lineage not in lineages:
                 lineages[bug.lineage] = []
