@@ -641,44 +641,6 @@ def execute_fixture(test_file: Path) -> tuple[str, int, dict | None]:
     )
 
 
-def _get_api_client():
-    """
-    Get the appropriate API client based on globals.use_octane flag.
-
-    Returns:
-        Tuple of (client_context_manager, is_octane)
-        The client_context_manager should be used with 'with' statement.
-        is_octane is True if using Octane API, False for FuzzCorp NG.
-    """
-    if getattr(globals, "use_octane", False):
-        # Use Octane API
-        api_origin = (
-            getattr(globals, "octane_api_origin", None) or get_octane_api_origin()
-        )
-        return (
-            OctaneAPIClient(
-                api_origin=api_origin,
-                http2=True,
-            ),
-            True,
-        )
-    else:
-        # Use FuzzCorp NG API
-        config = get_fuzzcorp_auth(interactive=False)
-        if not config:
-            return None, False
-        return (
-            FuzzCorpAPIClient(
-                api_origin=config.get_api_origin(),
-                token=config.get_token(),
-                org=config.get_organization(),
-                project=config.get_project(),
-                http2=True,
-            ),
-            False,
-        )
-
-
 def download_and_process(source):
     try:
         section_name, crash_hash = source
@@ -724,7 +686,10 @@ def download_and_process(source):
                     api_origin=api_origin,
                     http2=True,
                 ) as client:
-                    repro_metadata = client.get_repro_by_hash(crash_hash)
+                    # Pass lineage (section_name) to server for efficient lookup
+                    repro_metadata = client.get_repro_by_hash(
+                        crash_hash, lineage=section_name
+                    )
             else:
                 with FuzzCorpAPIClient(
                     api_origin=config.get_api_origin(),

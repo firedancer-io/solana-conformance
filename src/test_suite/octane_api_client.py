@@ -5,12 +5,15 @@ This module provides an API client that uses the native Octane orchestrator API
 endpoints directly (not the FuzzCorp NG compatibility layer).
 
 Native API endpoints used:
-- /api/bugs - List all bugs with full metadata
-- /api/bugs/reproducible - Only reproducible bugs (crash_reproducible, etc.)
+- /api/bugs - List all bugs with full metadata (supports filters: lineages, hashes, statuses, run_id, bundle_id)
+- /api/bugs/<hash> - Get single bug by hash
+- /api/bugs/<hash>/artifact - Get artifact download URLs
 - /api/health - Health check
 
-The client supports downloading artifacts directly from GCS/S3 URLs
-stored in the bug metadata.
+Key features:
+- Server-side filtering: lineages, hashes, statuses, run_id all combined with AND logic
+- Direct GCS/S3 downloads: artifacts are downloaded directly from cloud storage
+- Reproducible bugs: use statuses=REPRO_BUG_STATUSES or get_reproducible_bugs()
 
 Default API endpoint: gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000
 """
@@ -31,10 +34,19 @@ DEFAULT_OCTANE_API_ORIGIN = "http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com
 # Native Octane API endpoints
 API_PREFIX = "/api/"
 BUGS_PATH = API_PREFIX + "bugs"
-BUGS_REPRODUCIBLE_PATH = API_PREFIX + "bugs/reproducible"
 HEALTH_PATH = API_PREFIX + "health"
 STATS_PATH = API_PREFIX + "stats"
 BUNDLES_PATH = API_PREFIX + "bundles"
+
+# Reproducible bug statuses
+REPRO_BUG_STATUSES = {
+    "reproducible",
+    "crash_reproducible",
+    "crash_timeout",
+    "crash_leak",
+    "crash_oom",
+    "crash_asan",
+}
 
 
 @dataclass
@@ -245,8 +257,7 @@ class LineageRepro:
             hash=bug.hash,
             created_at=bug.created_at or datetime.min,
             count=1,  # Each bug is one repro
-            all_verified=bug.status
-            in ("reproducible", "crash_reproducible", "verified"),
+            all_verified=bug.status in REPRO_BUG_STATUSES,
             status=bug.status,
             bug_record=bug,
         )
@@ -420,30 +431,43 @@ class OctaneAPIClient:
         self,
         bundle_id: Optional[str] = None,
         run_id: Optional[str] = None,
-        lineage: Optional[str] = None,
+        lineages: Optional[List[str]] = None,
+        hashes: Optional[List[str]] = None,
+        statuses: Optional[List[str]] = None,
         limit: Optional[int] = None,
         include_fixed: bool = False,
     ) -> BugsResponse:
         """
         Get all bugs from the native /api/bugs endpoint.
 
+        All filters are combined with AND logic.
+
         Args:
             bundle_id: Optional bundle ID to filter by.
             run_id: Optional run ID to filter by.
-            lineage: Optional lineage (target name) to filter by.
+            lineages: Optional list of lineages to filter by.
+            hashes: Optional list of hashes to filter by.
+            statuses: Optional list of statuses to filter by (e.g., ["reproducible", "crash_reproducible"]).
             limit: Optional limit on number of bugs returned.
             include_fixed: Whether to include fixed bugs.
 
         Returns:
             BugsResponse with all bugs.
+
+        Note:
+            Using statuses=REPRO_BUG_STATUSES is equivalent to calling get_reproducible_bugs().
         """
         params = {}
         if bundle_id or self.bundle_id:
             params["bundle_id"] = bundle_id or self.bundle_id
         if run_id:
             params["run_id"] = run_id
-        if lineage:
-            params["lineage"] = lineage
+        if lineages:
+            params["lineages"] = ",".join(lineages)
+        if hashes:
+            params["hashes"] = ",".join(hashes)
+        if statuses:
+            params["statuses"] = ",".join(statuses)
         if limit:
             params["limit"] = str(limit)
         if include_fixed:
@@ -456,36 +480,38 @@ class OctaneAPIClient:
         self,
         bundle_id: Optional[str] = None,
         run_id: Optional[str] = None,
-        lineage: Optional[str] = None,
+        lineages: Optional[List[str]] = None,
+        hashes: Optional[List[str]] = None,
         limit: Optional[int] = None,
     ) -> BugsResponse:
         """
-        Get only reproducible bugs from the native /api/bugs/reproducible endpoint.
+        Get only reproducible bugs.
 
-        This returns bugs with status: reproducible, crash_reproducible,
-        crash_timeout, crash_leak, crash_oom, crash_asan.
+        This is a convenience method equivalent to calling get_bugs() with:
+            statuses=["reproducible", "crash_reproducible", "crash_timeout",
+                      "crash_leak", "crash_oom", "crash_asan"]
+
+        All filters are combined with AND logic.
 
         Args:
             bundle_id: Optional bundle ID to filter by.
             run_id: Optional run ID to filter by.
-            lineage: Optional lineage (target name) to filter by.
+            lineages: Optional list of lineages to filter by.
+            hashes: Optional list of hashes to filter by.
             limit: Optional limit on number of bugs returned.
 
         Returns:
             BugsResponse with reproducible bugs only.
         """
-        params = {}
-        if bundle_id or self.bundle_id:
-            params["bundle_id"] = bundle_id or self.bundle_id
-        if run_id:
-            params["run_id"] = run_id
-        if lineage:
-            params["lineage"] = lineage
-        if limit:
-            params["limit"] = str(limit)
-
-        response = self._make_request("GET", BUGS_REPRODUCIBLE_PATH, params=params)
-        return BugsResponse.from_dict(response)
+        return self.get_bugs(
+            bundle_id=bundle_id,
+            run_id=run_id,
+            lineages=lineages,
+            hashes=hashes,
+            statuses=list(REPRO_BUG_STATUSES),
+            limit=limit,
+            include_fixed=True,  # Status filter already restricts, don't double-filter
+        )
 
     def get_stats(self) -> Dict[str, Any]:
         """Get overall statistics from /api/stats."""
@@ -533,46 +559,6 @@ class OctaneAPIClient:
             if e.response.status_code == 404:
                 raise ValueError(f"No bug found for hash: {bug_hash}")
             raise
-
-    def get_bugs_bulk(
-        self,
-        hashes: Optional[List[str]] = None,
-        lineages: Optional[List[str]] = None,
-        bundle_id: Optional[str] = None,
-        include_artifacts: bool = False,
-    ) -> BugsResponse:
-        """
-        Bulk fetch bug metadata for multiple hashes and/or lineages.
-
-        This is more efficient than fetching all bugs or making N separate requests.
-
-        Args:
-            hashes: List of bug hashes to fetch.
-            lineages: List of lineages to filter by.
-            bundle_id: Optional bundle ID filter.
-            include_artifacts: If true, include artifact download URLs.
-
-        Returns:
-            BugsResponse with the requested bugs.
-
-        Raises:
-            ValueError: If neither hashes nor lineages are provided.
-        """
-        if not hashes and not lineages:
-            raise ValueError("At least one of 'hashes' or 'lineages' must be provided")
-
-        payload: Dict[str, Any] = {}
-        if hashes:
-            payload["hashes"] = hashes
-        if lineages:
-            payload["lineages"] = lineages
-        if bundle_id or self.bundle_id:
-            payload["bundle_id"] = bundle_id or self.bundle_id
-        if include_artifacts:
-            payload["include_artifacts"] = True
-
-        response = self._make_request("POST", f"{BUGS_PATH}/bulk", json_data=payload)
-        return BugsResponse.from_dict(response)
 
     def get_artifact_download_urls(
         self,
@@ -653,6 +639,8 @@ class OctaneAPIClient:
     def list_repros(
         self,
         bundle_id: Optional[str] = None,
+        lineages: Optional[List[str]] = None,
+        hashes: Optional[List[str]] = None,
     ) -> ReproIndexResponse:
         """
         List all repro lineages with their counts.
@@ -662,30 +650,41 @@ class OctaneAPIClient:
 
         Args:
             bundle_id: Optional bundle ID to filter by.
+            lineages: Optional list of lineages to filter by (bulk server-side filtering).
+            hashes: Optional list of hashes to filter by (bulk server-side filtering).
 
         Returns:
             ReproIndexResponse with lineages and repro counts.
         """
-        bugs_response = self.get_reproducible_bugs(bundle_id=bundle_id)
+        bugs_response = self.get_reproducible_bugs(
+            bundle_id=bundle_id,
+            lineages=lineages,
+            hashes=hashes,
+        )
         return ReproIndexResponse.from_bugs_response(bugs_response)
 
     def list_repros_full(
         self,
         bundle_id: Optional[str] = None,
-        lineage: Optional[str] = None,
+        lineages: Optional[List[str]] = None,
+        hashes: Optional[List[str]] = None,
     ) -> List[ReproMetadata]:
         """
         List all repros with full metadata.
 
         Args:
             bundle_id: Optional bundle ID to filter by.
-            lineage: Optional lineage to filter by (server-side filtering).
+            lineages: Optional list of lineages to filter by.
+            hashes: Optional list of hashes to filter by.
 
         Returns:
             List of ReproMetadata objects.
         """
-        # Use server-side lineage filtering for efficiency
-        bugs_response = self.get_reproducible_bugs(bundle_id=bundle_id, lineage=lineage)
+        bugs_response = self.get_reproducible_bugs(
+            bundle_id=bundle_id,
+            lineages=lineages,
+            hashes=hashes,
+        )
         return [ReproMetadata.from_bug_record(bug) for bug in bugs_response.bugs]
 
     def get_repro_by_hash(

@@ -811,10 +811,17 @@ def list_repros(
     if use_octane:
         # Use Octane API
         api_origin = octane_api_origin or get_octane_api_origin()
-        print(f"Fetching repro index from Octane at {api_origin}...")
+        if lineage:
+            print(
+                f"Fetching repros for lineage '{lineage}' from Octane at {api_origin}..."
+            )
+        else:
+            print(f"Fetching repro index from Octane at {api_origin}...")
 
         def fetch_repros(client):
-            return client.list_repros()
+            # Pass lineage filter to server for efficient filtering
+            lineages_filter = [lineage] if lineage else None
+            return client.list_repros(lineages=lineages_filter)
 
         response = octane_api_call(fetch_repros, api_origin=api_origin)
     else:
@@ -1047,6 +1054,11 @@ def download_fixtures(
         "--octane-api-origin",
         help="Octane API origin URL (only used with --use-octane)",
     ),
+    hashes: str = typer.Option(
+        "",
+        "--hashes",
+        help="Comma-delimited list of specific repro hashes to download (skips listing step if provided)",
+    ),
 ):
     """Download and extract fixtures for verified repros from FuzzCorp NG or Octane API."""
     # Create output directories
@@ -1065,16 +1077,30 @@ def download_fixtures(
     try:
         # Create HTTP client and fetch repros
         section_names_list = section_names.split(",")
+        hashes_list = (
+            [h.strip() for h in hashes.split(",") if h.strip()] if hashes else []
+        )
         download_list = []
 
         if use_octane:
             # Use Octane API
             api_origin = octane_api_origin or get_octane_api_origin()
             print(f"Using Octane API at {api_origin}")
-            print(f"Fetching repro index ...")
 
-            def fetch_repros(client):
-                return client.list_repros()
+            if hashes_list:
+                # If specific hashes provided, use bulk filtering for efficiency
+                print(f"Fetching {len(hashes_list)} specific repro(s) by hash...")
+
+                def fetch_repros(client):
+                    return client.list_repros(
+                        hashes=hashes_list, lineages=section_names_list
+                    )
+
+            else:
+                print(f"Fetching repro index...")
+
+                def fetch_repros(client):
+                    return client.list_repros(lineages=section_names_list)
 
             response = octane_api_call(fetch_repros, api_origin=api_origin)
         else:
@@ -1094,7 +1120,9 @@ def download_fixtures(
 
         print(f"Bundle ID: {response.bundle_id}\n")
 
-        # Process each requested lineage
+        # Process each requested lineage and build metadata cache in one pass
+        metadata_cache = {}
+
         for section_name in section_names_list:
             section_name = section_name.strip()
             print(f"Processing lineage: {section_name}")
@@ -1115,9 +1143,13 @@ def download_fixtures(
                 print(f"  [WARNING] No verified repros found for {section_name}")
                 continue
 
-            # Add to download list and cache metadata from first API call
+            # Add to download list and cache metadata in one pass
             for repro in verified_repros:
                 download_list.append((section_name, repro.hash))
+                # Cache metadata directly (Octane provides BugRecord, FuzzCorp doesn't)
+                if use_octane and repro.bug_record:
+                    metadata = ReproMetadata.from_bug_record(repro.bug_record)
+                    metadata_cache[repro.hash] = metadata
 
             print(f"  Found {len(verified_repros)} verified repro(s)")
 
@@ -1125,25 +1157,15 @@ def download_fixtures(
             print("\n[ERROR] No repros to download")
             raise typer.Exit(code=1)
 
-        # Build metadata cache from the data already fetched by list_repros()
-        # (avoids redundant second API call)
-        metadata_cache = {}
-
-        download_hashes = {hash_val for _, hash_val in download_list}
-
+        # For Octane, metadata cache is already built above
         if use_octane:
-            # Octane: list_repros() already fetched full BugRecord data
-            print(f"\nUsing metadata from initial fetch...")
-            for section_name in section_names_list:
-                section_name = section_name.strip()
-                lineage_repros = response.lineages.get(section_name, [])
-                for repro in lineage_repros:
-                    if repro.hash in download_hashes and repro.bug_record:
-                        metadata = ReproMetadata.from_bug_record(repro.bug_record)
-                        metadata_cache[repro.hash] = metadata
-                        print(
-                            f"    Repro {repro.hash[:8]} ({metadata.lineage}): {len(metadata.artifact_hashes)} artifact(s)"
-                        )
+            print(
+                f"\nCached metadata for {len(metadata_cache)} repro(s) from initial fetch"
+            )
+            for repro_hash, metadata in metadata_cache.items():
+                print(
+                    f"    Repro {repro_hash[:8]} ({metadata.lineage}): {len(metadata.artifact_hashes)} artifact(s)"
+                )
         else:
             # FuzzCorp: need to fetch full metadata separately
             print(f"\nFetching metadata for selected repros...")
@@ -1155,7 +1177,7 @@ def download_fixtures(
                 project=config.get_project(),
                 http2=True,
             ) as client:
-                # Fetch metadata per lineage (server can efficiently filter per lineage)
+                # Fetch metadata per lineage
                 for lineage in lineages_to_fetch:
                     lineage_repros = client.list_repros_full(
                         lineage=lineage,
@@ -1384,6 +1406,11 @@ def download_crashes(
         "--octane-api-origin",
         help="Octane API origin URL (only used with --use-octane)",
     ),
+    hashes: str = typer.Option(
+        "",
+        "--hashes",
+        help="Comma-delimited list of specific repro hashes to download (skips listing step if provided)",
+    ),
 ):
     """Download raw .crash files (repros) for given lineages."""
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -1393,19 +1420,38 @@ def download_crashes(
     globals.octane_api_origin = octane_api_origin
 
     try:
-        # List all repros
-        print("Fetching repro index ...")
+        section_names_list = [s.strip() for s in section_names.split(",") if s.strip()]
+        hashes_list = (
+            [h.strip() for h in hashes.split(",") if h.strip()] if hashes else []
+        )
 
+        # Fetch repros
         if use_octane:
             api_origin = octane_api_origin or get_octane_api_origin()
             print(f"Using Octane API at {api_origin}")
 
-            def fetch_repros(client):
-                return client.list_repros()
+            if hashes_list:
+                # If specific hashes provided, use bulk filtering for efficiency
+                print(f"Fetching {len(hashes_list)} specific repro(s) by hash...")
+
+                def fetch_repros(client):
+                    return client.list_repros(
+                        hashes=hashes_list,
+                        lineages=section_names_list if section_names_list else None,
+                    )
+
+            else:
+                print(f"Fetching repro index...")
+
+                def fetch_repros(client):
+                    return client.list_repros(
+                        lineages=section_names_list if section_names_list else None
+                    )
 
             response = octane_api_call(fetch_repros, api_origin=api_origin)
         else:
             # Auth/config
+            print("Fetching repro index ...")
             config = get_fuzzcorp_auth(interactive=interactive)
             if not config:
                 print("[ERROR] Failed to authenticate with FuzzCorp API")
@@ -1416,10 +1462,12 @@ def download_crashes(
 
             response = fuzzcorp_api_call(config, fetch_repros, interactive=interactive)
 
-        # Prepare worker globals and task list
+        # Prepare worker globals and task list, building metadata cache in one pass
         globals.output_dir = output_dir
         download_list = []
-        for lineage in [s.strip() for s in section_names.split(",") if s.strip()]:
+        metadata_cache = {}
+
+        for lineage in section_names_list:
             lineage_repros = response.lineages.get(lineage, [])
             if not lineage_repros:
                 print(f"[WARNING] No repros found for lineage {lineage}")
@@ -1432,28 +1480,21 @@ def download_crashes(
                 continue
             for repro in verified:
                 download_list.append((lineage, repro.hash))
+                # Cache metadata directly for Octane
+                if use_octane and repro.bug_record:
+                    metadata = ReproMetadata.from_bug_record(repro.bug_record)
+                    metadata_cache[repro.hash] = metadata
 
-        # Build metadata cache
+        # Build metadata cache for non-Octane or report cached count
         if download_list:
-            metadata_cache = {}
-            selection = {h for _, h in download_list}
-
             if use_octane:
-                # Octane: list_repros() already fetched full BugRecord data
-                # Use it directly instead of making another API call
-                print("\nUsing metadata from initial fetch...")
-                for lineage in [
-                    s.strip() for s in section_names.split(",") if s.strip()
-                ]:
-                    lineage_repros = response.lineages.get(lineage, [])
-                    for repro in lineage_repros:
-                        if repro.hash in selection and repro.bug_record:
-                            metadata = ReproMetadata.from_bug_record(repro.bug_record)
-                            metadata_cache[repro.hash] = metadata
-                            print(
-                                f"    Repro {repro.hash[:8]} ({metadata.lineage}): {len(metadata.artifact_hashes)} artifact(s)"
-                            )
-                print(f"  Cached metadata for {len(metadata_cache)} repro(s)")
+                print(
+                    f"\nCached metadata for {len(metadata_cache)} repro(s) from initial fetch"
+                )
+                for repro_hash, metadata in metadata_cache.items():
+                    print(
+                        f"    Repro {repro_hash[:8]} ({metadata.lineage}): {len(metadata.artifact_hashes)} artifact(s)"
+                    )
             else:
                 # FuzzCorp: need to fetch full metadata separately
                 print("\nFetching metadata for selected repros...")
@@ -1619,6 +1660,11 @@ def debug_mismatches(
         "--octane-api-origin",
         help="Octane API origin URL (only used with --use-octane)",
     ),
+    hashes: str = typer.Option(
+        "",
+        "--hashes",
+        help="Comma-delimited list of specific repro hashes to debug (skips listing step if provided)",
+    ),
 ):
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
 
@@ -1634,6 +1680,7 @@ def debug_mismatches(
     fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
     repro_urls_list = repro_urls.split(",") if repro_urls else []
     section_names_list = section_names.split(",") if section_names else []
+    hashes_list = [h.strip() for h in hashes.split(",") if h.strip()] if hashes else []
 
     custom_data_urls = []
 
@@ -1641,10 +1688,24 @@ def debug_mismatches(
     if use_octane:
         api_origin = octane_api_origin or get_octane_api_origin()
         print(f"Using Octane API at {api_origin}")
-        print(f"Fetching repro index...")
 
-        def fetch_repros(client):
-            return client.list_repros()
+        if hashes_list:
+            # If specific hashes provided, use bulk filtering for efficiency
+            print(f"Fetching {len(hashes_list)} specific repro(s) by hash...")
+
+            def fetch_repros(client):
+                return client.list_repros(
+                    hashes=hashes_list,
+                    lineages=section_names_list if section_names_list else None,
+                )
+
+        else:
+            print(f"Fetching repro index...")
+
+            def fetch_repros(client):
+                return client.list_repros(
+                    lineages=section_names_list if section_names_list else None
+                )
 
         response = octane_api_call(fetch_repros, api_origin=api_origin)
         config = None  # Not needed for Octane
@@ -1663,7 +1724,9 @@ def debug_mismatches(
 
         response = fuzzcorp_api_call(config, fetch_repros, interactive=True)
 
-    # Process each requested lineage
+    # Process each requested lineage and build metadata cache in one pass
+    metadata_cache = {}
+
     for section_name in section_names_list:
         print(f"Fetching crashes for lineage {section_name} ...")
 
@@ -1683,34 +1746,30 @@ def debug_mismatches(
             print(f"No verified repros found for {section_name}")
             continue
 
-        # Add to download list
+        # Add to download list and cache metadata in one pass
         for repro in verified_repros:
             custom_data_urls.append((section_name, repro.hash))
+            # Cache metadata directly for Octane
+            if use_octane and repro.bug_record:
+                metadata = ReproMetadata.from_bug_record(repro.bug_record)
+                metadata_cache[repro.hash] = metadata
 
         print(f"Found {len(verified_repros)} verified repro(s) for {section_name}")
 
     ld_preload = os.environ.pop("LD_PRELOAD", None)
 
     num_test_cases = len(custom_data_urls)
-    metadata_cache = None
 
     if num_test_cases > 0:
-        metadata_cache = {}
-        download_hashes = {hash_val for _, hash_val in custom_data_urls}
-
         if use_octane:
-            # Octane: list_repros() already fetched full BugRecord data
-            # Use it directly instead of making another API call
-            print(f"Using metadata from initial fetch...")
-            for section_name in section_names_list:
-                lineage_repros = response.lineages.get(section_name, [])
-                for repro in lineage_repros:
-                    if repro.hash in download_hashes and repro.bug_record:
-                        metadata = ReproMetadata.from_bug_record(repro.bug_record)
-                        metadata_cache[repro.hash] = metadata
-                        print(
-                            f"    Repro {repro.hash[:8]} ({metadata.lineage}): {len(metadata.artifact_hashes)} artifact(s)"
-                        )
+            # Octane: metadata already cached above
+            print(
+                f"Cached metadata for {len(metadata_cache)} repro(s) from initial fetch"
+            )
+            for repro_hash, metadata in metadata_cache.items():
+                print(
+                    f"    Repro {repro_hash[:8]} ({metadata.lineage}): {len(metadata.artifact_hashes)} artifact(s)"
+                )
         else:
             # FuzzCorp: need to fetch full metadata separately
             print(f"Fetching metadata for selected repros...")
@@ -1722,7 +1781,7 @@ def debug_mismatches(
                 project=config.get_project(),
                 http2=True,
             ) as client:
-                # Fetch metadata per lineage (server can efficiently filter per lineage)
+                # Fetch metadata per lineage
                 for lineage in lineages_to_fetch:
                     lineage_repros = client.list_repros_full(
                         lineage=lineage,
