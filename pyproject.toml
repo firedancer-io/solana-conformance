@@ -48,3 +48,10 @@ dev = [
 [build-system]
 requires = ["setuptools", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
+
+[tool.black]
+extend-exclude = '''
+/(
+    src/test_suite/flatbuffers
+)/
+'''
