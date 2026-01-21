@@ -3,7 +3,7 @@ FlatBuffers to Protobuf conversion utilities for solana-conformance.
 
 This module provides:
 1. Detection of FlatBuffers vs Protobuf format
-2. Parsing of FlatBuffers files  
+2. Parsing of FlatBuffers files
 3. Conversion from FlatBuffers to Protobuf for downstream processing
 
 This consolidates and extends the existing elf_proto_converter.py functionality
