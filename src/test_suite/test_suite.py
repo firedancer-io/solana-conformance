@@ -1657,7 +1657,7 @@ def debug_mismatches(
     log_level: int = typer.Option(
         5,
         "--log-level",
-        "-l",
+        "-L",
         help="FD logging level",
     ),
     randomize_output_buffer: bool = typer.Option(
@@ -2555,7 +2555,7 @@ def create_env(
     log_level: int = typer.Option(
         5,
         "--log-level",
-        "-l",
+        "-L",
         help="FD logging level",
     ),
     randomize_output_buffer: bool = typer.Option(

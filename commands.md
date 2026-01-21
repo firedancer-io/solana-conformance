@@ -89,7 +89,7 @@ $ solana-conformance create-env [OPTIONS]
 * `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
 * `-n, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
 * `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
-* `-l, --log-level INTEGER`: FD logging level  [default: 5]
+* `-L, --log-level INTEGER`: FD logging level  [default: 5]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-l, --section-limit INTEGER`: Limit number of fixture per section  [default: 0]
@@ -177,7 +177,7 @@ $ solana-conformance debug-mismatches [OPTIONS]
 * `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
 * `-n, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
 * `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
-* `-l, --log-level INTEGER`: FD logging level  [default: 5]
+* `-L, --log-level INTEGER`: FD logging level  [default: 5]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-l, --section-limit INTEGER`: Limit number of fixture per section  [default: 0]

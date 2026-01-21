@@ -15,7 +15,7 @@ dependencies = [
   "Cython>=3.0.9",
   "tqdm~=4.66.0",
   "bs4~=0.0.2",
-  "click>=8.0.0,<9.0.0",
+  "click>=8.0.0,<8.2.0",
   "httpx[http2]~=0.27.0",
   "protobuf>=6.33.0",
   "flatbuffers>=24.0.0",
@@ -51,7 +51,7 @@ build-backend = "setuptools.build_meta"
 [tool.black]
 extend-exclude = '''
 /(
-    src/test_suite/flatbuffers
-    | .*_pb2\.py
+    /flatbuffers/
+    | _pb2\.py$
 )/
 '''
