@@ -8,7 +8,6 @@ from typing import Callable, TypeVar, Any
 from test_suite.fuzzcorp_auth import get_fuzzcorp_auth, FuzzCorpAuth
 from test_suite.fuzzcorp_api_client import FuzzCorpAPIClient
 
-
 T = TypeVar("T")
 
 

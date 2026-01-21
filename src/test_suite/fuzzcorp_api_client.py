@@ -6,7 +6,6 @@ from datetime import datetime
 from typing import Optional, Dict, List, Any, Callable
 import httpx
 
-
 # API Constants (from fuzzcorp-ng/ui/endpoints*.go)
 API_PREFIX = "/api/"
 PROTECTED_PREFIX = API_PREFIX + "protected/"

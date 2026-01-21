@@ -5,6 +5,7 @@ Setup test data for integration tests.
 This script copies a small set of fixtures and contexts from test-vectors
 or generates minimal test data if test-vectors are not available.
 """
+
 import argparse
 import shutil
 import sys

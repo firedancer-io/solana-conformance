@@ -31,7 +31,6 @@ import test_suite.elf_loader.codec_utils as elf_codec
 
 import test_suite.type.diff_utils as type_diff
 
-
 ElfLoaderHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_elf_loader_v1",
     fixture_desc=elf_pb.ELFLoaderFixture.DESCRIPTOR,

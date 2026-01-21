@@ -14,7 +14,6 @@ import threading
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-
 # Thread-safe caches
 _ASAN_LOOKUP_LOCK = threading.Lock()
 _ASAN_PATH_CACHE: Optional[str] = None
