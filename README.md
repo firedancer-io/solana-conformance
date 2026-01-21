@@ -158,13 +158,9 @@ with open('fixture.fix', 'rb') as f:
     fmt = detect_format(f.read())  # Returns 'flatbuffers', 'protobuf', or 'unknown'
 ```
 
-## Octane Integration
-
-Octane is the fuzzing orchestrator that manages bug discovery, validation, and artifact storage. `solana-conformance` can download bugs and fixtures directly from Octane.
-
 ### Setup
 
-1. **Install Octane dependencies:**
+1. **Install dependencies:**
    ```sh
    pip install -e ".[octane]"
    ```
@@ -178,12 +174,7 @@ Octane is the fuzzing orchestrator that manages bug discovery, validation, and a
    export GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
    ```
 
-3. **Set Octane API endpoint** (optional, defaults to localhost):
-   ```sh
-   export OCTANE_API_ORIGIN=http://your-octane-server:5000
-   ```
-
-### Downloading from Octane
+### Debugging workflow
 
 ```sh
 # Download fixtures (prefers .fix files)
@@ -195,18 +186,10 @@ solana-conformance download-crashes --use-octane -n sol_elf_loader_diff -o crash
 # Download a single repro by hash
 solana-conformance download-repro --use-octane <hash> -l sol_elf_loader_diff -o output/
 
-# Debug a mismatch from Octane
+# Debug a mismatch
 solana-conformance debug-mismatch <hash> -l sol_elf_loader_diff --use-octane \
     -s $SOLFUZZ_TARGET -t $FIREDANCER_TARGET -o debug_output/
 ```
-
-### File Formats
-
-Octane stores artifacts in two formats:
-- **`.fuzz` files** - Raw fuzzer inputs (FlatBuffers format)
-- **`.fix` files** - Validated fixtures with expected outputs (FlatBuffers or Protobuf)
-
-`solana-conformance` automatically detects and handles both formats.
 
 ### GCS Authentication Troubleshooting
 
