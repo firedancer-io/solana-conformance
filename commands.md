@@ -1,6 +1,6 @@
 # `solana-conformance`
 
-Validate effects from clients using Protobuf messages.
+Validate effects from clients using Protobuf or FlatBuffers fixtures.
 
 **Usage**:
 
@@ -16,6 +16,7 @@ $ solana-conformance [OPTIONS] COMMAND [ARGS]...
 
 **Commands**:
 
+* `check-deps`: Check FlatBuffers and other dependencies...
 * `configure-fuzzcorp`: Configure FuzzCorp API credentials...
 * `create-env`: Set up environment for debugging a...
 * `create-fixtures`: Create test fixtures from a directory of...
@@ -35,6 +36,21 @@ $ solana-conformance [OPTIONS] COMMAND [ARGS]...
 * `mass-regenerate-fixtures`: Regenerate features for fixtures in...
 * `regenerate-fixtures`: Regenerate features in fixture messages.
 * `run-tests`: Run tests on a set of targets with a...
+* `validate-fixtures`: Validate fixture files and report their...
+
+## `solana-conformance check-deps`
+
+Check FlatBuffers and other dependencies status.
+
+**Usage**:
+
+```console
+$ solana-conformance check-deps [OPTIONS]
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
 
 ## `solana-conformance configure-fuzzcorp`
 
@@ -468,4 +484,20 @@ $ solana-conformance run-tests [OPTIONS]
 * `-l, --log-level INTEGER`: FD logging level  [default: 5]
 * `-d, --debug-mode`: Enables debug mode, which spawns a single child process for easier debugging
 * `-fe, --fail-early`: Stop test execution on the first failure
+* `--help`: Show this message and exit.
+
+## `solana-conformance validate-fixtures`
+
+Validate fixture files and report their format and status.
+
+**Usage**:
+
+```console
+$ solana-conformance validate-fixtures [OPTIONS]
+```
+
+**Options**:
+
+* `-i, --input PATH`: Input fixture file or directory of fixture files  [required]
+* `-v, --verbose`: Show detailed information for each fixture
 * `--help`: Show this message and exit.

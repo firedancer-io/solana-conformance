@@ -19,6 +19,8 @@ dependencies = [
   "click<8.2.0",
   "httpx[http2]~=0.27.0",
   "protobuf==6.33.0",
+  "flatbuffers>=24.0.0",
+  "numpy>=1.24.0",
 ]
 
 [project.scripts]

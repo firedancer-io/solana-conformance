@@ -96,7 +96,20 @@ class BugRecord:
 
         bundle_id = data.get("bundle_id") or data.get("bundle") or ""
         lineage = data.get("lineage") or data.get("target_name") or ""
-        status = data.get("status") or "unknown"
+
+        # Status can come from multiple fields:
+        # - "validation_statuses": array from Octane API (e.g., ["reproducible"])
+        # - "status": single string (fallback)
+        validation_statuses = data.get("validation_statuses")
+        if (
+            validation_statuses
+            and isinstance(validation_statuses, list)
+            and len(validation_statuses) > 0
+        ):
+            # Use the first status from the array (most relevant)
+            status = validation_statuses[0]
+        else:
+            status = data.get("status") or "unknown"
 
         # Optional fields
         asset = data.get("asset")
@@ -174,19 +187,68 @@ class BugRecord:
         )
 
     def get_download_urls(self) -> List[str]:
-        """Get all available download URLs in priority order (GCS first, then S3)."""
-        urls = []
+        """Get all available download URLs in priority order (GCS first, then S3).
 
-        # Fixture URLs first (preferred)
+        Deprecated: Use get_repro_download_urls(), get_fixture_download_urls(),
+        or get_crash_download_urls() instead.
+        This method returns repro URLs (.fix with .fuzz fallback) for backwards compatibility.
+        """
+        return self.get_repro_download_urls()
+
+    def get_repro_download_urls(self) -> List[str]:
+        """
+        Get download URLs for repro files: .fix first, then .fuzz as fallback.
+
+        Use this for download-repro / download-repros commands.
+
+        Returns:
+            List of download URLs in priority order:
+            1. Fixture GCS URL (.fix file)
+            2. Fixture S3 URL (.fix file)
+            3. Artifact GCS URLs (.fuzz files) - fallback
+            4. Artifact S3 URLs (.fuzz files) - fallback
+        """
+        urls = []
+        # Fixture URLs first (.fix files)
         if self.fixture_gcs_url:
             urls.append(self.fixture_gcs_url)
         if self.fixture_s3_url:
             urls.append(self.fixture_s3_url)
-
-        # Then artifact URLs
+        # Artifact URLs as fallback (.fuzz files)
         urls.extend(self.artifact_gcs_urls)
         urls.extend(self.artifact_s3_urls)
+        return urls
 
+    def get_fixture_download_urls(self) -> List[str]:
+        """
+        Get download URLs for fixture files (.fix) ONLY - no fallback.
+
+        Use this for download-fixture / download-fixtures commands.
+
+        Returns:
+            List of fixture download URLs only (GCS first, then S3).
+            Empty list if no fixture URLs available.
+        """
+        urls = []
+        if self.fixture_gcs_url:
+            urls.append(self.fixture_gcs_url)
+        if self.fixture_s3_url:
+            urls.append(self.fixture_s3_url)
+        return urls
+
+    def get_crash_download_urls(self) -> List[str]:
+        """
+        Get download URLs for crash/fuzz files (.fuzz) ONLY - no fallback.
+
+        Use this for download-crash / download-crashes commands.
+
+        Returns:
+            List of artifact download URLs only (GCS first, then S3).
+            Empty list if no artifact URLs available.
+        """
+        urls = []
+        urls.extend(self.artifact_gcs_urls)
+        urls.extend(self.artifact_s3_urls)
         return urls
 
 
@@ -752,7 +814,22 @@ class OctaneAPIClient:
             try:
                 from google.cloud import storage
 
-                self._gcs_client = storage.Client()
+                # Try to get project from environment or use a default
+                project = os.getenv("GCLOUD_PROJECT") or os.getenv(
+                    "GOOGLE_CLOUD_PROJECT"
+                )
+                if project:
+                    self._gcs_client = storage.Client(project=project)
+                else:
+                    # Let the client try to detect from credentials/environment
+                    try:
+                        self._gcs_client = storage.Client()
+                    except OSError:
+                        # If project can't be determined, use anonymous client for public buckets
+                        # or a default project for Firedancer fuzzing
+                        self._gcs_client = storage.Client(
+                            project="isol-firedancer-fuzzing"
+                        )
             except ImportError:
                 raise ImportError(
                     "google-cloud-storage is required for GCS downloads. "
@@ -868,28 +945,28 @@ class OctaneAPIClient:
         else:
             raise ValueError(f"Unsupported URL scheme: {url}")
 
-    def download_bug_artifact(
+    def download_bug_repro(
         self,
         bug: BugRecord,
         progress_callback: Optional[Callable[[int, int], None]] = None,
     ) -> bytes:
         """
-        Download artifact data for a bug.
+        Download repro data for a bug: .fix first, then .fuzz as fallback.
 
-        Tries cloud storage URLs in priority order (GCS first, then S3).
+        Use this for download-repro / download-repros commands.
 
         Args:
             bug: BugRecord with cloud storage URLs.
             progress_callback: Optional callback for progress updates.
 
         Returns:
-            Artifact data as bytes (usually a ZIP file).
+            Repro data as bytes (.fix preferred, .fuzz fallback).
 
         Raises:
             ValueError: If no download URLs are available.
             Exception: If all download attempts fail.
         """
-        urls = bug.get_download_urls()
+        urls = bug.get_repro_download_urls()
 
         if not urls:
             raise ValueError(
@@ -905,7 +982,202 @@ class OctaneAPIClient:
                 last_error = e
                 continue
 
-        raise last_error or ValueError(f"Failed to download bug {bug.hash}")
+        raise last_error or ValueError(f"Failed to download repro for bug {bug.hash}")
+
+    def download_bug_fixture(
+        self,
+        bug: BugRecord,
+        progress_callback: Optional[Callable[[int, int], None]] = None,
+    ) -> bytes:
+        """
+        Download fixture data (.fix file) ONLY for a bug - no fallback to .fuzz.
+
+        Use this for download-fixture / download-fixtures commands.
+
+        Args:
+            bug: BugRecord with cloud storage URLs.
+            progress_callback: Optional callback for progress updates.
+
+        Returns:
+            Fixture data as bytes.
+
+        Raises:
+            ValueError: If no fixture URLs are available.
+            Exception: If all download attempts fail.
+        """
+        urls = bug.get_fixture_download_urls()
+
+        if not urls:
+            raise ValueError(
+                f"No fixture URLs available for bug {bug.hash}. "
+                f"Bug may not have a .fix file uploaded."
+            )
+
+        last_error = None
+        for url in urls:
+            try:
+                return self._download_from_url(url, progress_callback)
+            except Exception as e:
+                last_error = e
+                continue
+
+        raise last_error or ValueError(f"Failed to download fixture for bug {bug.hash}")
+
+    def download_bug_crash(
+        self,
+        bug: BugRecord,
+        progress_callback: Optional[Callable[[int, int], None]] = None,
+    ) -> bytes:
+        """
+        Download crash data (.fuzz file) ONLY for a bug - no fallback to .fix.
+
+        Use this for download-crash / download-crashes commands.
+
+        Args:
+            bug: BugRecord with cloud storage URLs.
+            progress_callback: Optional callback for progress updates.
+
+        Returns:
+            Crash data as bytes.
+
+        Raises:
+            ValueError: If no crash/artifact URLs are available.
+            Exception: If all download attempts fail.
+        """
+        urls = bug.get_crash_download_urls()
+
+        if not urls:
+            raise ValueError(
+                f"No crash URLs available for bug {bug.hash}. "
+                f"Bug may not have a .fuzz file uploaded."
+            )
+
+        last_error = None
+        for url in urls:
+            try:
+                return self._download_from_url(url, progress_callback)
+            except Exception as e:
+                last_error = e
+                continue
+
+        raise last_error or ValueError(f"Failed to download crash for bug {bug.hash}")
+
+    def download_bug_artifact(
+        self,
+        bug: BugRecord,
+        progress_callback: Optional[Callable[[int, int], None]] = None,
+    ) -> bytes:
+        """
+        Download artifact data for a bug.
+
+        Deprecated: Use download_bug_repro(), download_bug_fixture(), or download_bug_crash() instead.
+        This method uses repro behavior (.fix with .fuzz fallback) for backwards compatibility.
+
+        Args:
+            bug: BugRecord with cloud storage URLs.
+            progress_callback: Optional callback for progress updates.
+
+        Returns:
+            Artifact data as bytes.
+
+        Raises:
+            ValueError: If no download URLs are available.
+            Exception: If all download attempts fail.
+        """
+        return self.download_bug_repro(bug, progress_callback)
+
+    def download_repro_data(
+        self,
+        repro_hash: str,
+        lineage: str,
+        bundle_id: Optional[str] = None,
+        progress_callback: Optional[Callable[[int, int], None]] = None,
+        desc: Optional[str] = None,
+    ) -> bytes:
+        """
+        Download repro data by hash: .fix first, then .fuzz as fallback.
+
+        Use this for download-repro / download-repros commands.
+        Downloads directly from cloud storage (GCS/S3), never proxied through Octane.
+
+        Args:
+            repro_hash: Hash of the repro to download.
+            lineage: Lineage name for the repro.
+            bundle_id: Optional bundle ID.
+            progress_callback: Optional callback for progress updates.
+            desc: Optional description for progress display.
+
+        Returns:
+            Repro data as bytes (.fix preferred, .fuzz fallback).
+        """
+        # Get bug metadata - let ValueError propagate if bug not found
+        bug = self.get_bug_by_hash(repro_hash, bundle_id=bundle_id, lineage=lineage)
+        # Download repro - let ValueError propagate if no URLs available
+        return self.download_bug_repro(bug, progress_callback)
+
+    def download_fixture_data(
+        self,
+        artifact_hash: str,
+        lineage: str,
+        bundle_id: Optional[str] = None,
+        progress_callback: Optional[Callable[[int, int], None]] = None,
+        desc: Optional[str] = None,
+    ) -> bytes:
+        """
+        Download fixture data (.fix file) ONLY by hash - no fallback to .fuzz.
+
+        Use this for download-fixture / download-fixtures commands.
+        Downloads directly from cloud storage (GCS/S3), never proxied through Octane.
+
+        Args:
+            artifact_hash: Hash of the artifact (bug hash) to download.
+            lineage: Lineage name for the artifact.
+            bundle_id: Optional bundle ID.
+            progress_callback: Optional callback for progress updates.
+            desc: Optional description for progress display.
+
+        Returns:
+            Fixture data as bytes.
+
+        Raises:
+            ValueError: If no fixture URL available for this bug.
+        """
+        # Get bug metadata - let ValueError propagate if bug not found
+        bug = self.get_bug_by_hash(artifact_hash, bundle_id=bundle_id, lineage=lineage)
+        # Download fixture - let ValueError propagate if no fixture URLs
+        return self.download_bug_fixture(bug, progress_callback)
+
+    def download_crash_data(
+        self,
+        crash_hash: str,
+        lineage: str,
+        bundle_id: Optional[str] = None,
+        progress_callback: Optional[Callable[[int, int], None]] = None,
+        desc: Optional[str] = None,
+    ) -> bytes:
+        """
+        Download crash data (.fuzz file) ONLY by hash - no fallback to .fix.
+
+        Use this for download-crash / download-crashes commands.
+        Downloads directly from cloud storage (GCS/S3), never proxied through Octane.
+
+        Args:
+            crash_hash: Hash of the crash (bug hash) to download.
+            lineage: Lineage name for the crash.
+            bundle_id: Optional bundle ID.
+            progress_callback: Optional callback for progress updates.
+            desc: Optional description for progress display.
+
+        Returns:
+            Crash data as bytes.
+
+        Raises:
+            ValueError: If no crash/artifact URL available for this bug.
+        """
+        # Get bug metadata - let ValueError propagate if bug not found
+        bug = self.get_bug_by_hash(crash_hash, bundle_id=bundle_id, lineage=lineage)
+        # Download crash - let ValueError propagate if no crash URLs
+        return self.download_bug_crash(bug, progress_callback)
 
     def download_artifact_data(
         self,
@@ -918,9 +1190,8 @@ class OctaneAPIClient:
         """
         Download artifact data by hash.
 
-        Downloads directly from cloud storage (GCS/S3), never proxied through Octane.
-        Uses the /api/bugs/<hash>/artifact endpoint to get download URLs, then
-        downloads directly from the cloud.
+        Deprecated: Use download_repro_data(), download_fixture_data(), or download_crash_data() instead.
+        This method uses repro behavior (.fix with .fuzz fallback) for backwards compatibility.
 
         Args:
             artifact_hash: Hash of the artifact (bug hash) to download.
@@ -932,58 +1203,8 @@ class OctaneAPIClient:
         Returns:
             Artifact data as bytes.
         """
-        # Primary: Get URLs from API, download directly from cloud
-        try:
-            return self.download_bug_artifact_native(
-                bug_hash=artifact_hash,
-                bundle_id=bundle_id,
-                lineage=lineage,
-                progress_callback=progress_callback,
-            )
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code != 404:
-                raise
-            # Fall through to try getting URLs from bug metadata
-        except Exception:
-            # Fall through to try getting URLs from bug metadata
-            pass
-
-        # Fallback: Get bug metadata and download directly from cloud URLs
-        try:
-            bug = self.get_bug_by_hash(
-                artifact_hash, bundle_id=bundle_id, lineage=lineage
-            )
-            return self.download_bug_artifact(bug, progress_callback)
-        except ValueError:
-            pass
-
-        raise ValueError(f"No bug found for hash: {artifact_hash}")
-
-    def download_repro_data(
-        self,
-        repro_hash: str,
-        lineage: str,
-        bundle_id: Optional[str] = None,
-        progress_callback: Optional[Callable[[int, int], None]] = None,
-        desc: Optional[str] = None,
-    ) -> bytes:
-        """
-        Download repro data by hash.
-
-        This is a compatibility method that calls download_artifact_data.
-
-        Args:
-            repro_hash: Hash of the repro to download.
-            lineage: Lineage name for the repro.
-            bundle_id: Optional bundle ID.
-            progress_callback: Optional callback for progress updates.
-            desc: Optional description for progress display.
-
-        Returns:
-            Repro data as bytes.
-        """
-        return self.download_artifact_data(
-            artifact_hash=repro_hash,
+        return self.download_repro_data(
+            repro_hash=artifact_hash,
             lineage=lineage,
             bundle_id=bundle_id,
             progress_callback=progress_callback,

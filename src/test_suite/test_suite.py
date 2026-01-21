@@ -52,7 +52,11 @@ import httpx
 from test_suite.fuzzcorp_auth import get_fuzzcorp_auth, FuzzCorpAuth
 from test_suite.fuzzcorp_api_client import FuzzCorpAPIClient
 from test_suite.fuzzcorp_utils import fuzzcorp_api_call
-from test_suite.octane_api_client import OctaneAPIClient, DEFAULT_OCTANE_API_ORIGIN
+from test_suite.octane_api_client import (
+    OctaneAPIClient,
+    DEFAULT_OCTANE_API_ORIGIN,
+    ReproMetadata,
+)
 from test_suite.octane_utils import octane_api_call, get_octane_api_origin
 
 """
@@ -65,7 +69,9 @@ Harness options:
 - ElfHarness
 """
 
-app = typer.Typer(help=f"Validate effects from clients using Protobuf messages.")
+app = typer.Typer(
+    help="Validate effects from clients using Protobuf or FlatBuffers fixtures."
+)
 
 
 @app.command(help=f"Execute Context or Fixture message(s) and print the Effects.")
@@ -703,6 +709,94 @@ def list_harness_types():
     return True
 
 
+@app.command(help="Check FlatBuffers and other dependencies status.")
+def check_deps():
+    """
+    Check if all dependencies are properly installed and configured.
+
+    This is useful for troubleshooting issues with FlatBuffers fixtures.
+    """
+    from test_suite.flatbuffers_utils import print_dependency_status
+
+    ready = print_dependency_status()
+    return ready
+
+
+@app.command(help="Validate fixture files and report their format and status.")
+def validate_fixtures(
+    input_dir: Path = typer.Option(
+        ...,
+        "--input",
+        "-i",
+        help="Input fixture file or directory of fixture files",
+    ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Show detailed information for each fixture",
+    ),
+):
+    """
+    Validate fixture files and report their format (Protobuf or FlatBuffers).
+
+    Useful for debugging fixture loading issues or verifying downloads.
+    """
+    from test_suite.flatbuffers_utils import FixtureLoader
+
+    if input_dir.is_file():
+        files = [input_dir]
+    else:
+        files = list(input_dir.glob("*.fix"))
+        files.extend(input_dir.glob("*.elfctx"))
+        files.extend(input_dir.glob("*.instrctx"))
+        files.extend(input_dir.glob("*.syscallctx"))
+        files.extend(input_dir.glob("*.vmctx"))
+        files.extend(input_dir.glob("*.txnctx"))
+        files.extend(input_dir.glob("*.blockctx"))
+
+    if not files:
+        print(f"No fixture files found in {input_dir}")
+        return False
+
+    valid_count = 0
+    invalid_count = 0
+    format_counts = {"protobuf": 0, "flatbuffers": 0, "unknown": 0}
+
+    for filepath in sorted(files):
+        loader = FixtureLoader(filepath)
+
+        if loader.is_valid:
+            valid_count += 1
+            format_counts[loader.format_type] += 1
+            if verbose:
+                entrypoint = loader.fn_entrypoint or "N/A"
+                elf_size = len(loader.elf_data) if loader.elf_data else 0
+                print(f"[OK] {filepath.name}")
+                print(f"     Format: {loader.format_type}")
+                print(f"     Entrypoint: {entrypoint}")
+                if elf_size > 0:
+                    print(f"     ELF size: {elf_size} bytes")
+        else:
+            invalid_count += 1
+            format_counts["unknown"] += 1
+            if verbose:
+                print(f"[FAIL] {filepath.name}")
+                print(f"       Error: {loader.error_message}")
+            else:
+                print(f"[FAIL] {filepath.name}: {loader.error_message}")
+
+    print()
+    print(f"Summary: {len(files)} files checked")
+    print(f"  Valid:   {valid_count}")
+    print(f"  Invalid: {invalid_count}")
+    print(
+        f"  Formats: {format_counts['protobuf']} Protobuf, {format_counts['flatbuffers']} FlatBuffers"
+    )
+
+    return invalid_count == 0
+
+
 @app.command(help=f"Configure FuzzCorp API credentials (interactive).")
 def configure_fuzzcorp(
     force: bool = typer.Option(
@@ -1275,7 +1369,8 @@ def download_crash(
                 http2=True,
             ) as client:
                 print(f"Downloading crash {repro_hash} from lineage {lineage}...")
-                data = client.download_repro_data(
+                # Use download_crash_data to prefer .fuzz files over .fix files
+                data = client.download_crash_data(
                     repro_hash,
                     lineage,
                     desc=f"Downloading {repro_hash[:8]}.crash",
