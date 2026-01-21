@@ -44,6 +44,11 @@ jobs:
           # Upgrade protobuf to match gencode version
           pip install --upgrade protobuf
 
+      - name: Install FlatBuffers compiler
+        run: |
+          ./ensure_flatc.sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Activate venv and fetch/generate protos and flatbuffers
         run: |
           source test_suite_env/bin/activate

@@ -4,7 +4,6 @@ description = "Conformance test client targets against Solana"
 authors = [
   { name = "Manik Jain", email = "mjain@jumptrading.com"},
   { name = "Charles Moyes", email = "cmoyes@jumptrading.com"},
-
 ]
 dynamic = ['version']
 readme = "README.md"
@@ -16,7 +15,7 @@ dependencies = [
   "Cython>=3.0.9",
   "tqdm~=4.66.0",
   "bs4~=0.0.2",
-  "click<8.2.0",
+  "click>=8.0.0,<9.0.0",
   "httpx[http2]~=0.27.0",
   "protobuf>=6.33.0",
   "flatbuffers>=24.0.0",
@@ -42,7 +41,7 @@ dev = [
   "pre-commit>=2.20.0",
   "solana-conformance[test]",
   "build>=0.10.0",
-  "black>=22.10.0",
+  "black==24.3.0",
 ]
 
 [build-system]
@@ -53,5 +52,6 @@ build-backend = "setuptools.build_meta"
 extend-exclude = '''
 /(
     src/test_suite/flatbuffers
+    | .*_pb2\.py
 )/
 '''
