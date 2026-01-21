@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class FixtureMetadata(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,7 +20,6 @@ class FixtureMetadata(object):
     def GetRootAsFixtureMetadata(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     # FixtureMetadata
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -34,28 +31,20 @@ class FixtureMetadata(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-
 def FixtureMetadataStart(builder):
     builder.StartObject(1)
-
 
 def Start(builder):
     FixtureMetadataStart(builder)
 
-
 def FixtureMetadataAddFnEntrypoint(builder, fnEntrypoint):
-    builder.PrependUOffsetTRelativeSlot(
-        0, flatbuffers.number_types.UOffsetTFlags.py_type(fnEntrypoint), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(fnEntrypoint), 0)
 
 def AddFnEntrypoint(builder, fnEntrypoint):
     FixtureMetadataAddFnEntrypoint(builder, fnEntrypoint)
 
-
 def FixtureMetadataEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return FixtureMetadataEnd(builder)

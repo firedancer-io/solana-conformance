@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class Account(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,7 +20,6 @@ class Account(object):
     def GetRootAsAccount(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     # Account
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -33,7 +30,6 @@ class Account(object):
         if o != 0:
             x = o + self._tab.Pos
             from org.solana.sealevel.v2.Pubkey import Pubkey
-
             obj = Pubkey()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -43,9 +39,7 @@ class Account(object):
     def Lamports(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Account
@@ -53,10 +47,7 @@ class Account(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(
-                flatbuffers.number_types.Uint8Flags,
-                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
         return 0
 
     # Account
@@ -82,9 +73,7 @@ class Account(object):
     def Executable(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
-            return bool(
-                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
-            )
+            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
     # Account
@@ -93,78 +82,55 @@ class Account(object):
         if o != 0:
             x = o + self._tab.Pos
             from org.solana.sealevel.v2.Pubkey import Pubkey
-
             obj = Pubkey()
             obj.Init(self._tab.Bytes, x)
             return obj
         return None
 
-
 def AccountStart(builder):
     builder.StartObject(5)
-
 
 def Start(builder):
     AccountStart(builder)
 
-
 def AccountAddAddress(builder, address):
-    builder.PrependStructSlot(
-        0, flatbuffers.number_types.UOffsetTFlags.py_type(address), 0
-    )
-
+    builder.PrependStructSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(address), 0)
 
 def AddAddress(builder, address):
     AccountAddAddress(builder, address)
 
-
 def AccountAddLamports(builder, lamports):
     builder.PrependUint64Slot(1, lamports, 0)
-
 
 def AddLamports(builder, lamports):
     AccountAddLamports(builder, lamports)
 
-
 def AccountAddData(builder, data):
-    builder.PrependUOffsetTRelativeSlot(
-        2, flatbuffers.number_types.UOffsetTFlags.py_type(data), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(data), 0)
 
 def AddData(builder, data):
     AccountAddData(builder, data)
 
-
 def AccountStartDataVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
-
 
 def StartDataVector(builder, numElems):
     return AccountStartDataVector(builder, numElems)
 
-
 def AccountAddExecutable(builder, executable):
     builder.PrependBoolSlot(3, executable, 0)
-
 
 def AddExecutable(builder, executable):
     AccountAddExecutable(builder, executable)
 
-
 def AccountAddOwner(builder, owner):
-    builder.PrependStructSlot(
-        4, flatbuffers.number_types.UOffsetTFlags.py_type(owner), 0
-    )
-
+    builder.PrependStructSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(owner), 0)
 
 def AddOwner(builder, owner):
     AccountAddOwner(builder, owner)
 
-
 def AccountEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return AccountEnd(builder)

@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class ELFLoaderFixture(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,7 +20,6 @@ class ELFLoaderFixture(object):
     def GetRootAsELFLoaderFixture(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     # ELFLoaderFixture
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -33,7 +30,6 @@ class ELFLoaderFixture(object):
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from org.solana.sealevel.v2.FixtureMetadata import FixtureMetadata
-
             obj = FixtureMetadata()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -45,7 +41,6 @@ class ELFLoaderFixture(object):
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from org.solana.sealevel.v2.ELFLoaderCtx import ELFLoaderCtx
-
             obj = ELFLoaderCtx()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -57,54 +52,37 @@ class ELFLoaderFixture(object):
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from org.solana.sealevel.v2.ELFLoaderEffects import ELFLoaderEffects
-
             obj = ELFLoaderEffects()
             obj.Init(self._tab.Bytes, x)
             return obj
         return None
 
-
 def ELFLoaderFixtureStart(builder):
     builder.StartObject(3)
-
 
 def Start(builder):
     ELFLoaderFixtureStart(builder)
 
-
 def ELFLoaderFixtureAddMetadata(builder, metadata):
-    builder.PrependUOffsetTRelativeSlot(
-        0, flatbuffers.number_types.UOffsetTFlags.py_type(metadata), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(metadata), 0)
 
 def AddMetadata(builder, metadata):
     ELFLoaderFixtureAddMetadata(builder, metadata)
 
-
 def ELFLoaderFixtureAddInput(builder, input):
-    builder.PrependUOffsetTRelativeSlot(
-        1, flatbuffers.number_types.UOffsetTFlags.py_type(input), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(input), 0)
 
 def AddInput(builder, input):
     ELFLoaderFixtureAddInput(builder, input)
 
-
 def ELFLoaderFixtureAddOutput(builder, output):
-    builder.PrependUOffsetTRelativeSlot(
-        2, flatbuffers.number_types.UOffsetTFlags.py_type(output), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(output), 0)
 
 def AddOutput(builder, output):
     ELFLoaderFixtureAddOutput(builder, output)
 
-
 def ELFLoaderFixtureEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return ELFLoaderFixtureEnd(builder)

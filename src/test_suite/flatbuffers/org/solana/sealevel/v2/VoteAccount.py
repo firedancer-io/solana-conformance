@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class VoteAccount(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,7 +20,6 @@ class VoteAccount(object):
     def GetRootAsVoteAccount(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     # VoteAccount
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -33,7 +30,6 @@ class VoteAccount(object):
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from org.solana.sealevel.v2.Account import Account
-
             obj = Account()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -43,41 +39,29 @@ class VoteAccount(object):
     def Stake(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
-
 
 def VoteAccountStart(builder):
     builder.StartObject(2)
 
-
 def Start(builder):
     VoteAccountStart(builder)
 
-
 def VoteAccountAddVoteAccount(builder, voteAccount):
-    builder.PrependUOffsetTRelativeSlot(
-        0, flatbuffers.number_types.UOffsetTFlags.py_type(voteAccount), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(voteAccount), 0)
 
 def AddVoteAccount(builder, voteAccount):
     VoteAccountAddVoteAccount(builder, voteAccount)
 
-
 def VoteAccountAddStake(builder, stake):
     builder.PrependUint64Slot(1, stake, 0)
-
 
 def AddStake(builder, stake):
     VoteAccountAddStake(builder, stake)
 
-
 def VoteAccountEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return VoteAccountEnd(builder)

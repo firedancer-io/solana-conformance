@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class Signature(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def SizeOf(cls):
@@ -20,32 +18,17 @@ class Signature(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Signature
-    def Signature(self, j=None):
+    def Signature(self, j = None):
         if j is None:
-            return [
-                self._tab.Get(
-                    flatbuffers.number_types.Uint8Flags,
-                    self._tab.Pos
-                    + flatbuffers.number_types.UOffsetTFlags.py_type(0 + i * 1),
-                )
-                for i in range(self.SignatureLength())
-            ]
+            return [self._tab.Get(flatbuffers.number_types.Uint8Flags, self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(0 + i * 1)) for i in range(self.SignatureLength())]
         elif j >= 0 and j < self.SignatureLength():
-            return self._tab.Get(
-                flatbuffers.number_types.Uint8Flags,
-                self._tab.Pos
-                + flatbuffers.number_types.UOffsetTFlags.py_type(0 + j * 1),
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint8Flags, self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(0 + j * 1))
         else:
             return None
 
     # Signature
     def SignatureAsNumpy(self):
-        return self._tab.GetArrayAsNumpy(
-            flatbuffers.number_types.Uint8Flags,
-            self._tab.Pos + 0,
-            self.SignatureLength(),
-        )
+        return self._tab.GetArrayAsNumpy(flatbuffers.number_types.Uint8Flags, self._tab.Pos + 0, self.SignatureLength())
 
     # Signature
     def SignatureLength(self):
@@ -58,6 +41,6 @@ class Signature(object):
 
 def CreateSignature(builder, signature):
     builder.Prep(1, 64)
-    for _idx0 in range(64, 0, -1):
-        builder.PrependUint8(signature[_idx0 - 1])
+    for _idx0 in range(64 , 0, -1):
+        builder.PrependUint8(signature[_idx0-1])
     return builder.Offset()

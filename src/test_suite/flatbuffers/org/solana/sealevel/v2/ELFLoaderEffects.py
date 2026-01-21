@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class ELFLoaderEffects(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,7 +20,6 @@ class ELFLoaderEffects(object):
     def GetRootAsELFLoaderEffects(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     # ELFLoaderEffects
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -40,7 +37,6 @@ class ELFLoaderEffects(object):
         if o != 0:
             x = o + self._tab.Pos
             from org.solana.sealevel.v2.XXHash import XXHash
-
             obj = XXHash()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -50,27 +46,21 @@ class ELFLoaderEffects(object):
     def TextCnt(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # ELFLoaderEffects
     def TextOff(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # ELFLoaderEffects
     def EntryPc(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # ELFLoaderEffects
@@ -79,76 +69,55 @@ class ELFLoaderEffects(object):
         if o != 0:
             x = o + self._tab.Pos
             from org.solana.sealevel.v2.XXHash import XXHash
-
             obj = XXHash()
             obj.Init(self._tab.Bytes, x)
             return obj
         return None
 
-
 def ELFLoaderEffectsStart(builder):
     builder.StartObject(6)
-
 
 def Start(builder):
     ELFLoaderEffectsStart(builder)
 
-
 def ELFLoaderEffectsAddErrCode(builder, errCode):
     builder.PrependUint8Slot(0, errCode, 0)
-
 
 def AddErrCode(builder, errCode):
     ELFLoaderEffectsAddErrCode(builder, errCode)
 
-
 def ELFLoaderEffectsAddRodataHash(builder, rodataHash):
-    builder.PrependStructSlot(
-        1, flatbuffers.number_types.UOffsetTFlags.py_type(rodataHash), 0
-    )
-
+    builder.PrependStructSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(rodataHash), 0)
 
 def AddRodataHash(builder, rodataHash):
     ELFLoaderEffectsAddRodataHash(builder, rodataHash)
 
-
 def ELFLoaderEffectsAddTextCnt(builder, textCnt):
     builder.PrependUint64Slot(2, textCnt, 0)
-
 
 def AddTextCnt(builder, textCnt):
     ELFLoaderEffectsAddTextCnt(builder, textCnt)
 
-
 def ELFLoaderEffectsAddTextOff(builder, textOff):
     builder.PrependUint64Slot(3, textOff, 0)
-
 
 def AddTextOff(builder, textOff):
     ELFLoaderEffectsAddTextOff(builder, textOff)
 
-
 def ELFLoaderEffectsAddEntryPc(builder, entryPc):
     builder.PrependUint64Slot(4, entryPc, 0)
-
 
 def AddEntryPc(builder, entryPc):
     ELFLoaderEffectsAddEntryPc(builder, entryPc)
 
-
 def ELFLoaderEffectsAddCalldestsHash(builder, calldestsHash):
-    builder.PrependStructSlot(
-        5, flatbuffers.number_types.UOffsetTFlags.py_type(calldestsHash), 0
-    )
-
+    builder.PrependStructSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(calldestsHash), 0)
 
 def AddCalldestsHash(builder, calldestsHash):
     ELFLoaderEffectsAddCalldestsHash(builder, calldestsHash)
 
-
 def ELFLoaderEffectsEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return ELFLoaderEffectsEnd(builder)

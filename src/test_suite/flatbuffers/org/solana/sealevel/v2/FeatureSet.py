@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class FeatureSet(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,7 +20,6 @@ class FeatureSet(object):
     def GetRootAsFeatureSet(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     # FeatureSet
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -32,10 +29,7 @@ class FeatureSet(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(
-                flatbuffers.number_types.Uint64Flags,
-                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 8),
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 8))
         return 0
 
     # FeatureSet
@@ -57,36 +51,26 @@ class FeatureSet(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         return o == 0
 
-
 def FeatureSetStart(builder):
     builder.StartObject(1)
-
 
 def Start(builder):
     FeatureSetStart(builder)
 
-
 def FeatureSetAddFeatures(builder, features):
-    builder.PrependUOffsetTRelativeSlot(
-        0, flatbuffers.number_types.UOffsetTFlags.py_type(features), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(features), 0)
 
 def AddFeatures(builder, features):
     FeatureSetAddFeatures(builder, features)
 
-
 def FeatureSetStartFeaturesVector(builder, numElems):
     return builder.StartVector(8, numElems, 8)
-
 
 def StartFeaturesVector(builder, numElems):
     return FeatureSetStartFeaturesVector(builder, numElems)
 
-
 def FeatureSetEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return FeatureSetEnd(builder)

@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class ELFLoaderCtx(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,7 +20,6 @@ class ELFLoaderCtx(object):
     def GetRootAsELFLoaderCtx(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     # ELFLoaderCtx
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -32,10 +29,7 @@ class ELFLoaderCtx(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(
-                flatbuffers.number_types.Uint8Flags,
-                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
         return 0
 
     # ELFLoaderCtx
@@ -63,7 +57,6 @@ class ELFLoaderCtx(object):
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from org.solana.sealevel.v2.FeatureSet import FeatureSet
-
             obj = FeatureSet()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -73,59 +66,41 @@ class ELFLoaderCtx(object):
     def DeployChecks(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
-            return bool(
-                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
-            )
+            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
-
 
 def ELFLoaderCtxStart(builder):
     builder.StartObject(3)
 
-
 def Start(builder):
     ELFLoaderCtxStart(builder)
 
-
 def ELFLoaderCtxAddElfData(builder, elfData):
-    builder.PrependUOffsetTRelativeSlot(
-        0, flatbuffers.number_types.UOffsetTFlags.py_type(elfData), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(elfData), 0)
 
 def AddElfData(builder, elfData):
     ELFLoaderCtxAddElfData(builder, elfData)
 
-
 def ELFLoaderCtxStartElfDataVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
-
 
 def StartElfDataVector(builder, numElems):
     return ELFLoaderCtxStartElfDataVector(builder, numElems)
 
-
 def ELFLoaderCtxAddFeatures(builder, features):
-    builder.PrependUOffsetTRelativeSlot(
-        1, flatbuffers.number_types.UOffsetTFlags.py_type(features), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(features), 0)
 
 def AddFeatures(builder, features):
     ELFLoaderCtxAddFeatures(builder, features)
 
-
 def ELFLoaderCtxAddDeployChecks(builder, deployChecks):
     builder.PrependBoolSlot(2, deployChecks, 0)
-
 
 def AddDeployChecks(builder, deployChecks):
     ELFLoaderCtxAddDeployChecks(builder, deployChecks)
 
-
 def ELFLoaderCtxEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return ELFLoaderCtxEnd(builder)

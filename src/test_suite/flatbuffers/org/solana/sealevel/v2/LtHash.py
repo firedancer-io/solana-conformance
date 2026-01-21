@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class LtHash(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def SizeOf(cls):
@@ -20,30 +18,17 @@ class LtHash(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # LtHash
-    def Hash(self, j=None):
+    def Hash(self, j = None):
         if j is None:
-            return [
-                self._tab.Get(
-                    flatbuffers.number_types.Uint16Flags,
-                    self._tab.Pos
-                    + flatbuffers.number_types.UOffsetTFlags.py_type(0 + i * 2),
-                )
-                for i in range(self.HashLength())
-            ]
+            return [self._tab.Get(flatbuffers.number_types.Uint16Flags, self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(0 + i * 2)) for i in range(self.HashLength())]
         elif j >= 0 and j < self.HashLength():
-            return self._tab.Get(
-                flatbuffers.number_types.Uint16Flags,
-                self._tab.Pos
-                + flatbuffers.number_types.UOffsetTFlags.py_type(0 + j * 2),
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint16Flags, self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(0 + j * 2))
         else:
             return None
 
     # LtHash
     def HashAsNumpy(self):
-        return self._tab.GetArrayAsNumpy(
-            flatbuffers.number_types.Uint16Flags, self._tab.Pos + 0, self.HashLength()
-        )
+        return self._tab.GetArrayAsNumpy(flatbuffers.number_types.Uint16Flags, self._tab.Pos + 0, self.HashLength())
 
     # LtHash
     def HashLength(self):
@@ -56,6 +41,6 @@ class LtHash(object):
 
 def CreateLtHash(builder, hash):
     builder.Prep(2, 2048)
-    for _idx0 in range(1024, 0, -1):
-        builder.PrependUint16(hash[_idx0 - 1])
+    for _idx0 in range(1024 , 0, -1):
+        builder.PrependUint16(hash[_idx0-1])
     return builder.Offset()
