@@ -165,7 +165,14 @@ with open('fixture.fix', 'rb') as f:
    pip install -e ".[octane]"
    ```
 
-2. **Configure GCS credentials** (for downloading artifacts from Google Cloud Storage):
+2. **GCS credentials** (for downloading artifacts from Google Cloud Storage):
+   
+   Credentials are auto-detected in this order:
+   1. `GOOGLE_APPLICATION_CREDENTIALS` environment variable
+   2. gcloud legacy credentials (`~/.config/gcloud/legacy_credentials/<account>/adc.json`)
+   3. GCE metadata service (when running on Google Compute Engine)
+   
+   For manual setup:
    ```sh
    # Option 1: Use gcloud CLI (recommended)
    gcloud auth application-default login
@@ -193,18 +200,23 @@ solana-conformance debug-mismatch <hash> -l sol_elf_loader_diff --use-octane \
 
 ### GCS Authentication Troubleshooting
 
-If you see GCS authentication errors:
+GCS credentials are auto-detected from gcloud legacy credentials, so most users won't need manual setup. If you still see authentication errors:
 
 ```sh
-# Check current credentials
-gcloud auth application-default print-access-token
+# Check if gcloud is authenticated
+gcloud auth list
 
-# Re-authenticate
+# Check for legacy credentials (auto-detected)
+ls ~/.config/gcloud/legacy_credentials/*/adc.json
+
+# Re-authenticate if needed
 gcloud auth application-default login
 
-# Verify project
-gcloud config get-value project
+# Or set credentials explicitly
+export GOOGLE_APPLICATION_CREDENTIALS=~/.config/gcloud/legacy_credentials/<account>/adc.json
 ```
+
+**Note:** On GCE VMs without a service account attached, the metadata service won't work. The tool will automatically fall back to gcloud legacy credentials if available.
 
 ## Setting up Environment
 To setup the `solana-conformance` environment, run the following command and you will be all set:
@@ -256,6 +268,31 @@ Example output:
 ```
 
 ### Common Issues
+
+#### "undefined symbol: __sanitizer_cov_8bit_counters_init"
+
+**Cause:** The shared library was built with sanitizer coverage instrumentation (`-fsanitize-coverage`) but is being loaded outside a fuzzer harness that would normally provide these symbols.
+
+**Fix:** This is now handled automatically! The tool will:
+1. Build a sancov stub library (`/tmp/solana_conformance_sancov_stub/libsancov_stub.so`)
+2. Set up `LD_PRELOAD` with the stub and ASAN libraries
+3. Configure `ASAN_OPTIONS` appropriately
+
+If you still see issues, you can manually set up the environment:
+```sh
+# Locate ASAN library
+ldconfig -p | grep libasan
+
+# Set LD_PRELOAD manually
+export LD_PRELOAD=/lib64/libasan.so.8:/tmp/solana_conformance_sancov_stub/libsancov_stub.so
+export ASAN_OPTIONS=detect_leaks=0:verify_asan_link_order=0
+```
+
+#### "cannot allocate memory in static TLS block"
+
+**Cause:** The shared library uses thread-local storage (TLS) and was loaded via `dlopen()` after program start, when the TLS block is already allocated.
+
+**Fix:** The tool automatically adds target libraries to `LD_PRELOAD` to ensure TLS is allocated at startup. If you see this error, ensure you're using the latest version.
 
 #### "FlatBuffers support not available"
 

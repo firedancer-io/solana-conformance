@@ -38,6 +38,10 @@ from test_suite.util import (
     fetch_with_retries,
     process_items,
 )
+from test_suite.sanitizer_utils import (
+    setup_sanitizer_environment,
+    load_shared_library_safe,
+)
 import resource
 import tqdm
 from test_suite.fuzz_context import *
@@ -124,13 +128,10 @@ def execute(
     if enable_vm_tracing:
         os.environ["ENABLE_VM_TRACING"] = "1"
 
-    try:
-        lib = ctypes.CDLL(shared_library)
-        lib.sol_compat_init(log_level)
-        globals.target_libraries[shared_library] = lib
-        globals.reference_shared_library = shared_library
-    except:
-        set_ld_preload_asan()
+    lib = load_shared_library_safe(str(shared_library))
+    lib.sol_compat_init(log_level)
+    globals.target_libraries[shared_library] = lib
+    globals.reference_shared_library = shared_library
 
     if input.is_file():
         files_to_exec = [input]
@@ -335,10 +336,15 @@ def create_fixtures(
         shutil.rmtree(globals.output_dir)
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Set up sanitizer environment before loading any libraries
+    setup_sanitizer_environment(target_libraries=[str(t) for t in shared_libraries])
+
     # Initialize shared library
     for target in shared_libraries:
         # Load in and initialize shared libraries
-        lib = ctypes.CDLL(target)
+        lib = load_shared_library_safe(
+            str(target), target_libraries=[str(t) for t in shared_libraries]
+        )
         lib.sol_compat_init(log_level)
         globals.target_libraries[target] = lib
 
@@ -528,10 +534,15 @@ expected to use different amounts of compute units than the other. Note: Cannot 
         shutil.rmtree(globals.output_dir)
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Set up sanitizer environment before loading any libraries
+    setup_sanitizer_environment(target_libraries=[str(t) for t in shared_libraries])
+
     # Initialize shared libraries
     for target in shared_libraries:
         # Load in and initialize shared libraries
-        lib = ctypes.CDLL(target)
+        lib = load_shared_library_safe(
+            str(target), target_libraries=[str(t) for t in shared_libraries]
+        )
         lib.sol_compat_init(log_level)
         globals.target_libraries[target] = lib
 
@@ -2170,7 +2181,7 @@ def regenerate_fixtures(
         shutil.rmtree(globals.output_dir)
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
-    lib: ctypes.CDLL = ctypes.CDLL(shared_library)
+    lib = load_shared_library_safe(str(shared_library))
     lib.sol_compat_init(log_level)
     globals.target_libraries[shared_library] = lib
     initialize_process_output_buffers()
@@ -2436,13 +2447,10 @@ def exec_fixtures(
 
     # Initialize output buffers and shared library
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
-    try:
-        lib = ctypes.CDLL(shared_library)
-        lib.sol_compat_init(log_level)
-        globals.target_libraries[shared_library] = lib
-        globals.reference_shared_library = shared_library
-    except:
-        set_ld_preload_asan()
+    lib = load_shared_library_safe(str(shared_library))
+    lib.sol_compat_init(log_level)
+    globals.target_libraries[shared_library] = lib
+    globals.reference_shared_library = shared_library
 
     if input.is_file():
         test_cases = [input]

@@ -29,6 +29,7 @@ from test_suite.fuzzcorp_auth import get_fuzzcorp_auth
 from test_suite.fuzzcorp_api_client import FuzzCorpAPIClient
 from test_suite.octane_api_client import OctaneAPIClient
 from test_suite.octane_utils import get_octane_api_origin
+from test_suite.sanitizer_utils import load_shared_library_safe
 
 # Thread-safe deduplication variables
 _download_cache_lock = threading.Lock()
@@ -717,7 +718,7 @@ def initialize_process_globals_for_regeneration(
     globals.regenerate_verbose = regenerate_verbose
 
     # Load the shared library in this worker process
-    lib = ctypes.CDLL(shared_library_path)
+    lib = load_shared_library_safe(str(shared_library_path))
     lib.sol_compat_init(log_level)
     globals.target_libraries = {shared_library_path: lib}
 

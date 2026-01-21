@@ -808,28 +808,83 @@ class OctaneAPIClient:
     # Direct GCS/S3 download methods
     # ========================================================================
 
+    def _find_gcloud_credentials(self) -> Optional[str]:
+        """
+        Find gcloud credentials file in standard locations.
+
+        Checks in order:
+        1. GOOGLE_APPLICATION_CREDENTIALS environment variable
+        2. gcloud legacy credentials for known service accounts
+
+        Returns:
+            Path to credentials JSON file, or None if not found.
+        """
+        # Check environment variable first
+        env_creds = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        if env_creds and os.path.isfile(env_creds):
+            return env_creds
+
+        # Check gcloud legacy credentials directory
+        # Pattern: ~/.config/gcloud/legacy_credentials/<service_account>/adc.json
+        home = os.path.expanduser("~")
+        legacy_creds_dir = os.path.join(home, ".config", "gcloud", "legacy_credentials")
+
+        if os.path.isdir(legacy_creds_dir):
+            # Known service accounts to look for (in priority order)
+            known_accounts = [
+                "firedancer-fuzzing@isol-firedancer-fuzzing.iam.gserviceaccount.com",
+            ]
+
+            # First try known accounts
+            for account in known_accounts:
+                creds_path = os.path.join(legacy_creds_dir, account, "adc.json")
+                if os.path.isfile(creds_path):
+                    return creds_path
+
+            # Fall back to any service account in the directory
+            try:
+                for entry in os.listdir(legacy_creds_dir):
+                    creds_path = os.path.join(legacy_creds_dir, entry, "adc.json")
+                    if os.path.isfile(creds_path):
+                        return creds_path
+            except OSError:
+                pass
+
+        return None
+
     def _get_gcs_client(self):
         """Get or create a GCS client."""
         if self._gcs_client is None:
             try:
                 from google.cloud import storage
+                from google.oauth2 import service_account
 
                 # Try to get project from environment or use a default
-                project = os.getenv("GCLOUD_PROJECT") or os.getenv(
-                    "GOOGLE_CLOUD_PROJECT"
+                project = (
+                    os.getenv("GCLOUD_PROJECT")
+                    or os.getenv("GOOGLE_CLOUD_PROJECT")
+                    or "isol-firedancer-fuzzing"
                 )
-                if project:
-                    self._gcs_client = storage.Client(project=project)
+
+                # Try to find credentials file
+                creds_path = self._find_gcloud_credentials()
+
+                if creds_path:
+                    # Load credentials from file
+                    credentials = service_account.Credentials.from_service_account_file(
+                        creds_path
+                    )
+                    self._gcs_client = storage.Client(
+                        project=project, credentials=credentials
+                    )
                 else:
-                    # Let the client try to detect from credentials/environment
+                    # Fall back to default credentials (ADC, metadata service, etc.)
                     try:
+                        self._gcs_client = storage.Client(project=project)
+                    except Exception:
+                        # Last resort: try without explicit project
                         self._gcs_client = storage.Client()
-                    except OSError:
-                        # If project can't be determined, use anonymous client for public buckets
-                        # or a default project for Firedancer fuzzing
-                        self._gcs_client = storage.Client(
-                            project="isol-firedancer-fuzzing"
-                        )
+
             except ImportError:
                 raise ImportError(
                     "google-cloud-storage is required for GCS downloads. "
