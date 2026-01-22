@@ -42,7 +42,7 @@ log_step "Running pre-flight checks..."
 # Check we're on RHEL/CentOS
 if [ ! -f /etc/redhat-release ]; then
     log_warn "This script is designed for RHEL/CentOS. For Ubuntu, use install_ubuntu.sh"
-    echo "    Detected OS: $(cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d'"' -f2 || uname -s)"
+    echo "    Detected OS: $(grep PRETTY_NAME /etc/os-release 2>/dev/null | cut -d'"' -f2 || uname -s)"
     read -p "    Continue anyway? [y/N] " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then

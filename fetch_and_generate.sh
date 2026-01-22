@@ -242,12 +242,14 @@ else
         popd >/dev/null
         
         # Create Python package structure (__init__.py files)
-        find "$FBS_OUTPUT_DIR" -type d | while read -r dir; do
-            init_file="$dir/__init__.py"
-            if [ ! -f "$init_file" ]; then
-                echo "# Auto-generated FlatBuffers package" > "$init_file"
-            fi
-        done
+        python3 -c "
+import os
+for root, dirs, files in os.walk('$FBS_OUTPUT_DIR'):
+    init_file = os.path.join(root, '__init__.py')
+    if not os.path.exists(init_file):
+        with open(init_file, 'w') as f:
+            f.write('# Auto-generated FlatBuffers package\n')
+"
         log_info "Created __init__.py files"
         
         fbs_py_count=$(find "$FBS_OUTPUT_DIR" -name "*.py" -type f | wc -l)
