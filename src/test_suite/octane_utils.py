@@ -14,7 +14,6 @@ import random
 from typing import Callable, TypeVar, Any, Optional
 from test_suite.octane_api_client import OctaneAPIClient, DEFAULT_OCTANE_API_ORIGIN
 
-
 T = TypeVar("T")
 
 

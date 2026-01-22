@@ -9,6 +9,7 @@ repos:
         # pre-commit's default_language_version, see
         # https://pre-commit.com/#top_level-default_language_version
         language_version: python3.11
+        exclude: (_pb2\.py$|/flatbuffers/)
   - repo: local
     hooks:
       - id: gen-cmd-docs
@@ -16,4 +17,10 @@ repos:
         language: python
         entry: bash -c 'SOLFUZZ_TARGET= FIREDANCER_TARGET= typer src/test_suite/test_suite.py utils docs --name solana-conformance --output commands.md'
         files: src/test_suite/test_suite.py
+        pass_filenames: false
+      - id: check-flatbuffers
+        name: Check FlatBuffers bindings exist
+        language: system
+        entry: test -d src/test_suite/flatbuffers/org
+        files: \.fbs$
         pass_filenames: false

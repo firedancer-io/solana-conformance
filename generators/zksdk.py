@@ -846,7 +846,7 @@ for test in test_vectors_agave:
     new_test = test.copy()
     data = new_test.get("data")
     if len(data) > 0:
-        new_test["data"] = bytes([(data[0] + 1)]) + bytes(data[1:])  # modify context
+        new_test["data"] = bytes([data[0] + 1]) + bytes(data[1:])  # modify context
     test_vectors_ctx.append(new_test)
 
 # failure tests because zkp is invalid
@@ -855,7 +855,7 @@ for test in test_vectors_agave:
     new_test = test.copy()
     data = new_test.get("data")
     if len(data) > 0:
-        new_test["data"] = bytes(data[:-1]) + bytes([(data[-1] + 1)])  # modify proof
+        new_test["data"] = bytes(data[:-1]) + bytes([data[-1] + 1])  # modify proof
     test_vectors_proof.append(new_test)
 
 # success tests where proof_data is read from an account

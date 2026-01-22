@@ -29,6 +29,7 @@ from test_suite.fuzzcorp_auth import get_fuzzcorp_auth
 from test_suite.fuzzcorp_api_client import FuzzCorpAPIClient
 from test_suite.octane_api_client import OctaneAPIClient
 from test_suite.octane_utils import get_octane_api_origin
+from test_suite.sanitizer_utils import load_shared_library_safe
 
 # Thread-safe deduplication variables
 _download_cache_lock = threading.Lock()
@@ -79,41 +80,140 @@ def _create_metadata_only_fixture():
 _MetadataOnlyFixture = _create_metadata_only_fixture()
 
 
-def extract_fix_files_from_zip(
-    zip_data: bytes, target_dir: Path, enable_deduplication: bool = True
+def save_raw_artifact(
+    data: bytes, target_dir: Path, filename: str, enable_deduplication: bool = True
 ) -> int:
+    """
+    Save raw artifact data directly to disk (no ZIP extraction).
+
+    Use this for Octane downloads which are never zipped.
+
+    Args:
+        data: Raw artifact bytes.
+        target_dir: Directory to save the file to.
+        filename: Filename to use.
+        enable_deduplication: Whether to skip files that already exist.
+
+    Returns:
+        1 if file was saved, 0 if skipped.
+    """
+    file_path = target_dir / filename
+
+    if enable_deduplication:
+        with _download_cache_lock:
+            # Skip if file already exists on disk
+            if file_path.exists():
+                existing_size = file_path.stat().st_size
+                new_size = len(data)
+                print(
+                    f"  WARNING: Skipping {filename} (exists on disk: {existing_size} bytes, new: {new_size} bytes)",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                return 0
+
+            # Skip if we've already extracted this file in this session
+            if filename in _extracted_fixtures:
+                return 0
+            _extracted_fixtures.add(filename)
+
+    with open(file_path, "wb") as f:
+        f.write(data)
+
+    return 1
+
+
+def extract_fix_files_from_zip(
+    zip_data: bytes,
+    target_dir: Path,
+    enable_deduplication: bool = True,
+    fallback_filename: str = None,
+    skip_zip_extraction: bool = False,
+) -> int:
+    """
+    Extract fixture files from a ZIP archive, or save raw artifact files.
+
+    Prefers .fix files, but falls back to .fuzz files if no .fix files exist.
+    This allows downloading raw fuzzer crash inputs when validated fixtures
+    haven't been generated yet.
+
+    If the data is not a valid ZIP file (e.g., raw .fuzz file from Octane),
+    saves it directly using the fallback_filename.
+
+    Args:
+        zip_data: Bytes of the ZIP archive or raw artifact file.
+        target_dir: Directory to extract files to.
+        enable_deduplication: Whether to skip files that already exist.
+        fallback_filename: Filename to use if data is not a ZIP file.
+        skip_zip_extraction: If True, skip ZIP extraction entirely and save raw file.
+                            Use this for Octane downloads which are never zipped.
+
+    Returns:
+        Number of files extracted/saved.
+    """
+    # Octane never zips files - save directly without attempting ZIP extraction
+    if skip_zip_extraction:
+        if not fallback_filename:
+            import hashlib
+
+            data_hash = hashlib.sha256(zip_data).hexdigest()[:16]
+            fallback_filename = f"{data_hash}.fuzz"
+        return save_raw_artifact(
+            zip_data, target_dir, fallback_filename, enable_deduplication
+        )
+
     fix_count = 0
 
-    with zipfile.ZipFile(io.BytesIO(zip_data)) as z:
-        for member in z.namelist():
-            if member.endswith(".fix"):
-                fix_content = z.read(member)
-                fix_name = Path(member).name
-                fix_path = target_dir / fix_name
+    # Try to open as ZIP first (FuzzCorp format)
+    try:
+        with zipfile.ZipFile(io.BytesIO(zip_data)) as z:
+            # Check if any .fix files exist, otherwise fall back to .fuzz files
+            fix_members = [m for m in z.namelist() if m.endswith(".fix")]
+            fuzz_members = [m for m in z.namelist() if m.endswith(".fuzz")]
+
+            # Prefer .fix files, fall back to .fuzz files if none exist
+            members_to_extract = fix_members if fix_members else fuzz_members
+
+            for member in members_to_extract:
+                file_content = z.read(member)
+                file_name = Path(member).name
+                file_path = target_dir / file_name
 
                 if enable_deduplication:
                     with _download_cache_lock:
-                        # Skip if fixture already exists on disk (never overwrite)
-                        if fix_path.exists():
-                            existing_size = fix_path.stat().st_size
-                            new_size = len(fix_content)
+                        # Skip if file already exists on disk (never overwrite)
+                        if file_path.exists():
+                            existing_size = file_path.stat().st_size
+                            new_size = len(file_content)
                             print(
-                                f"  WARNING: Skipping {fix_name} (exists on disk: {existing_size} bytes, new: {new_size} bytes)",
+                                f"  WARNING: Skipping {file_name} (exists on disk: {existing_size} bytes, new: {new_size} bytes)",
                                 file=sys.stderr,
                                 flush=True,
                             )
                             continue
 
-                        # Skip if we've already extracted this fixture in this session
-                        if fix_name in _extracted_fixtures:
+                        # Skip if we've already extracted this file in this session
+                        if file_name in _extracted_fixtures:
                             continue
-                        _extracted_fixtures.add(fix_name)
+                        _extracted_fixtures.add(file_name)
 
-                with open(fix_path, "wb") as f:
-                    f.write(fix_content)
+                with open(file_path, "wb") as f:
+                    f.write(file_content)
                 fix_count += 1
 
-    return fix_count
+        return fix_count
+
+    except zipfile.BadZipFile:
+        # Not a ZIP file - save directly using the fallback filename
+        if not fallback_filename:
+            import hashlib
+
+            data_hash = hashlib.sha256(zip_data).hexdigest()[:16]
+            fallback_filename = f"{data_hash}.fuzz"
+
+        return save_raw_artifact(
+            zip_data, target_dir, fallback_filename, enable_deduplication
+        )
 
 
 def _download_with_timing(download_func, log_prefix: str):
@@ -201,12 +301,37 @@ def extract_metadata(fixture_file: Path) -> str | None:
     """
     Extracts metadata from a fixture file.
 
+    Supports both Protobuf and FlatBuffers formats.
+
     Args:
         - fixture_file (Path): Path to the fixture message.
 
     Returns:
         - str | None: Metadata from the fixture file.
     """
+    # First, try FlatBuffers format detection
+    try:
+        from test_suite.flatbuffers_utils import (
+            detect_format,
+            FixtureLoader,
+            FLATBUFFERS_AVAILABLE,
+        )
+
+        with open(fixture_file, "rb") as f:
+            data = f.read()
+
+        fmt = detect_format(data)
+
+        if fmt == "flatbuffers" and FLATBUFFERS_AVAILABLE:
+            loader = FixtureLoader(fixture_file)
+            if loader.is_valid and loader.metadata:
+                return loader.metadata
+    except ImportError:
+        pass  # FlatBuffers support not available
+    except Exception:
+        pass  # Fall through to Protobuf parsing
+
+    # Try Protobuf format
     try:
         # Use minimal fixture that only parses field 1 (metadata)
         # Works for all fixture types since they all have metadata as field 1
@@ -267,7 +392,7 @@ def read_fixture(fixture_file: Path) -> message.Message | None:
     """
     Reads in test files and generates an Fixture Protobuf object for a test case.
 
-    DOES NOT SUPPORT HUMAN READABLE MESSAGES!!!
+    Supports both Protobuf and FlatBuffers formats.
 
     Args:
         - fixture_file (Path): Path to the fixture message.
@@ -276,6 +401,31 @@ def read_fixture(fixture_file: Path) -> message.Message | None:
         - message.Message | None: Fixture, or None if reading failed.
 
     """
+    fixture = None
+
+    # First, try FlatBuffers format
+    try:
+        from test_suite.flatbuffers_utils import (
+            detect_format,
+            FixtureLoader,
+            FLATBUFFERS_AVAILABLE,
+        )
+
+        with open(fixture_file, "rb") as f:
+            data = f.read()
+
+        fmt = detect_format(data)
+
+        if fmt == "flatbuffers" and FLATBUFFERS_AVAILABLE:
+            loader = FixtureLoader(fixture_file)
+            if loader.is_valid:
+                # Return the converted protobuf fixture
+                return loader.pb_fixture
+    except ImportError:
+        pass  # FlatBuffers support not available
+    except Exception:
+        pass  # Fall through to Protobuf parsing
+
     # Try to read in first as binary-encoded Protobuf messages
     try:
         # Read in binary Protobuf messages
@@ -568,7 +718,7 @@ def initialize_process_globals_for_regeneration(
     globals.regenerate_verbose = regenerate_verbose
 
     # Load the shared library in this worker process
-    lib = ctypes.CDLL(shared_library_path)
+    lib = load_shared_library_safe(str(shared_library_path))
     lib.sol_compat_init(log_level)
     globals.target_libraries = {shared_library_path: lib}
 
@@ -754,12 +904,13 @@ def download_and_process(source):
 
                 # Create HTTP client for artifact download
                 if use_octane:
+                    # Use download_fixture_data for Octane - only .fix files, no .fuzz fallback
                     with OctaneAPIClient(
                         api_origin=api_origin,
                         http2=True,
                     ) as client:
                         artifact_data = _download_with_timing(
-                            lambda: client.download_artifact_data(
+                            lambda: client.download_fixture_data(
                                 artifact_hash,
                                 section_name,
                                 desc=artifact_desc,
@@ -787,9 +938,15 @@ def download_and_process(source):
                 with open(artifact_zip_path, "wb") as f:
                     f.write(artifact_data)
 
-            # Extract .fix files from the artifact ZIP
+            # Extract .fix/.fuzz files from the artifact (ZIP or raw file)
+            # Octane never zips files, so skip ZIP extraction entirely for Octane
+            fallback_filename = f"{artifact_hash}.fix" if use_octane else None
             fix_count += extract_fix_files_from_zip(
-                artifact_data, globals.inputs_dir, enable_deduplication=True
+                artifact_data,
+                globals.inputs_dir,
+                enable_deduplication=True,
+                fallback_filename=fallback_filename,
+                skip_zip_extraction=use_octane,
             )
 
             # Mark this artifact as processed (in-memory only, for this session)
@@ -853,13 +1010,14 @@ def download_single_crash(source):
 
         if use_octane:
             # Using Octane API - no auth required
+            # Use download_crash_data to prefer .fuzz files over .fix files
             api_origin = get_octane_api_origin()
             with OctaneAPIClient(
                 api_origin=api_origin,
                 http2=True,
             ) as client:
                 data = _download_with_timing(
-                    lambda: client.download_repro_data(
+                    lambda: client.download_crash_data(
                         crash_hash,
                         lineage,
                         desc=f"Downloading {crash_hash[:8]}.crash",

@@ -8,7 +8,7 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: 3.11
-      - run: pip install black
+      - run: pip install black==24.3.0
       - uses: actions/checkout@v4
-      - run: black --check src/test_suite --exclude '_pb2\.py'
+      - run: black --check src/test_suite --exclude '(_pb2\.py$|/flatbuffers/)'
       # TODO add further checks here

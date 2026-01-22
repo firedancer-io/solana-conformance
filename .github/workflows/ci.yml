@@ -44,15 +44,30 @@ jobs:
           # Upgrade protobuf to match gencode version
           pip install --upgrade protobuf
 
-      - name: Activate venv and fetch/generate protos
+      - name: Install FlatBuffers compiler
+        run: |
+          ./ensure_flatc.sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Activate venv and fetch/generate protos and flatbuffers
         run: |
           source test_suite_env/bin/activate
           ./fetch_and_generate.sh
+
+      - name: Check dependencies (including FlatBuffers)
+        run: |
+          source test_suite_env/bin/activate
+          solana-conformance check-deps
 
       - name: List harness types
         run: |
           source test_suite_env/bin/activate
           solana-conformance list-harness-types
+
+      - name: Run FlatBuffers unit tests
+        run: |
+          source test_suite_env/bin/activate
+          pytest tests/test_flatbuffers.py -v --tb=short
 
       - name: Run integration tests
         run: |

@@ -2,14 +2,23 @@ from enum import Enum
 import test_suite.protos.elf_pb2 as elf_pb
 from argparse import ArgumentParser
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional
 from google.protobuf.message import DecodeError
+
+# Import unified FlatBuffers/Protobuf utilities
+from test_suite.flatbuffers_utils import (
+    FixtureLoader,
+    detect_format,
+    FLATBUFFERS_AVAILABLE,
+)
 
 """
 This script can either convert an ELF binary to a ELFLoaderCtx protobuf message (bin2ctx) or 
 convert a ELFLoaderCtx back to an ELF binary (ctx2bin) depending on the subcommand used.
 The output file will have the same name as the input file but will change the extension based on the operation.
 If an output directory is not specified, the output will be saved in the same directory as the input file.
+
+Supports both Protobuf and FlatBuffers input formats.
 """
 
 
@@ -19,14 +28,30 @@ class PBTypes(Enum):
     ELFLoaderFixture = 3
 
 
-# Normalize loading of protobuf messages
+# Normalize loading of protobuf messages (supports both Protobuf and FlatBuffers)
 class ElfProto:
     def __init__(self, proto_file: Path):
         self.proto_file = proto_file
+        self.ctx: Optional[elf_pb.ELFLoaderCtx] = None
+        self.effects: Optional[elf_pb.ELFLoaderEffects] = None
+        self.proto = None
+
         with open(proto_file, "rb") as f:
             data = f.read()
 
-        # Try to parse as ELFLoaderCtx
+        # Detect format and try to load appropriately
+        fmt = detect_format(data)
+
+        # For FlatBuffers fixtures, use the unified loader
+        if fmt == "flatbuffers" and FLATBUFFERS_AVAILABLE:
+            loader = FixtureLoader(proto_file)
+            if loader.is_valid and loader.pb_fixture:
+                self.proto = loader.pb_fixture
+                self.ctx = loader.pb_fixture.input
+                self.effects = loader.pb_fixture.output
+                return
+
+        # Try to parse as Protobuf ELFLoaderCtx
         elfctx = elf_pb.ELFLoaderCtx()
         try:
             elfctx.ParseFromString(data)
@@ -36,7 +61,7 @@ class ElfProto:
         except DecodeError:
             pass
 
-        # Try to parse as ELFLoaderFixture
+        # Try to parse as Protobuf ELFLoaderFixture
         elffixture = elf_pb.ELFLoaderFixture()
         try:
             elffixture.ParseFromString(data)
@@ -47,6 +72,7 @@ class ElfProto:
         except DecodeError:
             pass
 
+        # Try to parse as Protobuf ELFLoaderEffects
         effects = elf_pb.ELFLoaderEffects()
         try:
             effects.ParseFromString(data)
@@ -56,7 +82,9 @@ class ElfProto:
         except DecodeError:
             pass
 
-        raise ValueError(f"Failed to parse {proto_file}")
+        raise ValueError(
+            f"Failed to parse {proto_file} (tried Protobuf and FlatBuffers)"
+        )
 
     def serialize(self):
         return self.proto.SerializeToString()

@@ -4,7 +4,6 @@ description = "Conformance test client targets against Solana"
 authors = [
   { name = "Manik Jain", email = "mjain@jumptrading.com"},
   { name = "Charles Moyes", email = "cmoyes@jumptrading.com"},
-
 ]
 dynamic = ['version']
 readme = "README.md"
@@ -16,9 +15,11 @@ dependencies = [
   "Cython>=3.0.9",
   "tqdm~=4.66.0",
   "bs4~=0.0.2",
-  "click<8.2.0",
+  "click>=8.0.0,<8.2.0",
   "httpx[http2]~=0.27.0",
-  "protobuf==6.33.0",
+  "protobuf>=6.33.0",
+  "flatbuffers>=24.0.0",
+  "numpy>=1.24.0",
 ]
 
 [project.scripts]
@@ -27,6 +28,7 @@ solana-conformance = "test_suite.test_suite:app"
 [project.optional-dependencies]
 octane = [
   "google-cloud-storage>=2.0.0",
+  "google-auth>=2.0.0",
   "boto3>=1.26.0",
 ]
 
@@ -40,9 +42,17 @@ dev = [
   "pre-commit>=2.20.0",
   "solana-conformance[test]",
   "build>=0.10.0",
-  "black>=22.10.0",
+  "black==24.3.0",
 ]
 
 [build-system]
 requires = ["setuptools", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
+
+[tool.black]
+extend-exclude = '''
+/(
+    /flatbuffers/
+    | _pb2\.py$
+)/
+'''

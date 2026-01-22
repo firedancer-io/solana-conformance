@@ -38,6 +38,10 @@ from test_suite.util import (
     fetch_with_retries,
     process_items,
 )
+from test_suite.sanitizer_utils import (
+    setup_sanitizer_environment,
+    load_shared_library_safe,
+)
 import resource
 import tqdm
 from test_suite.fuzz_context import *
@@ -52,7 +56,11 @@ import httpx
 from test_suite.fuzzcorp_auth import get_fuzzcorp_auth, FuzzCorpAuth
 from test_suite.fuzzcorp_api_client import FuzzCorpAPIClient
 from test_suite.fuzzcorp_utils import fuzzcorp_api_call
-from test_suite.octane_api_client import OctaneAPIClient, DEFAULT_OCTANE_API_ORIGIN
+from test_suite.octane_api_client import (
+    OctaneAPIClient,
+    DEFAULT_OCTANE_API_ORIGIN,
+    ReproMetadata,
+)
 from test_suite.octane_utils import octane_api_call, get_octane_api_origin
 
 """
@@ -65,7 +73,42 @@ Harness options:
 - ElfHarness
 """
 
-app = typer.Typer(help=f"Validate effects from clients using Protobuf messages.")
+
+def get_version() -> str:
+    """Get the version string for solana-conformance."""
+    try:
+        from importlib.metadata import version
+
+        return version("solana-conformance")
+    except Exception:
+        return "0.0.0-dev"
+
+
+def version_callback(value: bool):
+    """Print version info and exit."""
+    if value:
+        print(f"solana-conformance {get_version()}")
+        raise typer.Exit()
+
+
+app = typer.Typer(
+    help="Validate effects from clients using Protobuf or FlatBuffers fixtures."
+)
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        "-V",
+        callback=version_callback,
+        is_eager=True,
+        help="Show version and exit.",
+    ),
+):
+    """Solana Conformance Test Suite."""
+    pass
 
 
 @app.command(help=f"Execute Context or Fixture message(s) and print the Effects.")
@@ -118,13 +161,10 @@ def execute(
     if enable_vm_tracing:
         os.environ["ENABLE_VM_TRACING"] = "1"
 
-    try:
-        lib = ctypes.CDLL(shared_library)
-        lib.sol_compat_init(log_level)
-        globals.target_libraries[shared_library] = lib
-        globals.reference_shared_library = shared_library
-    except:
-        set_ld_preload_asan()
+    lib = load_shared_library_safe(str(shared_library))
+    lib.sol_compat_init(log_level)
+    globals.target_libraries[shared_library] = lib
+    globals.reference_shared_library = shared_library
 
     if input.is_file():
         files_to_exec = [input]
@@ -329,10 +369,15 @@ def create_fixtures(
         shutil.rmtree(globals.output_dir)
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Set up sanitizer environment before loading any libraries
+    setup_sanitizer_environment(target_libraries=[str(t) for t in shared_libraries])
+
     # Initialize shared library
     for target in shared_libraries:
         # Load in and initialize shared libraries
-        lib = ctypes.CDLL(target)
+        lib = load_shared_library_safe(
+            str(target), target_libraries=[str(t) for t in shared_libraries]
+        )
         lib.sol_compat_init(log_level)
         globals.target_libraries[target] = lib
 
@@ -522,10 +567,15 @@ expected to use different amounts of compute units than the other. Note: Cannot 
         shutil.rmtree(globals.output_dir)
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Set up sanitizer environment before loading any libraries
+    setup_sanitizer_environment(target_libraries=[str(t) for t in shared_libraries])
+
     # Initialize shared libraries
     for target in shared_libraries:
         # Load in and initialize shared libraries
-        lib = ctypes.CDLL(target)
+        lib = load_shared_library_safe(
+            str(target), target_libraries=[str(t) for t in shared_libraries]
+        )
         lib.sol_compat_init(log_level)
         globals.target_libraries[target] = lib
 
@@ -701,6 +751,94 @@ def list_harness_types():
     for name in HARNESS_MAP:
         print(f"- {name}")
     return True
+
+
+@app.command(help="Check FlatBuffers and other dependencies status.")
+def check_deps():
+    """
+    Check if all dependencies are properly installed and configured.
+
+    This is useful for troubleshooting issues with FlatBuffers fixtures.
+    """
+    from test_suite.flatbuffers_utils import print_dependency_status
+
+    ready = print_dependency_status()
+    return ready
+
+
+@app.command(help="Validate fixture files and report their format and status.")
+def validate_fixtures(
+    input_dir: Path = typer.Option(
+        ...,
+        "--input",
+        "-i",
+        help="Input fixture file or directory of fixture files",
+    ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Show detailed information for each fixture",
+    ),
+):
+    """
+    Validate fixture files and report their format (Protobuf or FlatBuffers).
+
+    Useful for debugging fixture loading issues or verifying downloads.
+    """
+    from test_suite.flatbuffers_utils import FixtureLoader
+
+    if input_dir.is_file():
+        files = [input_dir]
+    else:
+        files = list(input_dir.glob("*.fix"))
+        files.extend(input_dir.glob("*.elfctx"))
+        files.extend(input_dir.glob("*.instrctx"))
+        files.extend(input_dir.glob("*.syscallctx"))
+        files.extend(input_dir.glob("*.vmctx"))
+        files.extend(input_dir.glob("*.txnctx"))
+        files.extend(input_dir.glob("*.blockctx"))
+
+    if not files:
+        print(f"No fixture files found in {input_dir}")
+        return False
+
+    valid_count = 0
+    invalid_count = 0
+    format_counts = {"protobuf": 0, "flatbuffers": 0, "unknown": 0}
+
+    for filepath in sorted(files):
+        loader = FixtureLoader(filepath)
+
+        if loader.is_valid:
+            valid_count += 1
+            format_counts[loader.format_type] += 1
+            if verbose:
+                entrypoint = loader.fn_entrypoint or "N/A"
+                elf_size = len(loader.elf_data) if loader.elf_data else 0
+                print(f"[OK] {filepath.name}")
+                print(f"     Format: {loader.format_type}")
+                print(f"     Entrypoint: {entrypoint}")
+                if elf_size > 0:
+                    print(f"     ELF size: {elf_size} bytes")
+        else:
+            invalid_count += 1
+            format_counts["unknown"] += 1
+            if verbose:
+                print(f"[FAIL] {filepath.name}")
+                print(f"       Error: {loader.error_message}")
+            else:
+                print(f"[FAIL] {filepath.name}: {loader.error_message}")
+
+    print()
+    print(f"Summary: {len(files)} files checked")
+    print(f"  Valid:   {valid_count}")
+    print(f"  Invalid: {invalid_count}")
+    print(
+        f"  Formats: {format_counts['protobuf']} Protobuf, {format_counts['flatbuffers']} FlatBuffers"
+    )
+
+    return invalid_count == 0
 
 
 @app.command(help=f"Configure FuzzCorp API credentials (interactive).")
@@ -1275,7 +1413,8 @@ def download_crash(
                 http2=True,
             ) as client:
                 print(f"Downloading crash {repro_hash} from lineage {lineage}...")
-                data = client.download_repro_data(
+                # Use download_crash_data to prefer .fuzz files over .fix files
+                data = client.download_crash_data(
                     repro_hash,
                     lineage,
                     desc=f"Downloading {repro_hash[:8]}.crash",
@@ -1551,7 +1690,7 @@ def debug_mismatches(
     log_level: int = typer.Option(
         5,
         "--log-level",
-        "-l",
+        "-L",
         help="FD logging level",
     ),
     randomize_output_buffer: bool = typer.Option(
@@ -2075,7 +2214,7 @@ def regenerate_fixtures(
         shutil.rmtree(globals.output_dir)
     globals.output_dir.mkdir(parents=True, exist_ok=True)
 
-    lib: ctypes.CDLL = ctypes.CDLL(shared_library)
+    lib = load_shared_library_safe(str(shared_library))
     lib.sol_compat_init(log_level)
     globals.target_libraries[shared_library] = lib
     initialize_process_output_buffers()
@@ -2341,13 +2480,10 @@ def exec_fixtures(
 
     # Initialize output buffers and shared library
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
-    try:
-        lib = ctypes.CDLL(shared_library)
-        lib.sol_compat_init(log_level)
-        globals.target_libraries[shared_library] = lib
-        globals.reference_shared_library = shared_library
-    except:
-        set_ld_preload_asan()
+    lib = load_shared_library_safe(str(shared_library))
+    lib.sol_compat_init(log_level)
+    globals.target_libraries[shared_library] = lib
+    globals.reference_shared_library = shared_library
 
     if input.is_file():
         test_cases = [input]
@@ -2452,7 +2588,7 @@ def create_env(
     log_level: int = typer.Option(
         5,
         "--log-level",
-        "-l",
+        "-L",
         help="FD logging level",
     ),
     randomize_output_buffer: bool = typer.Option(
