@@ -112,17 +112,15 @@ All message definitions are defined in [protosol](https://github.com/firedancer-
 ./fetch_and_generate.sh
 ```
 
-### `PROTO_VERSION`
-To avoid breakages, we enforce strict proto versioning using git tags.
+### Protosol Version
+The protosol schemas are vendored as a git submodule in `shlr/protosol`. The version is pinned by the submodule commit.
 
-Specifies the git tag/branch of the [`protosol`](https://github.com/firedancer-io/protosol) repository to use when fetching `.proto` and `.fbs` files.
-
-**Default:** `v3.0.0` (set in `fetch_and_generate.sh`) - includes both Protobuf and FlatBuffers schemas
-
-**Usage:**
-You can override the version for a one-off build:
+To update to a different version:
 ```bash
-PROTO_VERSION=v3.0.0 ./fetch_and_generate.sh
+cd shlr/protosol
+git checkout <tag-or-branch>
+cd ../..
+./fetch_and_generate.sh
 ```
 
 ## FlatBuffers
@@ -135,7 +133,7 @@ In addition to Protobuf, this tool supports FlatBuffers fixtures (`.fix` files).
 
 ### Updating FlatBuffers Definitions
 
-FlatBuffers schemas are also defined in [protosol](https://github.com/firedancer-io/protosol/) (v3.0.0+). The `fetch_and_generate.sh` script generates both Protobuf and FlatBuffers Python bindings:
+FlatBuffers schemas are defined in [protosol](https://github.com/firedancer-io/protosol/). The `fetch_and_generate.sh` script generates both Protobuf and FlatBuffers Python bindings:
 
 ```sh
 ./fetch_and_generate.sh

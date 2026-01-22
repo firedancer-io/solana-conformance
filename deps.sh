@@ -19,8 +19,8 @@
 #   - C++ compiler (g++ or clang++)
 #
 # Dependencies installed:
-#   - flatc: Built from shlr/flatbuffers (v24.3.25)
-#   - buf:   Downloaded pre-built binary (v1.50.0)
+#   - flatc: Built from shlr/flatbuffers submodule
+#   - buf:   Downloaded pre-built binary
 #
 
 set -euo pipefail
@@ -61,8 +61,8 @@ Prerequisites (for flatc build):
     - C++ compiler (g++ or clang++)
 
 Dependencies:
-    flatc - Built from shlr/flatbuffers (git submodule, v24.3.25)
-    buf   - Downloaded pre-built binary (v1.50.0)
+    flatc - Built from shlr/flatbuffers submodule
+    buf   - Downloaded pre-built binary
 
 All binaries are installed to opt/bin/ for consistency.
 

@@ -30,7 +30,7 @@ cd "$SCRIPT_DIR"
 
 echo ""
 echo -e "${GREEN}============================================================${NC}"
-echo -e "${GREEN}       solana-conformance Installation (RHEL8)             ${NC}"
+echo -e "${GREEN}       solana-conformance Installation (RHEL/Rocky)        ${NC}"
 echo -e "${GREEN}============================================================${NC}"
 echo ""
 
