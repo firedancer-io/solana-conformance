@@ -1,6 +1,8 @@
 [submodule "shlr/flatbuffers"]
 	path = shlr/flatbuffers
 	url = https://github.com/google/flatbuffers.git
+	branch = v24.3.25
 [submodule "shlr/protosol"]
 	path = shlr/protosol
 	url = https://github.com/firedancer-io/protosol.git
+	branch = v3.0.0
