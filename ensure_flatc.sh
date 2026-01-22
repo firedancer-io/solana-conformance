@@ -83,6 +83,8 @@ tmp="$(mktemp -d)"
 
 # Try different URL formats (GitHub release naming varies by version)
 urls=(
+    "https://github.com/google/flatbuffers/releases/download/v${FLATC_VERSION}/${os}.flatc.binary.g++-13.zip"
+    "https://github.com/google/flatbuffers/releases/download/v${FLATC_VERSION}/${os}.flatc.binary.clang++-15.zip"
     "https://github.com/google/flatbuffers/releases/download/v${FLATC_VERSION}/${os}.flatc.binary.zip"
     "https://github.com/google/flatbuffers/releases/download/v${FLATC_VERSION}/flatc_${os}.zip"
     "https://github.com/google/flatbuffers/releases/download/v${FLATC_VERSION}/${os}_flatc_binary.zip"
