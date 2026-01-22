@@ -25,6 +25,10 @@ feature_pool = None
 # (For fixtures) Whether to output in human-readable format
 readable = False
 
+# (For fixtures) Output format: 'auto', 'protobuf', or 'flatbuffers'
+# 'auto' matches output format to input format
+output_format = "auto"
+
 # (For fixtures) Whether to organize fixtures by program type
 organize_fixture_dir = False
 

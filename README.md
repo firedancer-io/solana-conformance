@@ -143,6 +143,29 @@ solana-conformance validate-fixtures -i fixtures/
 solana-conformance validate-fixtures -i fixtures/ -v  # verbose
 ```
 
+### Output Format Control
+
+When creating or regenerating fixtures, you can control the output format:
+
+```sh
+# Auto mode (default): matches output format to input format
+# FlatBuffers in -> FlatBuffers out, Protobuf in -> Protobuf out
+solana-conformance create-fixtures -i inputs/ -s $SOLFUZZ_TARGET -o output/
+
+# Force Protobuf output
+solana-conformance create-fixtures -i inputs/ -s $SOLFUZZ_TARGET -o output/ -F protobuf
+
+# Force FlatBuffers output (currently only for ELFLoaderHarness)
+solana-conformance create-fixtures -i inputs/ -s $SOLFUZZ_TARGET -o output/ -F flatbuffers -h ElfLoaderHarness
+```
+
+**Output format options (`-F` / `--output-format`):**
+- `auto` (default) - Matches output format to input format
+- `protobuf` - Always output Protobuf format
+- `flatbuffers` - Output FlatBuffers format (ELFLoaderHarness only)
+
+**Note:** FlatBuffers output is currently only supported for `ELFLoaderHarness` (`sol_compat_elf_loader_v1/_v2`). Other harness types (`InstrHarness`, `SyscallHarness`, `TxnHarness`, etc.) will automatically fall back to Protobuf output because FlatBuffers schemas don't exist for those fixture types in protosol.
+
 Example output:
 ```
 [OK] bug_3ec6cbcd.fix
@@ -159,7 +182,12 @@ Summary: 10 files checked
 ### Python API
 
 ```python
-from test_suite.flatbuffers_utils import FixtureLoader, detect_format
+from test_suite.flatbuffers_utils import (
+    FixtureLoader,
+    detect_format,
+    is_flatbuffers_output_supported,
+)
+from pathlib import Path
 
 # Unified loading (auto-detects format)
 loader = FixtureLoader(Path('fixture.fix'))
@@ -169,7 +197,17 @@ print(f"ELF size: {len(loader.elf_data)} bytes")
 
 # Format detection only
 with open('fixture.fix', 'rb') as f:
-    fmt = detect_format(f.read())  # Returns 'flatbuffers', 'protobuf', or 'unknown'
+    data = f.read()
+    
+# Quick heuristic detection
+fmt = detect_format(data)  # Returns 'flatbuffers', 'protobuf', or 'unknown'
+
+# Validated detection (actually tries to parse)
+fmt = detect_format(data, validate=True)  # More accurate but slower
+
+# Check if FlatBuffers output is supported for a harness
+is_flatbuffers_output_supported("sol_compat_elf_loader_v1")  # True
+is_flatbuffers_output_supported("sol_compat_instr_execute_v1")  # False
 ```
 
 ### Setup

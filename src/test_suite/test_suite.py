@@ -178,16 +178,16 @@ def execute(
                     files_to_exec.append(file_path)
     for file in files_to_exec:
         print(f"Handling {file}...")
-        if file.suffix == ".fix":
+        if file.suffix == FIXTURE_EXTENSION:
             fn_entrypoint = extract_metadata(file).fn_entrypoint
-            harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
+            harness_ctx = get_harness_for_entrypoint(fn_entrypoint)
             context = read_fixture(file).input
         else:
             harness_ctx = HARNESS_MAP[default_harness_ctx]
             context = read_context(harness_ctx, file)
             if context is None:
                 fn_entrypoint = extract_metadata(file).fn_entrypoint
-                harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
+                harness_ctx = get_harness_for_entrypoint(fn_entrypoint)
                 context = read_fixture(file).input
         # Execute and cleanup
         start = time.time()
@@ -335,6 +335,12 @@ def create_fixtures(
     readable: bool = typer.Option(
         False, "--readable", "-r", help="Output fixtures in human-readable format"
     ),
+    output_format: str = typer.Option(
+        "auto",
+        "--output-format",
+        "-F",
+        help="Output format: 'auto' (match input format), 'protobuf', or 'flatbuffers'",
+    ),
     only_keep_passing: bool = typer.Option(
         False, "--keep-passing", "-k", help="Only keep passing test cases"
     ),
@@ -357,10 +363,18 @@ def create_fixtures(
     # Add Solana library to shared libraries
     shared_libraries = [reference_shared_library] + shared_libraries
 
+    # Validate output format
+    if output_format not in ("auto", "protobuf", "flatbuffers"):
+        print(
+            f"Error: Invalid output format '{output_format}'. Must be 'auto', 'protobuf', or 'flatbuffers'."
+        )
+        raise typer.Exit(code=1)
+
     # Specify globals
     globals.output_dir = output_dir
     globals.reference_shared_library = reference_shared_library
     globals.readable = readable
+    globals.output_format = output_format
     globals.only_keep_passing = only_keep_passing
     globals.organize_fixture_dir = organize_fixture_dir
 

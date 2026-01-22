@@ -187,8 +187,10 @@ def is_flatbuffers_format(data: bytes) -> bool:
     """
     Detect if the data is in FlatBuffers format.
 
-    FlatBuffers files start with a 4-byte little-endian root table offset,
-    typically small (< 256). We check for common patterns.
+    FlatBuffers files have a specific structure:
+    - First 4 bytes: little-endian offset to root table
+    - At root table offset: signed 32-bit offset to vtable (negative)
+    - vtable contains size info
 
     Args:
         data: Raw bytes to check
@@ -196,30 +198,52 @@ def is_flatbuffers_format(data: bytes) -> bool:
     Returns:
         True if likely FlatBuffers format, False otherwise
     """
-    if len(data) < 8:
+    if len(data) < 12:
         return False
 
     # FlatBuffers files start with a 4-byte little-endian offset to the root table
-    offset = int.from_bytes(data[0:4], "little")
+    root_offset = int.from_bytes(data[0:4], "little")
 
-    # Valid offsets are typically 4-256 bytes from start
-    if offset < 4 or offset > 1024:
+    # Valid offsets are typically 4-1024 bytes from start
+    if root_offset < 4 or root_offset > 1024:
         return False
 
     # Check if offset points to a valid position
-    if offset >= len(data):
+    if root_offset + 4 > len(data):
         return False
 
-    # Common FlatBuffers patterns:
-    # 0x14 0x00 0x00 0x00 (offset = 20)
-    # Followed by 0x00 0x00 or 0x0a 0x00
+    # At root_offset, there should be a signed 32-bit offset to the vtable
+    # This offset is typically negative (vtable comes before the table)
+    vtable_offset_signed = int.from_bytes(
+        data[root_offset : root_offset + 4], "little", signed=True
+    )
+
+    # The vtable is at: root_offset - vtable_offset_signed
+    # For valid FlatBuffers, this should be a reasonable positive value
+    vtable_pos = root_offset - vtable_offset_signed
+
+    # Vtable should be before or at the root table, and within data bounds
+    if vtable_pos < 0 or vtable_pos + 4 > len(data):
+        return False
+
+    # Vtable starts with its size (uint16) and table size (uint16)
+    # Both should be reasonable small values
+    if vtable_pos + 4 <= len(data):
+        vtable_size = int.from_bytes(data[vtable_pos : vtable_pos + 2], "little")
+        table_size = int.from_bytes(data[vtable_pos + 2 : vtable_pos + 4], "little")
+
+        # Sanity checks: vtable size should be small and even
+        if vtable_size >= 4 and vtable_size <= 256 and vtable_size % 2 == 0:
+            if table_size >= 4 and table_size <= 1024:
+                return True
+
+    # Fallback: check common FlatBuffers byte patterns
+    # 0x14 0x00 0x00 0x00 is a very common root offset (20 bytes)
     if len(data) > 6:
-        if data[4] == 0x00 and data[5] == 0x00:
-            return True
-        if data[4:6] == b"\x0a\x00":
-            return True
         if data[0] == 0x14 and data[1] == 0x00 and data[2] == 0x00 and data[3] == 0x00:
-            return True
+            # Additional check: bytes 4-5 often 0x00 0x00 or small values
+            if data[4] <= 0x20 and data[5] == 0x00:
+                return True
 
     return False
 
@@ -228,8 +252,15 @@ def is_protobuf_format(data: bytes) -> bool:
     """
     Detect if the data is in Protobuf format.
 
-    Protobuf messages typically start with field tags.
-    Field 1 with wire type 2 (length-delimited) = 0x0a
+    Protobuf messages start with field tags encoded as varints.
+    Wire type is in the lower 3 bits, field number in upper bits.
+
+    Common patterns for fixture messages:
+    - 0x0a = field 1, wire type 2 (embedded message) - most common
+    - 0x12 = field 2, wire type 2
+    - 0x1a = field 3, wire type 2
+    - 0x08 = field 1, wire type 0 (varint)
+    - 0x10 = field 2, wire type 0
 
     Args:
         data: Raw bytes to check
@@ -240,26 +271,159 @@ def is_protobuf_format(data: bytes) -> bool:
     if len(data) < 2:
         return False
 
-    # 0x0a = field 1, wire type 2 (embedded message/string/bytes)
-    return data[0] == 0x0A
+    first_byte = data[0]
+    wire_type = first_byte & 0x07
+    field_num = first_byte >> 3
+
+    # Valid wire types are 0-5 (6 and 7 are deprecated/reserved)
+    if wire_type > 5:
+        return False
+
+    # Field number should be positive and reasonable (1-536870911 max, but realistically small)
+    if field_num < 1 or field_num > 100:
+        return False
+
+    # For wire type 2 (length-delimited), check if length is reasonable
+    if wire_type == 2 and len(data) >= 2:
+        # Next byte(s) encode the length as varint
+        length_byte = data[1]
+        if length_byte & 0x80:
+            # Multi-byte varint, harder to validate quickly
+            # Just check it's not obviously wrong
+            pass
+        else:
+            # Single byte length
+            declared_length = length_byte
+            # Length should be <= remaining data (with some slack for nested messages)
+            if declared_length > 0 and declared_length <= len(data):
+                return True
+
+    # For wire type 0 (varint), it's likely valid
+    if wire_type == 0:
+        return True
+
+    # Accept field 1-3 with wire type 2 (common fixture patterns)
+    if field_num <= 3 and wire_type == 2:
+        return True
+
+    return False
 
 
-def detect_format(data: bytes) -> str:
+def detect_format(data: bytes, validate: bool = False) -> str:
     """
     Detect the format of binary data.
 
+    Detection order matters - FlatBuffers has more specific patterns,
+    so it's checked first to avoid false positives from Protobuf detection.
+
     Args:
         data: Raw bytes to check
+        validate: If True, try to actually parse the data to confirm format
 
     Returns:
         'flatbuffers', 'protobuf', or 'unknown'
     """
-    if is_flatbuffers_format(data):
-        return "flatbuffers"
-    elif is_protobuf_format(data):
-        return "protobuf"
-    else:
+    if len(data) < 4:
         return "unknown"
+
+    # Check FlatBuffers first - it has more specific structural requirements
+    if is_flatbuffers_format(data):
+        if validate:
+            if _validate_flatbuffers(data):
+                return "flatbuffers"
+            # Fall through to try Protobuf
+        else:
+            return "flatbuffers"
+
+    # Then check Protobuf
+    if is_protobuf_format(data):
+        if validate:
+            if _validate_protobuf(data):
+                return "protobuf"
+        else:
+            return "protobuf"
+
+    # If validation is on and heuristics failed, try parsing anyway
+    if validate:
+        if _validate_flatbuffers(data):
+            return "flatbuffers"
+        if _validate_protobuf(data):
+            return "protobuf"
+
+    return "unknown"
+
+
+def _validate_flatbuffers(data: bytes) -> bool:
+    """
+    Try to actually parse data as FlatBuffers to validate format.
+
+    Returns:
+        True if data parses as valid FlatBuffers fixture
+    """
+    if not FLATBUFFERS_AVAILABLE:
+        return False
+
+    try:
+        fb_fixture = parse_fb_elf_fixture(data)
+        if fb_fixture is None:
+            return False
+
+        # Check that we can access basic fields without error
+        metadata = fb_fixture.Metadata()
+        if metadata is not None:
+            _ = metadata.FnEntrypoint()
+
+        return True
+    except Exception:
+        return False
+
+
+def _validate_protobuf(data: bytes) -> bool:
+    """
+    Try to actually parse data as Protobuf to validate format.
+
+    Uses the common fixture structure - all fixtures have metadata as field 1:
+        message AnyFixture {
+            FixtureMetadata metadata = 1;  // Common to all fixture types
+            ...
+        }
+
+    Returns:
+        True if data parses as valid Protobuf fixture with metadata
+    """
+    try:
+        # Use the metadata-only fixture parser that works for all fixture types
+        # This is defined in multiprocessing_utils and parses just field 1 (metadata)
+        from test_suite.multiprocessing_utils import _MetadataOnlyFixture
+
+        fixture = _MetadataOnlyFixture()
+        fixture.ParseFromString(data)
+
+        # Check that metadata is present and has fn_entrypoint
+        if fixture.HasField("metadata"):
+            if fixture.metadata.fn_entrypoint:
+                return True
+
+        return False
+    except ImportError:
+        # Fallback: try parsing with metadata_pb directly
+        try:
+            # All fixtures have metadata as field 1 containing fn_entrypoint
+            # We can check if the data starts with a valid field 1 message tag
+            # and contains a string that looks like an entrypoint
+            if len(data) < 10:
+                return False
+
+            # Check for presence of common entrypoint strings
+            common_entrypoints = [
+                b"sol_compat_",
+                b"fn_entrypoint",
+            ]
+            return any(ep in data[:200] for ep in common_entrypoints)
+        except Exception:
+            return False
+    except Exception:
+        return False
 
 
 # ============================================================================
@@ -366,28 +530,6 @@ def parse_fb_elf_fixture(data: bytes) -> Optional[Any]:
 
 
 # ============================================================================
-# Entrypoint Normalization
-# ============================================================================
-
-
-def normalize_entrypoint(entrypoint: str) -> str:
-    """
-    Normalize FlatBuffers v2 entrypoints to Protobuf v1 entrypoints.
-
-    FlatBuffers schema uses _v2 suffix, but the harness map expects _v1.
-
-    Args:
-        entrypoint: The original entrypoint name
-
-    Returns:
-        Normalized entrypoint name
-    """
-    if entrypoint and entrypoint.endswith("_v2"):
-        return entrypoint[:-3] + "_v1"
-    return entrypoint
-
-
-# ============================================================================
 # FlatBuffers to Protobuf Conversion
 # ============================================================================
 
@@ -419,8 +561,9 @@ def convert_fb_to_pb_elf_fixture(
                     if isinstance(fn_entrypoint, bytes)
                     else fn_entrypoint
                 )
-                # Normalize v2 entrypoints to v1 for harness compatibility
-                pb_fixture.metadata.fn_entrypoint = normalize_entrypoint(entrypoint_str)
+                # Convert v2 entrypoint to v1 for Protobuf format
+                # Convention: _v1 = Protobuf, _v2 = FlatBuffers
+                pb_fixture.metadata.fn_entrypoint = entrypoint_to_v1(entrypoint_str)
 
         # Convert input (ELFLoaderCtx)
         fb_input = fb_fixture.Input()
@@ -467,6 +610,151 @@ def convert_fb_to_pb_elf_fixture(
         return pb_fixture, None
     except Exception as e:
         return None, f"FlatBuffers conversion error: {type(e).__name__}: {e}"
+
+
+# ============================================================================
+# Protobuf to FlatBuffers Conversion (for output)
+# ============================================================================
+
+
+# Import centralized FlatBuffers support functions from fuzz_context
+# This avoids duplicating the list of supported entrypoints
+from test_suite.fuzz_context import (
+    is_flatbuffers_supported,
+    entrypoint_to_v1,
+    entrypoint_to_v2,
+)
+
+
+# Re-export for backwards compatibility
+def is_flatbuffers_output_supported(fn_entrypoint: str) -> bool:
+    """
+    Check if FlatBuffers output is supported for a given entrypoint.
+
+    Currently only ELFLoaderFixture has FlatBuffers schema support.
+    This is a thin wrapper around fuzz_context.is_flatbuffers_supported.
+
+    Args:
+        fn_entrypoint: The function entrypoint name
+
+    Returns:
+        True if FlatBuffers output is supported
+    """
+    return is_flatbuffers_supported(fn_entrypoint)
+
+
+def convert_pb_to_fb_elf_fixture(pb_fixture) -> Tuple[Optional[bytes], Optional[str]]:
+    """
+    Convert a Protobuf ELFLoaderFixture to FlatBuffers format.
+
+    Note: Only ELFLoaderFixture is supported. Other fixture types
+    (InstrFixture, TxnFixture, etc.) do not have FlatBuffers schemas.
+
+    Args:
+        pb_fixture: Protobuf ELFLoaderFixture
+
+    Returns:
+        Tuple of (FlatBuffers bytes, error_message).
+        On success: (bytes, None)
+        On failure: (None, error_message)
+    """
+    if not FLATBUFFERS_AVAILABLE:
+        return None, "FlatBuffers support not available"
+
+    # Check if this is a supported fixture type
+    if hasattr(pb_fixture, "metadata") and pb_fixture.metadata.fn_entrypoint:
+        if not is_flatbuffers_output_supported(pb_fixture.metadata.fn_entrypoint):
+            return (
+                None,
+                f"FlatBuffers output not supported for {pb_fixture.metadata.fn_entrypoint} (only ELFLoaderFixture has FlatBuffers schema)",
+            )
+
+    try:
+        import flatbuffers
+
+        # Import builder functions
+        from org.solana.sealevel.v2 import ELFLoaderFixture as FB_ELFLoaderFixture_mod
+        from org.solana.sealevel.v2 import ELFLoaderCtx as FB_ELFLoaderCtx_mod
+        from org.solana.sealevel.v2 import ELFLoaderEffects as FB_ELFLoaderEffects_mod
+        from org.solana.sealevel.v2 import FixtureMetadata as FB_FixtureMetadata_mod
+        from org.solana.sealevel.v2 import FeatureSet as FB_FeatureSet_mod
+        from org.solana.sealevel.v2 import XXHash as FB_XXHash_mod
+
+        builder = flatbuffers.Builder(1024)
+
+        # Build metadata - convert v1 entrypoint to v2 for FlatBuffers format
+        # Convention: _v1 = Protobuf, _v2 = FlatBuffers
+        fn_entrypoint = entrypoint_to_v2(pb_fixture.metadata.fn_entrypoint)
+        fn_entrypoint_offset = (
+            builder.CreateString(fn_entrypoint) if fn_entrypoint else None
+        )
+
+        FB_FixtureMetadata_mod.Start(builder)
+        if fn_entrypoint_offset:
+            FB_FixtureMetadata_mod.AddFnEntrypoint(builder, fn_entrypoint_offset)
+        metadata_offset = FB_FixtureMetadata_mod.End(builder)
+
+        # Build input (ELFLoaderCtx)
+        # First, build elf_data vector
+        elf_data = pb_fixture.input.elf.data if pb_fixture.input.elf else b""
+        if elf_data:
+            elf_data_offset = builder.CreateByteVector(elf_data)
+        else:
+            elf_data_offset = None
+
+        # Build features
+        features_list = (
+            list(pb_fixture.input.features.features)
+            if pb_fixture.input.features
+            else []
+        )
+        features_offset = None
+        if features_list:
+            FB_FeatureSet_mod.StartFeaturesVector(builder, len(features_list))
+            for f in reversed(features_list):
+                builder.PrependUint64(f)
+            features_vector = builder.EndVector()
+
+            FB_FeatureSet_mod.Start(builder)
+            FB_FeatureSet_mod.AddFeatures(builder, features_vector)
+            features_offset = FB_FeatureSet_mod.End(builder)
+
+        FB_ELFLoaderCtx_mod.Start(builder)
+        if elf_data_offset:
+            FB_ELFLoaderCtx_mod.AddElfData(builder, elf_data_offset)
+        if features_offset:
+            FB_ELFLoaderCtx_mod.AddFeatures(builder, features_offset)
+        FB_ELFLoaderCtx_mod.AddDeployChecks(builder, pb_fixture.input.deploy_checks)
+        input_offset = FB_ELFLoaderCtx_mod.End(builder)
+
+        # Build output (ELFLoaderEffects)
+        # Build rodata_hash (XXHash is 8 bytes)
+        rodata_hash_offset = None
+        if pb_fixture.output.rodata and len(pb_fixture.output.rodata) >= 8:
+            rodata_hash_bytes = list(pb_fixture.output.rodata[:8])
+            rodata_hash_offset = FB_XXHash_mod.CreateXXHash(builder, rodata_hash_bytes)
+
+        FB_ELFLoaderEffects_mod.Start(builder)
+        FB_ELFLoaderEffects_mod.AddErrCode(builder, pb_fixture.output.error)
+        if rodata_hash_offset:
+            FB_ELFLoaderEffects_mod.AddRodataHash(builder, rodata_hash_offset)
+        FB_ELFLoaderEffects_mod.AddTextCnt(builder, pb_fixture.output.text_cnt)
+        FB_ELFLoaderEffects_mod.AddTextOff(builder, pb_fixture.output.text_off)
+        FB_ELFLoaderEffects_mod.AddEntryPc(builder, pb_fixture.output.entry_pc)
+        output_offset = FB_ELFLoaderEffects_mod.End(builder)
+
+        # Build the fixture
+        FB_ELFLoaderFixture_mod.Start(builder)
+        FB_ELFLoaderFixture_mod.AddMetadata(builder, metadata_offset)
+        FB_ELFLoaderFixture_mod.AddInput(builder, input_offset)
+        FB_ELFLoaderFixture_mod.AddOutput(builder, output_offset)
+        fixture_offset = FB_ELFLoaderFixture_mod.End(builder)
+
+        builder.Finish(fixture_offset)
+        return bytes(builder.Output()), None
+
+    except Exception as e:
+        return None, f"FlatBuffers build error: {type(e).__name__}: {e}"
 
 
 # ============================================================================
