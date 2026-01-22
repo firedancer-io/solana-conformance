@@ -73,9 +73,42 @@ Harness options:
 - ElfHarness
 """
 
+
+def get_version() -> str:
+    """Get the version string for solana-conformance."""
+    try:
+        from importlib.metadata import version
+
+        return version("solana-conformance")
+    except Exception:
+        return "0.0.0-dev"
+
+
+def version_callback(value: bool):
+    """Print version info and exit."""
+    if value:
+        print(f"solana-conformance {get_version()}")
+        raise typer.Exit()
+
+
 app = typer.Typer(
     help="Validate effects from clients using Protobuf or FlatBuffers fixtures."
 )
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        "-V",
+        callback=version_callback,
+        is_eager=True,
+        help="Show version and exit.",
+    ),
+):
+    """Solana Conformance Test Suite."""
+    pass
 
 
 @app.command(help=f"Execute Context or Fixture message(s) and print the Effects.")

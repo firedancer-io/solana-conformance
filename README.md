@@ -224,6 +224,31 @@ To setup the `solana-conformance` environment, run the following command and you
 source test_suite_env/bin/activate
 ```
 
+### Environment Variables
+
+Set these environment variables to avoid passing target paths on every command:
+
+```sh
+# Path to Agave/Solana reference target (.so file)
+export SOLFUZZ_TARGET=/path/to/libsolfuzz_agave.so
+
+# Path to Firedancer target (.so file)
+export FIREDANCER_TARGET=/path/to/libfd_exec_sol_compat.so
+```
+
+With these set, you can run commands without `-s` and `-t`:
+```sh
+# Instead of:
+solana-conformance run-tests -i fixtures/ -s /path/to/agave.so -t /path/to/fd.so
+
+# Just use:
+solana-conformance run-tests -i fixtures/
+```
+
+Other useful environment variables:
+- `OCTANE_API_URL` - Override the Octane API endpoint
+- `GOOGLE_APPLICATION_CREDENTIALS` - Path to GCS credentials JSON file
+
 ## Usage
 Run the following to view all supported commands or refer to [commands.md](commands.md):
 ```
