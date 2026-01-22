@@ -3,6 +3,9 @@ name: Check
 on:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   lint-python:
     runs-on: ubuntu-latest
