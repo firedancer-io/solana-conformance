@@ -37,11 +37,9 @@ The install scripts will:
 3. Create a Python virtual environment
 4. Install Python packages and generate bindings
 
-The `deps.sh` script manages vendored dependencies:
-- **flatc**: Built from source (`shlr/flatbuffers` submodule)
-- **buf**: Downloas pre-built binary
-- **protosol**: Git submodule (`shlr/protosol`)
+For **reproducibility**, solana-conformance vendors all dependencies.
 
+The `deps.sh` script manages vendored dependencies:
 ```sh
 ./deps.sh           # Install all dependencies to opt/bin/
 ./deps.sh flatc     # Build only flatc
@@ -49,6 +47,8 @@ The `deps.sh` script manages vendored dependencies:
 ./deps.sh --status  # Check what's installed (including submodules)
 ./deps.sh --clean   # Remove built artifacts
 ```
+
+Building flatc requires cmake, make, and g++. The buf binary is downloaded pre-built.
 
 All built content lives in `opt/` (gitignored). Source is in `shlr/` (submodules).
 
@@ -126,21 +126,6 @@ FlatBuffers schemas are defined in [protosol](https://github.com/firedancer-io/p
 ```
 
 This generates both Protobuf and FlatBuffers bindings from the `shlr/protosol` submodule.
-
-### Vendored Dependencies
-
-For **reproducibility**, solana-conformance vendors all dependencies.
-
-```sh
-# Initialize submodules and install tools
-git submodule update --init --recursive
-./deps.sh
-
-# Check status of all dependencies
-./deps.sh --status
-```
-
-Building flatc requires cmake, make, and g++. The buf binary is downloaded pre-built.
 
 ### Using FlatBuffers Fixtures
 
