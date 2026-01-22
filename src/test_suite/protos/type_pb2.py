@@ -4,7 +4,6 @@
 # source: type.proto
 # Protobuf Python Version: 6.33.4
 """Generated protocol buffer code."""
-
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
@@ -20,6 +19,7 @@ _sym_db = _symbol_database.Default()
 
 
 from . import metadata_pb2 as metadata__pb2
+
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
     b'\n\ntype.proto\x12\x16org.solana.sealevel.v1\x1a\x0emetadata.proto"C\n\x0bTypeContext\x12\x18\n\x07\x63ontent\x18\x01 \x01(\x0cR\x07\x63ontent\x12\x1a\n\x08typename\x18\x02 \x01(\tR\x08typename"a\n\x0bTypeEffects\x12\x16\n\x06result\x18\x01 \x01(\x04R\x06result\x12&\n\x0erepresentation\x18\x02 \x01(\x0cR\x0erepresentation\x12\x12\n\x04yaml\x18\x03 \x01(\x0cR\x04yaml"\xca\x01\n\x0bTypeFixture\x12\x43\n\x08metadata\x18\x01 \x01(\x0b\x32\'.org.solana.sealevel.v1.FixtureMetadataR\x08metadata\x12\x39\n\x05input\x18\x02 \x01(\x0b\x32#.org.solana.sealevel.v1.TypeContextR\x05input\x12;\n\x06output\x18\x03 \x01(\x0b\x32#.org.solana.sealevel.v1.TypeEffectsR\x06outputb\x06proto3'

@@ -1,14 +1,86 @@
 name: Check
+
 on:
   pull_request:
+
 jobs:
-  check:
-    runs-on: ubuntu-22.04
+  lint-python:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-python@v4
-        with:
-          python-version: 3.11
-      - run: pip install black==24.3.0
       - uses: actions/checkout@v4
-      - run: black --check src/test_suite --exclude '(_pb2\.py$|/flatbuffers/)'
-      # TODO add further checks here
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install black
+        run: pip install black==24.3.0
+
+      - name: Check Python formatting
+        run: black --check src/test_suite --exclude '(_pb2\.py$|/flatbuffers/)'
+
+  lint-shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Lint shell scripts
+        run: |
+          # Check critical scripts (fail on errors)
+          shellcheck -e SC1091 -e SC2034 install.sh install_ubuntu.sh deps.sh
+          
+          # Check other scripts (warnings only)
+          shellcheck -e SC1091 -e SC2034 *.sh generators/*.sh 2>&1 || echo "Some warnings found (non-blocking)"
+
+  check-submodules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Verify submodules are configured
+        run: |
+          # Check .gitmodules has required submodules
+          grep -q "shlr/flatbuffers" .gitmodules || { echo "ERROR: flatbuffers submodule not configured"; exit 1; }
+          grep -q "shlr/protosol" .gitmodules || { echo "ERROR: protosol submodule not configured"; exit 1; }
+          
+          # Check submodule directories exist
+          test -f shlr/flatbuffers/CMakeLists.txt || { echo "ERROR: flatbuffers submodule not initialized"; exit 1; }
+          test -d shlr/protosol/proto || { echo "ERROR: protosol submodule not initialized"; exit 1; }
+          
+          echo "All submodules configured correctly"
+
+  check-deps-script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build tools
+        run: sudo apt-get install -y cmake make g++
+
+      - name: Test deps.sh --help
+        run: ./deps.sh --help
+
+      - name: Test deps.sh --status (before build)
+        run: ./deps.sh --status
+
+      - name: Test deps.sh (build all)
+        run: ./deps.sh
+
+      - name: Test deps.sh --status (after build)
+        run: |
+          ./deps.sh --status
+          test -x opt/bin/flatc || { echo "ERROR: flatc not built"; exit 1; }
+          test -x opt/bin/buf || { echo "ERROR: buf not installed"; exit 1; }
+
+      - name: Test deps.sh --clean
+        run: |
+          ./deps.sh --clean
+          test ! -d opt || { echo "ERROR: opt/ not cleaned"; exit 1; }
+          echo "Clean successful"

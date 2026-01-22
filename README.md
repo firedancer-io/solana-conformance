@@ -2,23 +2,69 @@
 
 This tool allows for validation of targets (e.g. Firedancer) against Solana Agave by running it against a series of predefined tests. It takes binary or human-readable Protobuf messages, as well as FlatBuffers fixtures, as inputs and runs them through the specified targets. It also includes functionality to validate targets for other issues, such as memory corruption.
 
+## Quick Start
+
+```sh
+# Clone with submodules
+git clone --recurse-submodules <repo-url>
+cd solana-conformance
+
+# Install (RHEL8)
+source install.sh
+
+# Verify
+solana-conformance --help
+```
+
 ## Requirements
 
 This tool works on RHEL8 or Ubuntu.
 
+**Build dependencies** (for compiling vendored tools from source):
+- cmake (3.x+)
+- make
+- g++ (or clang++)
+- git (with submodule support)
+
 ## Installation
 
-Clone this repository and, for RHEL8, run:
+Clone this repository and install dependencies:
 
 ```sh
+# Clone with submodules
+git clone --recurse-submodules <repo-url>
+cd solana-conformance
+
+# Or if already cloned, initialize submodules:
+git submodule update --init --recursive
+
+# For RHEL8, run:
 source install.sh
-```
 
-For Ubuntu, run:
-
-```sh
+# For Ubuntu, run:
 source install_ubuntu.sh
 ```
+
+The install scripts will:
+1. Install system packages (Python, cmake, etc.)
+2. Install vendored dependencies to `opt/bin/` (flatc, buf)
+3. Create a Python virtual environment
+4. Install Python packages and generate bindings
+
+The `deps.sh` script manages vendored dependencies:
+- **flatc**: Built from source (`shlr/flatbuffers` submodule, v24.3.25)
+- **buf**: Downloaded pre-built binary (v1.50.0)
+- **protosol**: Git submodule (`shlr/protosol`, v3.0.0)
+
+```sh
+./deps.sh           # Install all dependencies to opt/bin/
+./deps.sh flatc     # Build only flatc
+./deps.sh buf       # Download only buf
+./deps.sh --status  # Check what's installed (including submodules)
+./deps.sh --clean   # Remove built artifacts
+```
+
+All built content lives in `opt/` (gitignored). Source is in `shlr/` (submodules).
 
 ### Install auto-completion
 
@@ -85,7 +131,7 @@ In addition to Protobuf, this tool supports FlatBuffers fixtures (`.fix` files).
 
 ### Supported Formats
 - **Protobuf** (`.fix`, `.elfctx`, `.instrctx`, etc.) - Standard format
-- **FlatBuffers** (`.fix`) - Auto-detected and converted, used by honggfuzz/solfuzz
+- **FlatBuffers** (`.fix`) - Auto-detected and converted, used by honggfuzz/solfuzz-agave fuzzing
 
 ### Updating FlatBuffers Definitions
 
@@ -95,23 +141,46 @@ FlatBuffers schemas are also defined in [protosol](https://github.com/firedancer
 ./fetch_and_generate.sh
 ```
 
-Or generate FlatBuffers bindings only:
+This generates both Protobuf and FlatBuffers bindings from the `shlr/protosol` submodule.
+
+### Vendored Dependencies
+
+For **reproducibility**, solana-conformance vendors all dependencies:
+
+| Component | Version | Location | Source |
+|-----------|---------|----------|--------|
+| `flatc` | v24.3.25 | `opt/bin/flatc` | Built from `shlr/flatbuffers` submodule |
+| `buf` | v1.50.0 | `opt/bin/buf` | Downloaded pre-built binary |
+| `protosol` | v3.0.0 | `shlr/protosol/` | Git submodule |
+
+This approach ensures:
+- Pinned, reproducible versions (submodules lock exact commits)
+- No reliance on system-installed tools
+- Consistent builds across all platforms
+- No network fetches at build time (everything is in the repo)
+
 ```sh
-./generate_flatbuffers.sh
+# Initialize submodules and install tools
+git submodule update --init --recursive
+./deps.sh
+
+# Check status of all dependencies
+./deps.sh --status
+
+# Directory structure:
+shlr/
+├── flatbuffers/    # FlatBuffers source (submodule, v24.3.25)
+└── protosol/       # Schema files (submodule, v3.0.0)
+
+opt/
+├── bin/flatc       # Built FlatBuffers compiler
+├── bin/buf         # Downloaded buf binary
+└── cache/buf/      # Buf cache (avoids polluting ~/.cache/)
 ```
 
-### FlatBuffers Compiler (flatc)
+Building flatc requires cmake, make, and g++. The buf binary is downloaded pre-built.
 
-The `ensure_flatc.sh` script finds or installs the `flatc` compiler. It searches:
-- `$SOLFUZZ_DIR/bin/flatc`
-- `/data/$USER/solfuzz/bin/flatc`
-- `/data/$USER/repos/solfuzz/bin/flatc`
-- System PATH
-- `~/.local/bin/flatc`
-
-```sh
-./ensure_flatc.sh
-```
+**Note:** All operations stay within the project directory - nothing is written to `~/.local/`, `~/.cache/`, or other user directories.
 
 ### Using FlatBuffers Fixtures
 
@@ -271,6 +340,34 @@ Recommended usage is opening two terminals side by side, and running the above c
 source clean.sh
 ```
 
+### Script Reference
+
+| Script | Purpose |
+|--------|---------|
+| `install.sh` | Full installation (RHEL8) |
+| `install_ubuntu.sh` | Full installation (Ubuntu) |
+| `deps.sh` | Build/install vendored tools (flatc, buf) to opt/bin/ |
+| `fetch_and_generate.sh` | Generate Protobuf + FlatBuffers bindings from shlr/protosol |
+| `run_integration_tests.sh` | Run the integration test suite |
+| `clean.sh` | Remove generated files, venv, and opt/ directory |
+| `exec_it.sh` | Execute a single fixture |
+| `debug_it.sh` | Debug a fixture with GDB |
+
+## Running Integration Tests
+
+To run the integration test suite:
+
+```sh
+# Ensure dependencies are installed
+./deps.sh
+
+# Activate the virtual environment
+source test_suite_env/bin/activate
+
+# Run tests (requires target .so files)
+./run_integration_tests.sh
+```
+
 ## Troubleshooting
 
 ### Check Dependencies
@@ -336,12 +433,45 @@ source install.sh
 
 **Fix:**
 ```sh
-./generate_flatbuffers.sh
+# First ensure flatc is installed
+./deps.sh
+
+# Then generate bindings
+./fetch_and_generate.sh
 ```
 
-If that fails, ensure `flatc` is available:
+#### "flatc not found"
+
+**Cause:** The vendored FlatBuffers compiler is not built. For reproducibility, solana-conformance only uses the vendored flatc built from `shlr/flatbuffers/` and does not use system-installed versions.
+
+**Fix:**
 ```sh
-./ensure_flatc.sh
+# Initialize submodules (if not done during clone)
+git submodule update --init --recursive
+
+# Build flatc from source
+./deps.sh
+
+# Check status
+./deps.sh --status
+```
+
+**Note:** Requires cmake, make, and g++ to build from source.
+
+#### "buf not found"
+
+**Cause:** The vendored buf tool is not installed. For reproducibility, solana-conformance only uses the vendored buf in `opt/bin/` and does not use system-installed versions.
+
+**Fix:**
+```sh
+# Install buf (downloads pre-built binary)
+./deps.sh buf
+
+# Or install all dependencies
+./deps.sh
+
+# Check status
+./deps.sh --status
 ```
 
 #### "Failed to parse fixture" with FlatBuffers file
@@ -401,3 +531,17 @@ With numpy, large ELF data is parsed significantly faster.
 ```
 
 This fetches the latest protosol schemas and regenerates both Protobuf and FlatBuffers bindings.
+
+#### "Cowardly refusing to install hooks with core.hooksPath set"
+
+**Cause:** You have custom git hooks configured via `core.hooksPath`. This is just a warning during installation and doesn't affect functionality.
+
+**What it means:** The `pre-commit install` step was skipped. This is fine - the pre-commit hooks are only used for development (formatting, linting) and are not required to use solana-conformance.
+
+**Fix (optional):** If you want pre-commit hooks for development:
+```sh
+# Temporarily unset core.hooksPath
+git config --unset core.hooksPath
+pre-commit install
+# Re-set your hooks if needed
+```

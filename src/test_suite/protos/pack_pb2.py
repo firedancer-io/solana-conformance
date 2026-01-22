@@ -4,7 +4,6 @@
 # source: pack.proto
 # Protobuf Python Version: 6.33.4
 """Generated protocol buffer code."""
-
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
@@ -21,6 +20,7 @@ _sym_db = _symbol_database.Default()
 
 from . import metadata_pb2 as metadata__pb2
 from . import context_pb2 as context__pb2
+
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
     b'\n\npack.proto\x12\x16org.solana.sealevel.v1\x1a\x0emetadata.proto\x1a\rcontext.proto"{\n\x18PackComputeBudgetContext\x12\x1f\n\x0binstr_datas\x18\x01 \x03(\x0cR\ninstrDatas\x12>\n\x08\x66\x65\x61tures\x18\x02 \x01(\x0b\x32".org.solana.sealevel.v1.FeatureSetR\x08\x66\x65\x61tures"\xc5\x01\n\x18PackComputeBudgetEffects\x12,\n\x12\x63ompute_unit_limit\x18\x01 \x01(\x04R\x10\x63omputeUnitLimit\x12\x18\n\x07rewards\x18\x02 \x01(\x04R\x07rewards\x12\x17\n\x07heap_sz\x18\x03 \x01(\rR\x06heapSz\x12-\n\x13loaded_acct_data_sz\x18\x04 \x01(\rR\x10loadedAcctDataSz\x12\x19\n\x08is_empty\x18\x05 \x01(\rR\x07isEmpty"\xf1\x01\n\x18PackComputeBudgetFixture\x12\x43\n\x08metadata\x18\x01 \x01(\x0b\x32\'.org.solana.sealevel.v1.FixtureMetadataR\x08metadata\x12\x46\n\x05input\x18\x02 \x01(\x0b\x32\x30.org.solana.sealevel.v1.PackComputeBudgetContextR\x05input\x12H\n\x06output\x18\x03 \x01(\x0b\x32\x30.org.solana.sealevel.v1.PackComputeBudgetEffectsR\x06outputb\x06proto3'
