@@ -14,11 +14,11 @@ source test_suite_env/bin/activate
 # Install Python dev headers
 sudo dnf install -y python3.11-devel || true
 
-# Install package in editable mode with dev dependencies
-pip install -e ".[dev]"
+# Install package in editable mode with dev and octane dependencies
+pip install -e ".[dev,octane]"
 
-# Install pre-commit hooks
-pre-commit install
+# Install pre-commit hooks (optional, may fail if core.hooksPath is set)
+pre-commit install || echo "WARNING: pre-commit hooks not installed (you may have core.hooksPath set)"
 
 # Generate protobuf/flatbuffers bindings if missing
 if [ ! -d "src/test_suite/protos" ] || [ -z "$(ls -A src/test_suite/protos/*.py 2>/dev/null)" ]; then

@@ -49,6 +49,8 @@ dev = [
 requires = ["setuptools", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools_scm]
+
 [tool.black]
 extend-exclude = '''
 /(
