@@ -4,21 +4,53 @@ This tool allows for validation of targets (e.g. Firedancer) against Solana Agav
 
 ## Requirements
 
-This tool works on RHEL8 or Ubuntu.
+This tool works on RHEL or Ubuntu.
+
+**Build dependencies** (for compiling vendored tools from source):
+- cmake (3.x+)
+- make
+- g++ (or clang++)
+- git (with submodule support)
 
 ## Installation
 
-Clone this repository and, for RHEL8, run:
+Clone this repository and install dependencies:
 
 ```sh
+# Clone with submodules
+git clone --recurse-submodules <repo-url>
+cd solana-conformance
+
+# Or if already cloned, initialize submodules:
+git submodule update --init --recursive
+
+# For RHEL, run:
 source install.sh
-```
 
-For Ubuntu, run:
-
-```sh
+# For Ubuntu, run:
 source install_ubuntu.sh
 ```
+
+The install scripts will:
+1. Install system packages (Python, cmake, etc.)
+2. Install vendored dependencies to `opt/bin/` (flatc, buf)
+3. Create a Python virtual environment
+4. Install Python packages and generate bindings
+
+For **reproducibility**, solana-conformance vendors all dependencies.
+
+The `deps.sh` script manages vendored dependencies:
+```sh
+./deps.sh           # Install all dependencies to opt/bin/
+./deps.sh flatc     # Build only flatc
+./deps.sh buf       # Download only buf
+./deps.sh --status  # Check what's installed (including submodules)
+./deps.sh --clean   # Remove built artifacts
+```
+
+Building flatc requires cmake, make, and g++. The buf binary is downloaded pre-built.
+
+All built content lives in `opt/` (gitignored). Source is in `shlr/` (submodules).
 
 ### Install auto-completion
 
@@ -66,17 +98,15 @@ All message definitions are defined in [protosol](https://github.com/firedancer-
 ./fetch_and_generate.sh
 ```
 
-### `PROTO_VERSION`
-To avoid breakages, we enforce strict proto versioning using git tags.
+### Protosol Version
+The protosol schemas are vendored as a git submodule in `shlr/protosol`. The version is pinned by the submodule commit.
 
-Specifies the git tag/branch of the [`protosol`](https://github.com/firedancer-io/protosol) repository to use when fetching `.proto` and `.fbs` files.
-
-**Default:** `v3.0.0` (set in `fetch_and_generate.sh`) - includes both Protobuf and FlatBuffers schemas
-
-**Usage:**
-You can override the version for a one-off build:
+To update to a different version:
 ```bash
-PROTO_VERSION=v3.0.0 ./fetch_and_generate.sh
+cd shlr/protosol
+git checkout <tag-or-branch>
+cd ../..
+./fetch_and_generate.sh
 ```
 
 ## FlatBuffers
@@ -85,33 +115,17 @@ In addition to Protobuf, this tool supports FlatBuffers fixtures (`.fix` files).
 
 ### Supported Formats
 - **Protobuf** (`.fix`, `.elfctx`, `.instrctx`, etc.) - Standard format
-- **FlatBuffers** (`.fix`) - Auto-detected and converted, used by honggfuzz/solfuzz
+- **FlatBuffers** (`.fix`) - Auto-detected and converted, used by honggfuzz/solfuzz fuzzing
 
 ### Updating FlatBuffers Definitions
 
-FlatBuffers schemas are also defined in [protosol](https://github.com/firedancer-io/protosol/) (v3.0.0+). The `fetch_and_generate.sh` script generates both Protobuf and FlatBuffers Python bindings:
+FlatBuffers schemas are defined in [protosol](https://github.com/firedancer-io/protosol/). The `fetch_and_generate.sh` script generates both Protobuf and FlatBuffers Python bindings:
 
 ```sh
 ./fetch_and_generate.sh
 ```
 
-Or generate FlatBuffers bindings only:
-```sh
-./generate_flatbuffers.sh
-```
-
-### FlatBuffers Compiler (flatc)
-
-The `ensure_flatc.sh` script finds or installs the `flatc` compiler. It searches:
-- `$SOLFUZZ_DIR/bin/flatc`
-- `/data/$USER/solfuzz/bin/flatc`
-- `/data/$USER/repos/solfuzz/bin/flatc`
-- System PATH
-- `~/.local/bin/flatc`
-
-```sh
-./ensure_flatc.sh
-```
+This generates both Protobuf and FlatBuffers bindings from the `shlr/protosol` submodule.
 
 ### Using FlatBuffers Fixtures
 
@@ -271,6 +285,21 @@ Recommended usage is opening two terminals side by side, and running the above c
 source clean.sh
 ```
 
+## Running Integration Tests
+
+To run the integration test suite:
+
+```sh
+# Ensure dependencies are installed
+./deps.sh
+
+# Activate the virtual environment
+source test_suite_env/bin/activate
+
+# Run tests (requires target .so files)
+./run_integration_tests.sh
+```
+
 ## Troubleshooting
 
 ### Check Dependencies
@@ -336,12 +365,45 @@ source install.sh
 
 **Fix:**
 ```sh
-./generate_flatbuffers.sh
+# First ensure flatc is installed
+./deps.sh
+
+# Then generate bindings
+./fetch_and_generate.sh
 ```
 
-If that fails, ensure `flatc` is available:
+#### "flatc not found"
+
+**Cause:** The vendored FlatBuffers compiler is not built. For reproducibility, solana-conformance only uses the vendored flatc built from `shlr/flatbuffers/` and does not use system-installed versions.
+
+**Fix:**
 ```sh
-./ensure_flatc.sh
+# Initialize submodules (if not done during clone)
+git submodule update --init --recursive
+
+# Build flatc from source
+./deps.sh
+
+# Check status
+./deps.sh --status
+```
+
+**Note:** Requires cmake, make, and g++ to build from source.
+
+#### "buf not found"
+
+**Cause:** The vendored buf tool is not installed. For reproducibility, solana-conformance only uses the vendored buf in `opt/bin/` and does not use system-installed versions.
+
+**Fix:**
+```sh
+# Install buf (downloads pre-built binary)
+./deps.sh buf
+
+# Or install all dependencies
+./deps.sh
+
+# Check status
+./deps.sh --status
 ```
 
 #### "Failed to parse fixture" with FlatBuffers file
@@ -401,3 +463,17 @@ With numpy, large ELF data is parsed significantly faster.
 ```
 
 This fetches the latest protosol schemas and regenerates both Protobuf and FlatBuffers bindings.
+
+#### "Cowardly refusing to install hooks with core.hooksPath set"
+
+**Cause:** You have custom git hooks configured via `core.hooksPath`. This is just a warning during installation and doesn't affect functionality.
+
+**What it means:** The `pre-commit install` step was skipped. This is fine - the pre-commit hooks are only used for development (formatting, linting) and are not required to use solana-conformance.
+
+**Fix (optional):** If you want pre-commit hooks for development:
+```sh
+# Temporarily unset core.hooksPath
+git config --unset core.hooksPath
+pre-commit install
+# Re-set your hooks if needed
+```

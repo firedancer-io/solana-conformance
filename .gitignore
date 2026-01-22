@@ -174,3 +174,6 @@ scratch/
 
 # protosol
 protosol/
+
+# Vendored dependencies (built by deps.sh)
+opt/

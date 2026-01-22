@@ -4,7 +4,6 @@
 # source: block.proto
 # Protobuf Python Version: 6.33.4
 """Generated protocol buffer code."""
-
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
@@ -22,6 +21,7 @@ _sym_db = _symbol_database.Default()
 from . import context_pb2 as context__pb2
 from . import txn_pb2 as txn__pb2
 from . import metadata_pb2 as metadata__pb2
+
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
     b'\n\x0b\x62lock.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\ttxn.proto\x1a\x0emetadata.proto"I\n\x0b\x43ostTracker\x12\x1d\n\nblock_cost\x18\x01 \x01(\x04R\tblockCost\x12\x1b\n\tvote_cost\x18\x02 \x01(\x04R\x08voteCost"\xc0\x02\n\x0c\x42lockContext\x12@\n\x04txns\x18\x01 \x03(\x0b\x32,.org.solana.sealevel.v1.SanitizedTransactionR\x04txns\x12\x42\n\x0b\x61\x63\x63t_states\x18\x02 \x03(\x0b\x32!.org.solana.sealevel.v1.AcctStateR\nacctStates\x12\'\n\x0f\x62lockhash_queue\x18\x03 \x03(\x0cR\x0e\x62lockhashQueue\x12>\n\x08slot_ctx\x18\x04 \x01(\x0b\x32#.org.solana.sealevel.v1.SlotContextR\x07slotCtx\x12\x41\n\tepoch_ctx\x18\x05 \x01(\x0b\x32$.org.solana.sealevel.v1.EpochContextR\x08\x65pochCtx"\x8f\x02\n\x15LeaderScheduleEffects\x12#\n\rleaders_epoch\x18\x01 \x01(\x04R\x0cleadersEpoch\x12#\n\rleaders_slot0\x18\x02 \x01(\x04R\x0cleadersSlot0\x12(\n\x10leaders_slot_cnt\x18\x03 \x01(\x04R\x0eleadersSlotCnt\x12$\n\x0eleader_pub_cnt\x18\x04 \x01(\x04R\x0cleaderPubCnt\x12*\n\x11leaders_sched_cnt\x18\x05 \x01(\x04R\x0fleadersSchedCnt\x12\x30\n\x14leader_schedule_hash\x18\x06 \x01(\x0cR\x12leaderScheduleHash"\x99\x02\n\x0c\x42lockEffects\x12\x1b\n\thas_error\x18\x01 \x01(\x08R\x08hasError\x12/\n\x13slot_capitalization\x18\x02 \x01(\x04R\x12slotCapitalization\x12\x1b\n\tbank_hash\x18\x03 \x01(\x0cR\x08\x62\x61nkHash\x12\x46\n\x0c\x63ost_tracker\x18\x04 \x01(\x0b\x32#.org.solana.sealevel.v1.CostTrackerR\x0b\x63ostTracker\x12V\n\x0fleader_schedule\x18\x05 \x01(\x0b\x32-.org.solana.sealevel.v1.LeaderScheduleEffectsR\x0eleaderSchedule"\xcd\x01\n\x0c\x42lockFixture\x12\x43\n\x08metadata\x18\x01 \x01(\x0b\x32\'.org.solana.sealevel.v1.FixtureMetadataR\x08metadata\x12:\n\x05input\x18\x02 \x01(\x0b\x32$.org.solana.sealevel.v1.BlockContextR\x05input\x12<\n\x06output\x18\x03 \x01(\x0b\x32$.org.solana.sealevel.v1.BlockEffectsR\x06outputb\x06proto3'

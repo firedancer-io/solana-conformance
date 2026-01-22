@@ -4,7 +4,6 @@
 # source: elf.proto
 # Protobuf Python Version: 6.33.4
 """Generated protocol buffer code."""
-
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
@@ -21,6 +20,7 @@ _sym_db = _symbol_database.Default()
 
 from . import context_pb2 as context__pb2
 from . import metadata_pb2 as metadata__pb2
+
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
     b'\n\telf.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\x0emetadata.proto"\x1f\n\tELFBinary\x12\x12\n\x04\x64\x61ta\x18\x01 \x01(\x0cR\x04\x64\x61ta"\xa8\x01\n\x0c\x45LFLoaderCtx\x12\x33\n\x03\x65lf\x18\x01 \x01(\x0b\x32!.org.solana.sealevel.v1.ELFBinaryR\x03\x65lf\x12>\n\x08\x66\x65\x61tures\x18\x02 \x01(\x0b\x32".org.solana.sealevel.v1.FeatureSetR\x08\x66\x65\x61tures\x12#\n\rdeploy_checks\x18\x04 \x01(\x08R\x0c\x64\x65ployChecks"\xcc\x01\n\x10\x45LFLoaderEffects\x12\x16\n\x06rodata\x18\x01 \x01(\x0cR\x06rodata\x12\x1b\n\trodata_sz\x18\x02 \x01(\x04R\x08rodataSz\x12\x19\n\x08text_cnt\x18\x04 \x01(\x04R\x07textCnt\x12\x19\n\x08text_off\x18\x05 \x01(\x04R\x07textOff\x12\x19\n\x08\x65ntry_pc\x18\x06 \x01(\x04R\x07\x65ntryPc\x12\x1c\n\tcalldests\x18\x07 \x03(\x04R\tcalldests\x12\x14\n\x05\x65rror\x18\x08 \x01(\x05R\x05\x65rror"\xd5\x01\n\x10\x45LFLoaderFixture\x12\x43\n\x08metadata\x18\x01 \x01(\x0b\x32\'.org.solana.sealevel.v1.FixtureMetadataR\x08metadata\x12:\n\x05input\x18\x02 \x01(\x0b\x32$.org.solana.sealevel.v1.ELFLoaderCtxR\x05input\x12@\n\x06output\x18\x03 \x01(\x0b\x32(.org.solana.sealevel.v1.ELFLoaderEffectsR\x06outputb\x06proto3'

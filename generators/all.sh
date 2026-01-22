@@ -1,7 +1,29 @@
 #!/bin/bash
+#
+# Generate test fixtures using solfuzz-agave
+#
+# Requires SOLFUZZ_TARGET environment variable to be set:
+#   export SOLFUZZ_TARGET=/path/to/libsolfuzz_agave.so
+#
+set -e
+
+if [ -z "$SOLFUZZ_TARGET" ]; then
+    echo "Error: SOLFUZZ_TARGET environment variable not set"
+    echo ""
+    echo "Set it to the path of your solfuzz-agave shared library:"
+    echo "  export SOLFUZZ_TARGET=/path/to/libsolfuzz_agave.so"
+    echo ""
+    exit 1
+fi
+
+if [ ! -f "$SOLFUZZ_TARGET" ]; then
+    echo "Error: SOLFUZZ_TARGET file not found: $SOLFUZZ_TARGET"
+    exit 1
+fi
+
 TESTS_PATH=./test-vectors/txn/tests/precompile
 FIXTS_PATH=./test-vectors/txn/fixtures/precompile
-LIB_SOLFUZZ_AGAVE=../solfuzz-agave/target/debug/libsolfuzz_agave.so
+LIB_SOLFUZZ_AGAVE="$SOLFUZZ_TARGET"
 
 rm -r ${TESTS_PATH}/ed25519   ; mkdir -p ${TESTS_PATH}/ed25519
 python3 generators/ed25519.py
