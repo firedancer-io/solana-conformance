@@ -17,7 +17,7 @@ dependencies = [
   "bs4~=0.0.2",
   "click>=8.0.0,<8.2.0",
   "httpx[http2]~=0.27.0",
-  "protobuf>=6.33.0",
+  "protobuf==6.33.4",
   "flatbuffers>=24.3.25",
   "numpy>=1.24.0",
 ]
