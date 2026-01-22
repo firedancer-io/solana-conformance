@@ -216,9 +216,8 @@ else
     if ! ls "$FBS_SRC_DIR"/*.fbs &>/dev/null; then
         log_warn "No .fbs files found in $FBS_SRC_DIR (skipping)"
     else
-        # Find schema files
-        FBS_FILES=$(find "$FBS_SRC_DIR" -name "*.fbs" -type f | sort)
-        FBS_COUNT=$(echo "$FBS_FILES" | wc -l)
+        # Count schema files (using ls for portability - find may not be in PATH)
+        FBS_COUNT=$(ls -1 "$FBS_SRC_DIR"/*.fbs 2>/dev/null | wc -l)
         log_info "Found $FBS_COUNT schema files"
         
         # Clean previous generation
@@ -252,7 +251,7 @@ for root, dirs, files in os.walk('$FBS_OUTPUT_DIR'):
 "
         log_info "Created __init__.py files"
         
-        fbs_py_count=$(find "$FBS_OUTPUT_DIR" -name "*.py" -type f | wc -l)
+        fbs_py_count=$(python3 -c "import os; print(sum(1 for r,d,f in os.walk('$FBS_OUTPUT_DIR') for x in f if x.endswith('.py')))")
         echo "    Generated $fbs_py_count Python files"
     fi
 fi
@@ -269,7 +268,7 @@ echo ""
 echo "Generated files:"
 echo "  Protobuf:    $PROTO_OUTPUT_DIR/ ($proto_count files)"
 if [ -d "$FBS_OUTPUT_DIR" ]; then
-    fbs_py_count=$(find "$FBS_OUTPUT_DIR" -name "*.py" -type f 2>/dev/null | wc -l)
+    fbs_py_count=$(python3 -c "import os; print(sum(1 for r,d,f in os.walk('$FBS_OUTPUT_DIR') for x in f if x.endswith('.py')) if os.path.isdir('$FBS_OUTPUT_DIR') else 0)")
     echo "  FlatBuffers: $FBS_OUTPUT_DIR/ ($fbs_py_count files)"
 fi
 echo ""

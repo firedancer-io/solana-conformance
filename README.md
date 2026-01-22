@@ -9,7 +9,7 @@ This tool allows for validation of targets (e.g. Firedancer) against Solana Agav
 git clone --recurse-submodules <repo-url>
 cd solana-conformance
 
-# Install (RHEL8)
+# Install (RHEL)
 source install.sh
 
 # Verify
@@ -18,7 +18,7 @@ solana-conformance --help
 
 ## Requirements
 
-This tool works on RHEL8 or Ubuntu.
+This tool works on RHEL or Ubuntu.
 
 **Build dependencies** (for compiling vendored tools from source):
 - cmake (3.x+)
@@ -38,7 +38,7 @@ cd solana-conformance
 # Or if already cloned, initialize submodules:
 git submodule update --init --recursive
 
-# For RHEL8, run:
+# For RHEL, run:
 source install.sh
 
 # For Ubuntu, run:
@@ -52,9 +52,9 @@ The install scripts will:
 4. Install Python packages and generate bindings
 
 The `deps.sh` script manages vendored dependencies:
-- **flatc**: Built from source (`shlr/flatbuffers` submodule, v24.3.25)
-- **buf**: Downloaded pre-built binary (v1.50.0)
-- **protosol**: Git submodule (`shlr/protosol`, v3.0.0)
+- **flatc**: Built from source (`shlr/flatbuffers` submodule)
+- **buf**: Downloas pre-built binary
+- **protosol**: Git submodule (`shlr/protosol`)
 
 ```sh
 ./deps.sh           # Install all dependencies to opt/bin/
@@ -131,7 +131,7 @@ In addition to Protobuf, this tool supports FlatBuffers fixtures (`.fix` files).
 
 ### Supported Formats
 - **Protobuf** (`.fix`, `.elfctx`, `.instrctx`, etc.) - Standard format
-- **FlatBuffers** (`.fix`) - Auto-detected and converted, used by honggfuzz/solfuzz-agave fuzzing
+- **FlatBuffers** (`.fix`) - Auto-detected and converted, used by honggfuzz/solfuzz fuzzing
 
 ### Updating FlatBuffers Definitions
 
@@ -145,19 +145,7 @@ This generates both Protobuf and FlatBuffers bindings from the `shlr/protosol` s
 
 ### Vendored Dependencies
 
-For **reproducibility**, solana-conformance vendors all dependencies:
-
-| Component | Version | Location | Source |
-|-----------|---------|----------|--------|
-| `flatc` | v24.3.25 | `opt/bin/flatc` | Built from `shlr/flatbuffers` submodule |
-| `buf` | v1.50.0 | `opt/bin/buf` | Downloaded pre-built binary |
-| `protosol` | v3.0.0 | `shlr/protosol/` | Git submodule |
-
-This approach ensures:
-- Pinned, reproducible versions (submodules lock exact commits)
-- No reliance on system-installed tools
-- Consistent builds across all platforms
-- No network fetches at build time (everything is in the repo)
+For **reproducibility**, solana-conformance vendors all dependencies.
 
 ```sh
 # Initialize submodules and install tools
@@ -166,21 +154,9 @@ git submodule update --init --recursive
 
 # Check status of all dependencies
 ./deps.sh --status
-
-# Directory structure:
-shlr/
-├── flatbuffers/    # FlatBuffers source (submodule, v24.3.25)
-└── protosol/       # Schema files (submodule, v3.0.0)
-
-opt/
-├── bin/flatc       # Built FlatBuffers compiler
-├── bin/buf         # Downloaded buf binary
-└── cache/buf/      # Buf cache (avoids polluting ~/.cache/)
 ```
 
 Building flatc requires cmake, make, and g++. The buf binary is downloaded pre-built.
-
-**Note:** All operations stay within the project directory - nothing is written to `~/.local/`, `~/.cache/`, or other user directories.
 
 ### Using FlatBuffers Fixtures
 
@@ -339,19 +315,6 @@ Recommended usage is opening two terminals side by side, and running the above c
 ```sh
 source clean.sh
 ```
-
-### Script Reference
-
-| Script | Purpose |
-|--------|---------|
-| `install.sh` | Full installation (RHEL8) |
-| `install_ubuntu.sh` | Full installation (Ubuntu) |
-| `deps.sh` | Build/install vendored tools (flatc, buf) to opt/bin/ |
-| `fetch_and_generate.sh` | Generate Protobuf + FlatBuffers bindings from shlr/protosol |
-| `run_integration_tests.sh` | Run the integration test suite |
-| `clean.sh` | Remove generated files, venv, and opt/ directory |
-| `exec_it.sh` | Execute a single fixture |
-| `debug_it.sh` | Debug a fixture with GDB |
 
 ## Running Integration Tests
 
