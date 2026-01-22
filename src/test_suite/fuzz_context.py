@@ -118,8 +118,9 @@ HARNESS_MAP = {
     name: obj for name, obj in globals().items() if isinstance(obj, HarnessCtx)
 }
 
-# Fixture extension (used by all harness types)
-FIXTURE_EXTENSION = ".fix"
+# File extensions
+FIXTURE_EXTENSION = ".fix"  # Processed fixture files
+CRASH_EXTENSION = ".fuzz"  # Raw fuzzer crash/input files
 
 # ============================================================================
 # FlatBuffers Support

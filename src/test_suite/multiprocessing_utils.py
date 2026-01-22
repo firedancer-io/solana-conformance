@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field
 from test_suite.constants import OUTPUT_BUFFER_SIZE
 from test_suite.fuzz_context import (
+    CRASH_EXTENSION,
     ENTRYPOINT_HARNESS_MAP,
-    HarnessCtx,
     FIXTURE_EXTENSION,
+    HarnessCtx,
     get_harness_for_entrypoint,
 )
 from test_suite.fuzz_interface import ContextType, EffectsType
@@ -174,7 +175,7 @@ def extract_fix_files_from_zip(
         with zipfile.ZipFile(io.BytesIO(zip_data)) as z:
             # Check if any .fix files exist, otherwise fall back to .fuzz files
             fix_members = [m for m in z.namelist() if m.endswith(FIXTURE_EXTENSION)]
-            fuzz_members = [m for m in z.namelist() if m.endswith(".fuzz")]
+            fuzz_members = [m for m in z.namelist() if m.endswith(CRASH_EXTENSION)]
 
             # Prefer .fix files, fall back to .fuzz files if none exist
             members_to_extract = fix_members if fix_members else fuzz_members

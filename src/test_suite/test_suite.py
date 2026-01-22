@@ -805,13 +805,9 @@ def validate_fixtures(
     if input_dir.is_file():
         files = [input_dir]
     else:
-        files = list(input_dir.glob("*.fix"))
-        files.extend(input_dir.glob("*.elfctx"))
-        files.extend(input_dir.glob("*.instrctx"))
-        files.extend(input_dir.glob("*.syscallctx"))
-        files.extend(input_dir.glob("*.vmctx"))
-        files.extend(input_dir.glob("*.txnctx"))
-        files.extend(input_dir.glob("*.blockctx"))
+        files = []
+        for ext in get_all_supported_extensions():
+            files.extend(input_dir.glob(f"*{ext}"))
 
     if not files:
         print(f"No fixture files found in {input_dir}")

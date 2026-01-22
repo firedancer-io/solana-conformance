@@ -98,7 +98,7 @@ def print_dependency_status():
         print(f"[OK] flatbuffers package: v{status['flatbuffers_package']['version']}")
     else:
         print("[MISSING] flatbuffers package: NOT INSTALLED")
-        print("   Fix: pip install flatbuffers>=24.0.0")
+        print("   Fix: pip install flatbuffers")
 
     # Numpy (optional)
     if status["numpy_package"]["installed"]:
@@ -107,7 +107,7 @@ def print_dependency_status():
         )
     else:
         print("[OPTIONAL] numpy package: not installed (improves performance)")
-        print("   Optional: pip install numpy>=1.24.0")
+        print("   Optional: pip install numpy")
 
     # FlatBuffers bindings
     if status["fb_bindings"]["generated"]:
@@ -141,7 +141,7 @@ _FB_PKG_OK, _FB_PKG_VER = _check_flatbuffers_package()
 if not _FB_PKG_OK:
     print(
         "\nWarning: FlatBuffers package not installed. FlatBuffers fixtures won't be readable.\n"
-        "   To install: pip install flatbuffers>=24.0.0\n"
+        "   To install: pip install flatbuffers\n"
         "   Or re-run:  source install.sh  (or install_ubuntu.sh)\n"
     )
 
@@ -852,7 +852,7 @@ class FixtureLoader:
         if not FLATBUFFERS_AVAILABLE:
             self.error_message = (
                 "FlatBuffers support not available.\n"
-                "  To install package: pip install flatbuffers>=24.0.0\n"
+                "  To install package: pip install flatbuffers\n"
                 "  To generate bindings: ./generate_flatbuffers.sh"
             )
             if _FB_IMPORT_ERROR:
