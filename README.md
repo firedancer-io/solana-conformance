@@ -2,20 +2,6 @@
 
 This tool allows for validation of targets (e.g. Firedancer) against Solana Agave by running it against a series of predefined tests. It takes binary or human-readable Protobuf messages, as well as FlatBuffers fixtures, as inputs and runs them through the specified targets. It also includes functionality to validate targets for other issues, such as memory corruption.
 
-## Quick Start
-
-```sh
-# Clone with submodules
-git clone --recurse-submodules <repo-url>
-cd solana-conformance
-
-# Install (RHEL)
-source install.sh
-
-# Verify
-solana-conformance --help
-```
-
 ## Requirements
 
 This tool works on RHEL or Ubuntu.
