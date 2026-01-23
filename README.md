@@ -148,8 +148,8 @@ solana-conformance validate-fixtures -i fixtures/ -v  # verbose
 When creating or regenerating fixtures, you can control the output format:
 
 ```sh
-# Auto mode (default): matches output format to input format
-# FlatBuffers in -> FlatBuffers out, Protobuf in -> Protobuf out
+# Auto mode (default): upgrades to FlatBuffers when supported
+# ELF fixtures -> FlatBuffers, other fixtures -> Protobuf
 solana-conformance create-fixtures -i inputs/ -s $SOLFUZZ_TARGET -o output/
 
 # Force Protobuf output
@@ -160,7 +160,7 @@ solana-conformance create-fixtures -i inputs/ -s $SOLFUZZ_TARGET -o output/ -F f
 ```
 
 **Output format options (`-F` / `--output-format`):**
-- `auto` (default) - Matches output format to input format
+- `auto` (default) - Upgrades to FlatBuffers when supported, otherwise Protobuf
 - `protobuf` - Always output Protobuf format
 - `flatbuffers` - Output FlatBuffers format (ELFLoaderHarness only)
 

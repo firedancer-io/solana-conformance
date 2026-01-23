@@ -26,7 +26,7 @@ feature_pool = None
 readable = False
 
 # (For fixtures) Output format: 'auto', 'protobuf', or 'flatbuffers'
-# 'auto' matches output format to input format
+# 'auto' upgrades to FlatBuffers when supported
 output_format = "auto"
 
 # (For fixtures) Whether to organize fixtures by program type

@@ -122,6 +122,10 @@ HARNESS_MAP = {
 FIXTURE_EXTENSION = ".fix"  # Processed fixture files
 CRASH_EXTENSION = ".fuzz"  # Raw fuzzer crash/input files
 
+# Valid output formats for fixtures
+VALID_OUTPUT_FORMATS = ("auto", "protobuf", "flatbuffers")
+DEFAULT_OUTPUT_FORMAT = "auto"
+
 # ============================================================================
 # FlatBuffers Support
 # ============================================================================

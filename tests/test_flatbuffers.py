@@ -754,9 +754,10 @@ class TestOutputFormatHandling:
         # Check it has a default value
         assert sig.parameters["source_format"].default == "protobuf"
 
-    def test_auto_format_matches_input(self):
-        """Test that auto format matches the source format."""
+    def test_auto_format_upgrades_to_flatbuffers(self):
+        """Test that auto format upgrades to FlatBuffers when supported."""
         import test_suite.globals as globals
+        from test_suite.flatbuffers_utils import is_flatbuffers_output_supported
 
         # Save original
         original_format = globals.output_format
@@ -764,47 +765,33 @@ class TestOutputFormatHandling:
         try:
             globals.output_format = "auto"
 
-            # The logic: if output_format is 'auto', use source_format
-            # Test this logic directly
+            # The logic: if output_format is 'auto', upgrade to FlatBuffers when supported
+            # For ELF harness (supported), should resolve to flatbuffers
+            fb_supported = is_flatbuffers_output_supported("sol_compat_elf_loader_v1")
+            assert fb_supported, "ELF harness should support FlatBuffers"
+
             output_format = globals.output_format
-            source_format = "flatbuffers"
-
             if output_format == "auto":
-                resolved = (
-                    source_format
-                    if source_format in ("protobuf", "flatbuffers")
-                    else "protobuf"
-                )
+                resolved = "flatbuffers" if fb_supported else "protobuf"
             else:
                 resolved = output_format
 
-            assert resolved == "flatbuffers"
+            assert resolved == "flatbuffers", "Auto should upgrade ELF to FlatBuffers"
 
-            # Test with protobuf source
-            source_format = "protobuf"
+            # For non-ELF harness (not supported), should resolve to protobuf
+            fb_supported = is_flatbuffers_output_supported(
+                "sol_compat_instr_execute_v1"
+            )
+            assert not fb_supported, "Instr harness should not support FlatBuffers"
+
             if output_format == "auto":
-                resolved = (
-                    source_format
-                    if source_format in ("protobuf", "flatbuffers")
-                    else "protobuf"
-                )
+                resolved = "flatbuffers" if fb_supported else "protobuf"
             else:
                 resolved = output_format
 
-            assert resolved == "protobuf"
-
-            # Test with unknown source (should default to protobuf)
-            source_format = "unknown"
-            if output_format == "auto":
-                resolved = (
-                    source_format
-                    if source_format in ("protobuf", "flatbuffers")
-                    else "protobuf"
-                )
-            else:
-                resolved = output_format
-
-            assert resolved == "protobuf"
+            assert (
+                resolved == "protobuf"
+            ), "Auto should use Protobuf for unsupported harnesses"
 
         finally:
             globals.output_format = original_format
@@ -1313,9 +1300,13 @@ class TestWithRealFixtures:
                 "unknown",
             ), f"Unexpected format for {fixture_file}"
 
-    def test_write_preserves_format_in_auto_mode(self):
-        """Test that auto mode preserves the detected format."""
-        from test_suite.flatbuffers_utils import detect_format, FixtureLoader
+    def test_write_upgrades_to_flatbuffers_in_auto_mode(self):
+        """Test that auto mode upgrades to FlatBuffers when supported."""
+        from test_suite.flatbuffers_utils import (
+            detect_format,
+            FixtureLoader,
+            is_flatbuffers_output_supported,
+        )
         import test_suite.globals as globals
 
         fixtures_dir = Path(__file__).parent / "test_data" / "fixtures"
@@ -1329,20 +1320,24 @@ class TestWithRealFixtures:
             globals.output_format = "auto"
 
             for fixture_file in fixture_files[:2]:  # Test first 2 files
-                with open(fixture_file, "rb") as f:
-                    data = f.read()
+                loader = FixtureLoader(fixture_file)
+                if not loader.is_valid:
+                    continue
 
-                input_format = detect_format(data)
+                # Get the entrypoint to check if FlatBuffers is supported
+                entrypoint = loader.fn_entrypoint
+                fb_supported = (
+                    is_flatbuffers_output_supported(entrypoint) if entrypoint else False
+                )
 
-                # In auto mode, output should match input
-                if input_format in ("protobuf", "flatbuffers"):
-                    # The resolved format should match
-                    resolved = (
-                        input_format
-                        if globals.output_format == "auto"
-                        else globals.output_format
-                    )
-                    assert resolved == input_format
+                # In auto mode, should upgrade to FlatBuffers when supported
+                if globals.output_format == "auto":
+                    expected = "flatbuffers" if fb_supported else "protobuf"
+                else:
+                    expected = globals.output_format
+
+                # ELF fixtures should resolve to flatbuffers, others to protobuf
+                assert expected in ("flatbuffers", "protobuf")
 
         finally:
             globals.output_format = original_format

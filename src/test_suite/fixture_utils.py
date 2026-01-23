@@ -132,7 +132,7 @@ def write_fixture_to_disk(
     specified otherwise with the --readable flag.
 
     Output format is controlled by globals.output_format:
-    - 'auto': Match the source format (FlatBuffers in -> FlatBuffers out)
+    - 'auto': Upgrade to FlatBuffers when supported, otherwise Protobuf
     - 'protobuf': Binary Protobuf format (.fix) or human-readable (.fix.txt with -r)
     - 'flatbuffers': FlatBuffers binary format (.fix)
 
@@ -164,9 +164,12 @@ def write_fixture_to_disk(
     # Currently only ELFLoaderFixture has FlatBuffers schema
     fb_supported = is_flatbuffers_output_supported(harness_ctx.fuzz_fn_name)
 
-    # Handle 'auto' mode: match the source format (if supported)
+    # Handle 'auto' mode: upgrade to FlatBuffers when supported
+    # This helps migrate the corpus to the newer format
     if output_format == "auto":
-        if source_format == "flatbuffers" and fb_supported:
+        if fb_supported:
+            if source_format == "protobuf":
+                print(f"Upgrading {file_stem} from Protobuf to FlatBuffers format")
             output_format = "flatbuffers"
         else:
             output_format = "protobuf"

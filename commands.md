@@ -122,7 +122,7 @@ $ solana-conformance create-fixtures [OPTIONS]
 * `-o, --output-dir PATH`: Output directory for fixtures  [required]
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-r, --readable`: Output fixtures in human-readable format
-* `-F, --output-format TEXT`: Output format: 'auto' (match input format), 'protobuf', or 'flatbuffers'  [default: auto]
+* `-F, --output-format TEXT`: Output format: 'auto' (upgrade to FlatBuffers when supported), 'protobuf', or 'flatbuffers'  [default: auto]
 * `-k, --keep-passing`: Only keep passing test cases
 * `-g, --group-by-program`: Group fixture output by program type
 * `-l, --log-level INTEGER`: FD logging level  [default: 5]

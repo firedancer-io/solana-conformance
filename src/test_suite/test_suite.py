@@ -339,7 +339,7 @@ def create_fixtures(
         "auto",
         "--output-format",
         "-F",
-        help="Output format: 'auto' (match input format), 'protobuf', or 'flatbuffers'",
+        help="Output format: 'auto' (upgrade to FlatBuffers when supported), 'protobuf', or 'flatbuffers'",
     ),
     only_keep_passing: bool = typer.Option(
         False, "--keep-passing", "-k", help="Only keep passing test cases"
@@ -364,9 +364,9 @@ def create_fixtures(
     shared_libraries = [reference_shared_library] + shared_libraries
 
     # Validate output format
-    if output_format not in ("auto", "protobuf", "flatbuffers"):
+    if output_format not in VALID_OUTPUT_FORMATS:
         print(
-            f"Error: Invalid output format '{output_format}'. Must be 'auto', 'protobuf', or 'flatbuffers'."
+            f"Error: Invalid output format '{output_format}'. Must be one of: {', '.join(VALID_OUTPUT_FORMATS)}"
         )
         raise typer.Exit(code=1)
 

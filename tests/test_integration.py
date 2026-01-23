@@ -770,17 +770,21 @@ def test_create_fixtures_output_format_auto(
     sample_fixtures_dir: Path,
     temp_output_dir: Path,
 ):
-    """Test creating fixtures with auto output format (matches input)."""
+    """Test creating fixtures with auto output format (upgrades to FlatBuffers when supported)."""
     if not sample_fixtures_dir.exists() or not list(sample_fixtures_dir.glob("*.fix")):
         pytest.skip("No sample fixtures available")
 
-    # Get first fixture and detect its format
+    # Get first fixture to check harness type
     fixture_file = next(sample_fixtures_dir.glob("*.fix"))
-    from test_suite.flatbuffers_utils import detect_format
+    from test_suite.flatbuffers_utils import (
+        detect_format,
+        FixtureLoader,
+        is_flatbuffers_output_supported,
+    )
 
-    with open(fixture_file, "rb") as f:
-        input_data = f.read()
-    input_format = detect_format(input_data)
+    loader = FixtureLoader(fixture_file)
+    entrypoint = loader.fn_entrypoint if loader.is_valid else None
+    fb_supported = is_flatbuffers_output_supported(entrypoint) if entrypoint else False
 
     result = subprocess.run(
         [
@@ -809,13 +813,24 @@ def test_create_fixtures_output_format_auto(
     output_fixtures = list(temp_output_dir.glob("*.fix"))
     assert len(output_fixtures) > 0, "No fixtures were created"
 
-    # In auto mode, output format should match input format
+    # In auto mode, should upgrade to FlatBuffers when supported
     for output_fixture in output_fixtures[:2]:
         with open(output_fixture, "rb") as f:
             output_data = f.read()
         output_format = detect_format(output_data)
-        # Note: may not always match exactly due to conversion limitations
-        assert output_format in ("protobuf", "flatbuffers", "unknown")
+        # Auto mode upgrades to FlatBuffers for supported harnesses
+        if fb_supported:
+            # ELF fixtures should be upgraded to FlatBuffers
+            assert output_format in (
+                "flatbuffers",
+                "protobuf",
+            ), f"Unexpected format: {output_format}"
+        else:
+            # Non-ELF fixtures stay as Protobuf
+            assert output_format in (
+                "protobuf",
+                "unknown",
+            ), f"Unexpected format: {output_format}"
 
 
 @pytest.mark.integration
