@@ -1,6 +1,12 @@
 from dataclasses import dataclass, field
 from test_suite.constants import OUTPUT_BUFFER_SIZE
-from test_suite.fuzz_context import ENTRYPOINT_HARNESS_MAP, HarnessCtx
+from test_suite.fuzz_context import (
+    CRASH_EXTENSION,
+    ENTRYPOINT_HARNESS_MAP,
+    FIXTURE_EXTENSION,
+    HarnessCtx,
+    get_harness_for_entrypoint,
+)
 from test_suite.fuzz_interface import ContextType, EffectsType
 import test_suite.protos.invoke_pb2 as invoke_pb
 import test_suite.protos.type_pb2 as type_pb
@@ -168,8 +174,8 @@ def extract_fix_files_from_zip(
     try:
         with zipfile.ZipFile(io.BytesIO(zip_data)) as z:
             # Check if any .fix files exist, otherwise fall back to .fuzz files
-            fix_members = [m for m in z.namelist() if m.endswith(".fix")]
-            fuzz_members = [m for m in z.namelist() if m.endswith(".fuzz")]
+            fix_members = [m for m in z.namelist() if m.endswith(FIXTURE_EXTENSION)]
+            fuzz_members = [m for m in z.namelist() if m.endswith(CRASH_EXTENSION)]
 
             # Prefer .fix files, fall back to .fuzz files if none exist
             members_to_extract = fix_members if fix_members else fuzz_members
@@ -430,7 +436,7 @@ def read_fixture(fixture_file: Path) -> message.Message | None:
     try:
         # Read in binary Protobuf messages
         fn_entrypoint = extract_metadata(fixture_file).fn_entrypoint
-        harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
+        harness_ctx = get_harness_for_entrypoint(fn_entrypoint)
         with open(fixture_file, "rb") as f:
             fixture = harness_ctx.fixture_type()
             fixture.ParseFromString(f.read())
@@ -438,7 +444,7 @@ def read_fixture(fixture_file: Path) -> message.Message | None:
         try:
             # Maybe it's in human-readable Protobuf format?
             fn_entrypoint = extract_metadata(fixture_file).fn_entrypoint
-            harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
+            harness_ctx = get_harness_for_entrypoint(fn_entrypoint)
             with open(fixture_file) as f:
                 fixture = text_format.Parse(f.read(), harness_ctx.fixture_type())
             harness_ctx.context_human_decode_fn(fixture.input)
@@ -465,9 +471,9 @@ def decode_single_test_case(test_file: Path) -> int:
     Returns:
         - int: 1 if successfully decoded and written, 0 if skipped.
     """
-    if test_file.suffix == ".fix":
+    if test_file.suffix == FIXTURE_EXTENSION:
         fn_entrypoint = extract_metadata(test_file).fn_entrypoint
-        harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
+        harness_ctx = get_harness_for_entrypoint(fn_entrypoint)
         fixture = read_fixture(test_file)
         serialized_protobuf = fixture.SerializeToString(deterministic=True)
     else:
@@ -480,14 +486,14 @@ def decode_single_test_case(test_file: Path) -> int:
         return 0
 
     # Encode the input fields to be human readable
-    if test_file.suffix == ".fix":
+    if test_file.suffix == FIXTURE_EXTENSION:
         output = harness_ctx.fixture_type()
     else:
         output = harness_ctx.context_type()
 
     output.ParseFromString(serialized_protobuf)
 
-    if test_file.suffix == ".fix":
+    if test_file.suffix == FIXTURE_EXTENSION:
         harness_ctx.context_human_encode_fn(output.input)
         harness_ctx.effects_human_encode_fn(output.output)
     else:
@@ -744,16 +750,16 @@ def run_test(test_file: Path) -> tuple[str, int, dict | None]:
             - Dictionary of target library names and file-dumpable serialized instruction effects
     """
     # Process fixtures through this entrypoint as well
-    if test_file.suffix == ".fix":
+    if test_file.suffix == FIXTURE_EXTENSION:
         fn_entrypoint = extract_metadata(test_file).fn_entrypoint
-        harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
+        harness_ctx = get_harness_for_entrypoint(fn_entrypoint)
         context = read_fixture(test_file).input
     else:
         harness_ctx = globals.default_harness_ctx
         context = read_context(harness_ctx, test_file)
         if context is None:
             fn_entrypoint = extract_metadata(test_file).fn_entrypoint
-            harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
+            harness_ctx = get_harness_for_entrypoint(fn_entrypoint)
             context = read_fixture(test_file).input
 
     results = process_single_test_case(harness_ctx, context)
@@ -764,12 +770,12 @@ def run_test(test_file: Path) -> tuple[str, int, dict | None]:
 
 
 def execute_fixture(test_file: Path) -> tuple[str, int, dict | None]:
-    if test_file.suffix != ".fix":
+    if test_file.suffix != FIXTURE_EXTENSION:
         print(f"File {test_file} is not a fixture")
         return test_file.stem, None
 
     fn_entrypoint = extract_metadata(test_file).fn_entrypoint
-    harness_ctx = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
+    harness_ctx = get_harness_for_entrypoint(fn_entrypoint)
     fixture = read_fixture(test_file)
     context = fixture.input
     output = fixture.output
