@@ -197,16 +197,18 @@ def build_ld_preload(
         Combined LD_PRELOAD string or None if no libraries to preload
     """
     parts = []
-    # Target libraries first - they need TLS allocated at startup to avoid
+    # Sancov stub MUST be first - it provides __sancov_lowest_stack which is
+    # needed by target libraries built with -sanitizer-coverage-stack-depth.
+    # When sanitizers spawn llvm-symbolizer, it inherits LD_PRELOAD and needs
+    # to resolve this symbol before loading the instrumented target libraries.
+    if sancov_path:
+        parts.append(sancov_path)
+    # Target libraries next - they need TLS allocated at startup to avoid
     # "cannot allocate memory in static TLS block" errors
     if target_libraries:
         for lib in target_libraries:
             if lib and os.path.isfile(str(lib)):
                 parts.append(str(lib))
-    # Sancov stub next since it provides symbols that may be needed
-    # before ASAN symbols
-    if sancov_path:
-        parts.append(sancov_path)
     if asan_path:
         parts.append(asan_path)
 
