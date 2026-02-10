@@ -957,7 +957,6 @@ def download_fixture(
     # Set globals for download_and_process
     globals.output_dir = output_dir
     globals.inputs_dir = inputs_dir
-    globals.use_octane = True  # Always use Octane
 
     try:
         api_origin = get_octane_api_origin()
@@ -1050,7 +1049,6 @@ def download_fixtures(
     # Set globals for download_and_process
     globals.output_dir = output_dir
     globals.inputs_dir = inputs_dir
-    globals.use_octane = True  # Always use Octane
 
     try:
         # Create HTTP client and fetch repros
@@ -1204,16 +1202,6 @@ def download_crash(
         "-o",
         help="Output directory for downloaded crash",
     ),
-    interactive: bool = typer.Option(
-        True,
-        "--interactive/--no-interactive",
-        help="(Deprecated, no longer needed for Octane)",
-    ),
-    use_octane: bool = typer.Option(
-        True,
-        "--use-octane",
-        help=f"(Deprecated, Octane is now always enabled)",
-    ),
 ):
     """Download a single crash (repro) file from Octane API."""
     # Create output directories
@@ -1222,7 +1210,6 @@ def download_crash(
     crashes_dir.mkdir(parents=True, exist_ok=True)
 
     # Set globals
-    globals.use_octane = True  # Always use Octane
 
     try:
         api_origin = get_octane_api_origin()
@@ -1281,22 +1268,11 @@ def download_crashes(
         "-p",
         help="Number of parallel download processes",
     ),
-    interactive: bool = typer.Option(
-        True,
-        "--interactive/--no-interactive",
-        help="(Deprecated, no longer needed for Octane)",
-    ),
-    use_octane: bool = typer.Option(
-        True,
-        "--use-octane",
-        help=f"(Deprecated, Octane is now always enabled)",
-    ),
 ):
     """Download raw crash files (repros) for given lineages from Octane API."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Set globals
-    globals.use_octane = True  # Always use Octane
 
     try:
         section_names_list = [s.strip() for s in section_names.split(",") if s.strip()]
@@ -1462,7 +1438,6 @@ def debug_mismatches(
 
     globals.inputs_dir = globals.output_dir / "inputs"
     globals.inputs_dir.mkdir(parents=True, exist_ok=True)
-    globals.use_octane = True  # Always use Octane
 
     repro_urls_list = repro_urls.split(",") if repro_urls else []
     section_names_list = section_names.split(",") if section_names else []
@@ -1691,7 +1666,6 @@ def debug_mismatch(
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
 
     globals.output_dir = output_dir
-    globals.use_octane = True  # Always use Octane
 
     if globals.output_dir.exists():
         shutil.rmtree(globals.output_dir)

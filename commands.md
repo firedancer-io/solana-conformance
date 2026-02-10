@@ -199,8 +199,6 @@ $ solana-conformance download-crash [OPTIONS] REPRO_HASH
 
 * `-l, --lineage TEXT`: Lineage name (e.g., sol_vm_syscall_cpi_rust_diff_hf)  [required]
 * `-o, --output-dir PATH`: Output directory for downloaded crash  [default: fuzzcorp_downloads]
-* `--interactive / --no-interactive`: (Deprecated, no longer needed for Octane)  [default: interactive]
-* `--use-octane`: (Deprecated, Octane is now always enabled)  [default: True]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance download-crashes`
@@ -219,8 +217,6 @@ $ solana-conformance download-crashes [OPTIONS]
 * `-n, --section-names TEXT`: Comma-delimited list of lineage names to download  [required]
 * `-l, --section-limit INTEGER`: Limit number of crashes per lineage (0 = all verified)  [default: 0]
 * `-p, --num-processes INTEGER`: Number of parallel download processes  [default: 4]
-* `--interactive / --no-interactive`: (Deprecated, no longer needed for Octane)  [default: interactive]
-* `--use-octane`: (Deprecated, Octane is now always enabled)  [default: True]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance download-fixture`
