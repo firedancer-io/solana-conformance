@@ -6,7 +6,7 @@ import filecmp
 from glob import glob
 import itertools
 from pathlib import Path
-import subprocess
+
 from concurrent.futures.process import BrokenProcessPool
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
 from test_suite.fixture_utils import (
@@ -2319,69 +2319,6 @@ def create_env(
     print(f"Updated list file: {list_path}")
     print(f"Copied fixtures to: {test_vectors_repos_path}")
     return True
-
-
-@app.command(
-    context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
-    help="Run the fuzzcorp 'fuzz' binary with the provided arguments.",
-)
-def fuzz(
-    ctx: typer.Context,
-):
-    """
-    Pass-through command to run the fuzzcorp 'fuzz' binary.
-
-    This command looks for the 'fuzz' binary in:
-    1. FUZZCORP_FUZZ_BINARY environment variable (if set)
-    2. System PATH
-
-    All arguments after 'fuzz' are passed directly to the binary.
-
-    Examples:
-        ./solana-conformance fuzz help
-        ./solana-conformance fuzz version
-        ./solana-conformance fuzz list repros --org myorg --project myproject
-
-    Note: Use 'fuzz help' instead of 'fuzz --help' to get the fuzz binary's help.
-    """
-    # Check for FUZZCORP_FUZZ_BINARY environment variable
-    fuzz_binary = os.getenv("FUZZCORP_FUZZ_BINARY")
-    if fuzz_binary:
-        if not os.path.exists(fuzz_binary):
-            print(
-                f"[ERROR] FUZZCORP_FUZZ_BINARY is set but file not found: {fuzz_binary}"
-            )
-            raise typer.Exit(code=1)
-        if not os.access(fuzz_binary, os.X_OK):
-            print(
-                f"[ERROR] FUZZCORP_FUZZ_BINARY is set but file is not executable: {fuzz_binary}"
-            )
-            raise typer.Exit(code=1)
-    else:
-        # Look for 'fuzz' in PATH
-        fuzz_binary = shutil.which("fuzz")
-        if not fuzz_binary:
-            print("[ERROR] 'fuzz' binary not found in PATH")
-            print("\nPlease either:")
-            print("  1. Add the 'fuzz' binary to your PATH, or")
-            print("  2. Set FUZZCORP_FUZZ_BINARY environment variable to the full path")
-            print("\nExample:")
-            print("  export FUZZCORP_FUZZ_BINARY=/path/to/fuzz")
-            raise typer.Exit(code=1)
-
-    # Build command with all extra arguments
-    cmd = [fuzz_binary] + ctx.args
-
-    # Run the fuzz binary with all arguments
-    try:
-        result = subprocess.run(cmd, check=False)
-        raise typer.Exit(code=result.returncode)
-    except FileNotFoundError:
-        print(f"[ERROR] Failed to execute: {fuzz_binary}")
-        raise typer.Exit(code=1)
-    except KeyboardInterrupt:
-        print("\n[INFO] Interrupted by user")
-        raise typer.Exit(code=130)
 
 
 if __name__ == "__main__":
