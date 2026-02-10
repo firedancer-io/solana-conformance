@@ -27,9 +27,7 @@ from google.protobuf import (
 import os
 import sys
 import time
-import zipfile
 import threading
-import io
 from datetime import datetime
 from test_suite.octane_api_client import OctaneAPIClient
 from test_suite.octane_utils import get_octane_api_origin
@@ -125,99 +123,6 @@ def save_raw_artifact(
         f.write(data)
 
     return 1
-
-
-def extract_fix_files_from_zip(
-    zip_data: bytes,
-    target_dir: Path,
-    enable_deduplication: bool = True,
-    fallback_filename: str = None,
-    skip_zip_extraction: bool = False,
-) -> int:
-    """
-    Extract fixture files from a ZIP archive, or save raw artifact files.
-
-    Prefers .fix files, but falls back to .fuzz files if no .fix files exist.
-    This allows downloading raw fuzzer crash inputs when validated fixtures
-    haven't been generated yet.
-
-    If the data is not a valid ZIP file (e.g., raw .fuzz file from Octane),
-    saves it directly using the fallback_filename.
-
-    Args:
-        zip_data: Bytes of the ZIP archive or raw artifact file.
-        target_dir: Directory to extract files to.
-        enable_deduplication: Whether to skip files that already exist.
-        fallback_filename: Filename to use if data is not a ZIP file.
-        skip_zip_extraction: If True, skip ZIP extraction entirely and save raw file.
-                            Use this for Octane downloads which are never zipped.
-
-    Returns:
-        Number of files extracted/saved.
-    """
-    # Octane never zips files - save directly without attempting ZIP extraction
-    if skip_zip_extraction:
-        if not fallback_filename:
-            import hashlib
-
-            data_hash = hashlib.sha256(zip_data).hexdigest()[:16]
-            fallback_filename = f"{data_hash}.fuzz"
-        return save_raw_artifact(
-            zip_data, target_dir, fallback_filename, enable_deduplication
-        )
-
-    fix_count = 0
-
-    # Try to open as ZIP first
-    try:
-        with zipfile.ZipFile(io.BytesIO(zip_data)) as z:
-            # Check if any .fix files exist, otherwise fall back to .fuzz files
-            fix_members = [m for m in z.namelist() if m.endswith(FIXTURE_EXTENSION)]
-            fuzz_members = [m for m in z.namelist() if m.endswith(CRASH_EXTENSION)]
-
-            # Prefer .fix files, fall back to .fuzz files if none exist
-            members_to_extract = fix_members if fix_members else fuzz_members
-
-            for member in members_to_extract:
-                file_content = z.read(member)
-                file_name = Path(member).name
-                file_path = target_dir / file_name
-
-                if enable_deduplication:
-                    with _download_cache_lock:
-                        # Skip if file already exists on disk (never overwrite)
-                        if file_path.exists():
-                            existing_size = file_path.stat().st_size
-                            new_size = len(file_content)
-                            print(
-                                f"  WARNING: Skipping {file_name} (exists on disk: {existing_size} bytes, new: {new_size} bytes)",
-                                file=sys.stderr,
-                                flush=True,
-                            )
-                            continue
-
-                        # Skip if we've already extracted this file in this session
-                        if file_name in _extracted_fixtures:
-                            continue
-                        _extracted_fixtures.add(file_name)
-
-                with open(file_path, "wb") as f:
-                    f.write(file_content)
-                fix_count += 1
-
-        return fix_count
-
-    except zipfile.BadZipFile:
-        # Not a ZIP file - save directly using the fallback filename
-        if not fallback_filename:
-            import hashlib
-
-            data_hash = hashlib.sha256(zip_data).hexdigest()[:16]
-            fallback_filename = f"{data_hash}.fuzz"
-
-        return save_raw_artifact(
-            zip_data, target_dir, fallback_filename, enable_deduplication
-        )
 
 
 def _download_with_timing(download_func, log_prefix: str):
@@ -857,16 +762,16 @@ def download_and_process(source):
         artifact_cache_dir.mkdir(parents=True, exist_ok=True)
 
         for idx, artifact_hash in enumerate(artifacts_to_download, 1):
-            # Check if artifact ZIP already exists on disk
-            artifact_zip_path = artifact_cache_dir / f"{artifact_hash}.zip"
+            # Check if artifact already exists on disk
+            artifact_cache_path = artifact_cache_dir / f"{artifact_hash}.bin"
 
-            if artifact_zip_path.exists():
-                # Use cached ZIP file
+            if artifact_cache_path.exists():
+                # Use cached file
                 was_cached = True
-                with open(artifact_zip_path, "rb") as f:
+                with open(artifact_cache_path, "rb") as f:
                     artifact_data = f.read()
             else:
-                # Download artifact (ZIP file)
+                # Download artifact
                 artifact_desc = (
                     f"Downloading artifact {idx}/{len(artifacts_to_download)}"
                     if len(artifacts_to_download) > 1
@@ -911,18 +816,13 @@ def download_and_process(source):
                         )
 
                 # Save to cache for future runs
-                with open(artifact_zip_path, "wb") as f:
+                with open(artifact_cache_path, "wb") as f:
                     f.write(artifact_data)
 
-            # Extract .fix/.fuzz files from the artifact (ZIP or raw file)
-            # Octane never zips files, so skip ZIP extraction entirely
-            fallback_filename = f"{artifact_hash}.fix"
-            fix_count += extract_fix_files_from_zip(
-                artifact_data,
-                globals.inputs_dir,
-                enable_deduplication=True,
-                fallback_filename=fallback_filename,
-                skip_zip_extraction=True,
+            # Save artifact to inputs directory
+            filename = f"{artifact_hash}.fix"
+            fix_count += save_raw_artifact(
+                artifact_data, globals.inputs_dir, filename, enable_deduplication=True
             )
 
             # Mark this artifact as processed (in-memory only, for this session)
