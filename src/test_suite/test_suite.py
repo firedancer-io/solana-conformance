@@ -1813,8 +1813,6 @@ def debug_mismatches(
 
         print(f"Found {len(verified_repros)} verified repro(s) for {section_name}")
 
-    ld_preload = os.environ.pop("LD_PRELOAD", None)
-
     num_test_cases = len(custom_data_urls)
 
     if num_test_cases > 0:
@@ -1893,9 +1891,6 @@ def debug_mismatches(
                 f"  - {failure.get('repro', 'unknown')}: {failure.get('message', 'unknown error')}"
             )
 
-    if ld_preload is not None:
-        os.environ["LD_PRELOAD"] = ld_preload
-
     repro_custom = globals.output_dir / "repro_custom"
     if repro_custom.exists():
         shutil.rmtree(repro_custom)
@@ -1928,6 +1923,7 @@ def debug_mismatches(
         output_dir=create_fixtures_dir,
         num_processes=num_processes,
         readable=False,
+        output_format="auto",
         only_keep_passing=False,
         organize_fixture_dir=False,
         log_level=log_level,
@@ -2098,6 +2094,7 @@ def debug_mismatch(
             output_dir=create_fixtures_dir,
             num_processes=1,  # Single repro, no need for parallel
             readable=False,
+            output_format="auto",
             only_keep_passing=False,
             organize_fixture_dir=False,
             log_level=log_level,
