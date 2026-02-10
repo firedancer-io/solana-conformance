@@ -862,13 +862,6 @@ def list_repros(
         "--interactive/--no-interactive",
         help="(Deprecated, no longer needed for Octane)",
     ),
-    fuzzcorp_url: str = typer.Option(
-        None,
-        "--fuzzcorp-url",
-        "-f",
-        help="(Deprecated, FuzzCorp has been removed)",
-        hidden=True,
-    ),
 ):
     """List all repro lineages with their counts, or all repros in a specific lineage."""
 
@@ -1429,22 +1422,13 @@ def debug_mismatches(
         help=f"Output directory for messages",
     ),
     repro_urls: str = typer.Option(
-        "", "--repro-urls", "-u", help="Comma-delimited list of FuzzCorp mismatch links"
+        "", "--repro-urls", "-u", help="Comma-delimited list of repro URLs"
     ),
     section_names: str = typer.Option(
         "",
         "--section-names",
         "-n",
-        help="Comma-delimited list of FuzzCorp section names",
-    ),
-    fuzzcorp_url: str = typer.Option(
-        os.getenv(
-            "FUZZCORP_URL",
-            "https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/",
-        ),
-        "--fuzzcorp-url",
-        "-f",
-        help="Comma-delimited list of FuzzCorp section names",
+        help="Comma-delimited list of lineage names",
     ),
     log_level: int = typer.Option(
         5,
@@ -2246,22 +2230,13 @@ def create_env(
         help=f"Output directory for messages",
     ),
     repro_urls: str = typer.Option(
-        "", "--repro-urls", "-u", help="Comma-delimited list of FuzzCorp mismatch links"
+        "", "--repro-urls", "-u", help="Comma-delimited list of repro URLs"
     ),
     section_names: str = typer.Option(
         "",
         "--section-names",
         "-n",
-        help="Comma-delimited list of FuzzCorp section names",
-    ),
-    fuzzcorp_url: str = typer.Option(
-        os.getenv(
-            "FUZZCORP_URL",
-            "https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/",
-        ),
-        "--fuzzcorp-url",
-        "-f",
-        help="Comma-delimited list of FuzzCorp section names",
+        help="Comma-delimited list of lineage names",
     ),
     log_level: int = typer.Option(
         5,
@@ -2343,7 +2318,6 @@ def create_env(
         output_dir=output_dir,
         repro_urls=repro_urls,
         section_names=section_names,
-        fuzzcorp_url=fuzzcorp_url,
         log_level=log_level,
         randomize_output_buffer=randomize_output_buffer,
         num_processes=num_processes,

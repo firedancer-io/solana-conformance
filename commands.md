@@ -68,9 +68,8 @@ $ solana-conformance create-env [OPTIONS]
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
 * `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: .]
 * `-o, --output-dir PATH`: Output directory for messages  [required]
-* `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
-* `-n, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
-* `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
+* `-u, --repro-urls TEXT`: Comma-delimited list of repro URLs
+* `-n, --section-names TEXT`: Comma-delimited list of lineage names
 * `-L, --log-level INTEGER`: FD logging level  [default: 5]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
@@ -154,9 +153,8 @@ $ solana-conformance debug-mismatches [OPTIONS]
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
 * `-t, --target PATH`: Shared object (.so) target file paths (pairs with --keep-passing). Targets must have required function entrypoints defined  [default: .]
 * `-o, --output-dir PATH`: Output directory for messages  [required]
-* `-u, --repro-urls TEXT`: Comma-delimited list of FuzzCorp mismatch links
-* `-n, --section-names TEXT`: Comma-delimited list of FuzzCorp section names
-* `-f, --fuzzcorp-url TEXT`: Comma-delimited list of FuzzCorp section names  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
+* `-u, --repro-urls TEXT`: Comma-delimited list of repro URLs
+* `-n, --section-names TEXT`: Comma-delimited list of lineage names
 * `-L, --log-level INTEGER`: FD logging level  [default: 5]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
