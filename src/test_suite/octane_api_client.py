@@ -28,7 +28,7 @@ from datetime import datetime
 from typing import Optional, Dict, List, Any, Callable
 import httpx
 
-# Default Octane API endpoint
+# Default API endpoint
 DEFAULT_OCTANE_API_ORIGIN = "http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000"
 
 # Native Octane API endpoints

@@ -860,7 +860,6 @@ def list_repros(
 ):
     """List all repro lineages with their counts, or all repros in a specific lineage."""
 
-    # Always use Octane API
     api_origin = get_octane_api_origin()
     if lineage:
         print(f"Fetching repros for lineage '{lineage}' at {api_origin}...")
@@ -1048,7 +1047,6 @@ def download_fixtures(
         section_names_list = section_names.split(",")
         download_list = []
 
-        # Always use Octane API
         api_origin = get_octane_api_origin()
         print(f"Using Octane API at {api_origin}")
         print(f"Fetching repro index...")
@@ -1086,7 +1084,7 @@ def download_fixtures(
             # Add to download list and cache metadata in one pass
             for repro in verified_repros:
                 download_list.append((section_name, repro.hash))
-                # Cache metadata directly (Octane provides BugRecord)
+                # Cache metadata directly
                 if repro.bug_record:
                     metadata = ReproMetadata.from_bug_record(repro.bug_record)
                     metadata_cache[repro.hash] = metadata
@@ -1097,7 +1095,6 @@ def download_fixtures(
             print("\n[ERROR] No repros to download")
             raise typer.Exit(code=1)
 
-        # Octane: metadata cache is already built above
         print(
             f"\nCached metadata for {len(metadata_cache)} repro(s) from initial fetch"
         )
@@ -1270,7 +1267,6 @@ def download_crashes(
     try:
         section_names_list = [s.strip() for s in section_names.split(",") if s.strip()]
 
-        # Always use Octane API
         api_origin = get_octane_api_origin()
         print(f"Using Octane API at {api_origin}")
         print(f"Fetching repro index...")
@@ -1300,12 +1296,12 @@ def download_crashes(
                 continue
             for repro in verified:
                 download_list.append((lineage, repro.hash))
-                # Cache metadata directly (Octane provides BugRecord)
+                # Cache metadata directly
                 if repro.bug_record:
                     metadata = ReproMetadata.from_bug_record(repro.bug_record)
                     metadata_cache[repro.hash] = metadata
 
-        # Build metadata cache (Octane provides metadata inline)
+        # Build metadata cache
         if download_list:
             print(
                 f"\nCached metadata for {len(metadata_cache)} repro(s) from initial fetch"
@@ -1437,7 +1433,6 @@ def debug_mismatches(
 
     custom_data_urls = []
 
-    # Always use Octane API
     api_origin = get_octane_api_origin()
     print(f"Using Octane API at {api_origin}")
     print(f"Fetching repro index...")
@@ -1474,7 +1469,7 @@ def debug_mismatches(
         # Add to download list and cache metadata in one pass
         for repro in verified_repros:
             custom_data_urls.append((section_name, repro.hash))
-            # Cache metadata directly (Octane provides BugRecord)
+            # Cache metadata directly
             if repro.bug_record:
                 metadata = ReproMetadata.from_bug_record(repro.bug_record)
                 metadata_cache[repro.hash] = metadata
@@ -1484,7 +1479,6 @@ def debug_mismatches(
     num_test_cases = len(custom_data_urls)
 
     if num_test_cases > 0:
-        # Octane: metadata already cached above
         print(f"Cached metadata for {len(metadata_cache)} repro(s) from initial fetch")
         for repro_hash, metadata in metadata_cache.items():
             print(

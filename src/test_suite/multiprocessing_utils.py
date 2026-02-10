@@ -86,9 +86,7 @@ def save_raw_artifact(
     data: bytes, target_dir: Path, filename: str, enable_deduplication: bool = True
 ) -> int:
     """
-    Save raw artifact data directly to disk (no ZIP extraction).
-
-    Use this for Octane downloads which are never zipped.
+    Save raw artifact data directly to dis.
 
     Args:
         data: Raw artifact bytes.
@@ -707,7 +705,6 @@ def download_and_process(source):
         out_dir = globals.inputs_dir / f"{section_name}_{crash_hash}"
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        # Always use Octane API - no auth required
         api_origin = get_octane_api_origin()
 
         # Check if metadata is cached (to avoid slow API calls)
@@ -783,7 +780,7 @@ def download_and_process(source):
                     else ""
                 )
 
-                # Create HTTP client for artifact download (always Octane)
+                # Create HTTP client for artifact download
                 # Use download_bug_repro (.fix preferred, .fuzz fallback) so
                 # that bugs which only have raw crash files still download
                 # successfully — callers like debug-mismatches will convert
