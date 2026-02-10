@@ -31,8 +31,6 @@ import zipfile
 import threading
 import io
 from datetime import datetime
-from test_suite.fuzzcorp_auth import get_fuzzcorp_auth
-from test_suite.fuzzcorp_api_client import FuzzCorpAPIClient
 from test_suite.octane_api_client import OctaneAPIClient
 from test_suite.octane_utils import get_octane_api_origin
 from test_suite.sanitizer_utils import load_shared_library_safe
@@ -804,21 +802,8 @@ def download_and_process(source):
         out_dir = globals.inputs_dir / f"{section_name}_{crash_hash}"
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        # Check if using Octane or FuzzCorp NG
-        use_octane = getattr(globals, "use_octane", False)
-
-        if use_octane:
-            # Using Octane API - no auth required
-            api_origin = get_octane_api_origin()
-        else:
-            # Using FuzzCorp NG API
-            config = get_fuzzcorp_auth(interactive=False)
-            if not config:
-                return {
-                    "success": False,
-                    "repro": f"{section_name}/{crash_hash}",
-                    "message": "Failed to download: no FuzzCorp config",
-                }
+        # Always use Octane API - no auth required
+        api_origin = get_octane_api_origin()
 
         # Check if metadata is cached (to avoid slow API calls)
         repro_metadata = None
@@ -835,29 +820,14 @@ def download_and_process(source):
                 file=sys.stderr,
                 flush=True,
             )
-            if use_octane:
-                with OctaneAPIClient(
-                    api_origin=api_origin,
-                    http2=True,
-                ) as client:
-                    # Pass lineage (section_name) to server for efficient lookup
-                    repro_metadata = client.get_repro_by_hash(
-                        crash_hash, lineage=section_name
-                    )
-            else:
-                with FuzzCorpAPIClient(
-                    api_origin=config.get_api_origin(),
-                    token=config.get_token(),
-                    org=config.get_organization(),
-                    project=config.get_project(),
-                    http2=True,
-                ) as client:
-                    # Get repro metadata to find artifact hashes
-                    repro_metadata = client.get_repro_by_hash(
-                        crash_hash,
-                        org=config.get_organization(),
-                        project=config.get_project(),
-                    )
+            with OctaneAPIClient(
+                api_origin=api_origin,
+                http2=True,
+            ) as client:
+                # Pass lineage (section_name) to server for efficient lookup
+                repro_metadata = client.get_repro_by_hash(
+                    crash_hash, lineage=section_name
+                )
 
         # Require at least one artifact hash. If none are present, there is
         # nothing we can download or convert into fixtures...
@@ -908,31 +878,31 @@ def download_and_process(source):
                     else ""
                 )
 
-                # Create HTTP client for artifact download
-                if use_octane:
-                    # Use download_fixture_data for Octane - only .fix files, no .fuzz fallback
-                    with OctaneAPIClient(
-                        api_origin=api_origin,
-                        http2=True,
-                    ) as client:
+                # Create HTTP client for artifact download (always Octane)
+                # Use download_bug_repro (.fix preferred, .fuzz fallback) so
+                # that bugs which only have raw crash files still download
+                # successfully — callers like debug-mismatches will convert
+                # them to fixtures via create-fixtures.
+                with OctaneAPIClient(
+                    api_origin=api_origin,
+                    http2=True,
+                ) as client:
+                    # If we have cached metadata with a BugRecord, download
+                    # directly from the GCS/S3 URLs to avoid a redundant
+                    # /api/bugs/<hash> round-trip.
+                    bug_record = (
+                        getattr(repro_metadata, "bug_record", None)
+                        if repro_metadata
+                        else None
+                    )
+                    if bug_record:
                         artifact_data = _download_with_timing(
-                            lambda: client.download_fixture_data(
-                                artifact_hash,
-                                section_name,
-                                desc=artifact_desc,
-                            ),
+                            lambda: client.download_bug_repro(bug_record),
                             f"  [{section_name}/{crash_hash[:8]}] Artifact {artifact_label}",
                         )
-                else:
-                    with FuzzCorpAPIClient(
-                        api_origin=config.get_api_origin(),
-                        token=config.get_token(),
-                        org=config.get_organization(),
-                        project=config.get_project(),
-                        http2=True,
-                    ) as client:
+                    else:
                         artifact_data = _download_with_timing(
-                            lambda: client.download_artifact_data(
+                            lambda: client.download_repro_data(
                                 artifact_hash,
                                 section_name,
                                 desc=artifact_desc,
@@ -945,14 +915,14 @@ def download_and_process(source):
                     f.write(artifact_data)
 
             # Extract .fix/.fuzz files from the artifact (ZIP or raw file)
-            # Octane never zips files, so skip ZIP extraction entirely for Octane
-            fallback_filename = f"{artifact_hash}.fix" if use_octane else None
+            # Octane never zips files, so skip ZIP extraction entirely
+            fallback_filename = f"{artifact_hash}.fix"
             fix_count += extract_fix_files_from_zip(
                 artifact_data,
                 globals.inputs_dir,
                 enable_deduplication=True,
                 fallback_filename=fallback_filename,
-                skip_zip_extraction=use_octane,
+                skip_zip_extraction=True,
             )
 
             # Mark this artifact as processed (in-memory only, for this session)
@@ -1011,44 +981,34 @@ def download_single_crash(source):
                 "path": str(out_path),
             }
 
-        # Check if using Octane or FuzzCorp NG
-        use_octane = getattr(globals, "use_octane", False)
+        # Always use Octane API - no auth required
+        # Use download_crash_data to prefer .fuzz files over .fix files
+        api_origin = get_octane_api_origin()
+        with OctaneAPIClient(
+            api_origin=api_origin,
+            http2=True,
+        ) as client:
+            # If we have cached metadata with a BugRecord, download directly
+            # from the GCS/S3 URLs to avoid a redundant /api/bugs/<hash>
+            # round-trip (which can 404 due to bundle_id scoping in
+            # standalone mode).
+            cached_meta = None
+            if hasattr(globals, "repro_metadata_cache") and crash_hash in getattr(
+                globals, "repro_metadata_cache", {}
+            ):
+                cached_meta = globals.repro_metadata_cache[crash_hash]
 
-        if use_octane:
-            # Using Octane API - no auth required
-            # Use download_crash_data to prefer .fuzz files over .fix files
-            api_origin = get_octane_api_origin()
-            with OctaneAPIClient(
-                api_origin=api_origin,
-                http2=True,
-            ) as client:
+            bug_record = (
+                getattr(cached_meta, "bug_record", None) if cached_meta else None
+            )
+            if bug_record:
                 data = _download_with_timing(
-                    lambda: client.download_crash_data(
-                        crash_hash,
-                        lineage,
-                        desc=f"Downloading {crash_hash[:8]}.crash",
-                    ),
+                    lambda: client.download_bug_crash(bug_record),
                     f"  [{lineage}/{crash_hash[:8]}] Crash file",
                 )
-        else:
-            # Using FuzzCorp NG API
-            config = get_fuzzcorp_auth(interactive=False)
-            if not config:
-                return {
-                    "success": False,
-                    "repro": f"{lineage}/{crash_hash}",
-                    "message": "Failed to download: no FuzzCorp config",
-                }
-
-            with FuzzCorpAPIClient(
-                api_origin=config.get_api_origin(),
-                token=config.get_token(),
-                org=config.get_organization(),
-                project=config.get_project(),
-                http2=True,
-            ) as client:
+            else:
                 data = _download_with_timing(
-                    lambda: client.download_repro_data(
+                    lambda: client.download_crash_data(
                         crash_hash,
                         lineage,
                         desc=f"Downloading {crash_hash[:8]}.crash",

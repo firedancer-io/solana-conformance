@@ -18,7 +18,7 @@ $ solana-conformance [OPTIONS] COMMAND [ARGS]...
 **Commands**:
 
 * `check-deps`: Check FlatBuffers and other dependencies...
-* `configure-fuzzcorp`: Configure FuzzCorp API credentials...
+* `configure-fuzzcorp`: [DEPRECATED] FuzzCorp has been removed.
 * `create-env`: Set up environment for debugging a...
 * `create-fixtures`: Create test fixtures from a directory of...
 * `debug-mismatch`: Debug a single repro by hash.
@@ -55,7 +55,7 @@ $ solana-conformance check-deps [OPTIONS]
 
 ## `solana-conformance configure-fuzzcorp`
 
-Configure FuzzCorp API credentials (interactive).
+[DEPRECATED] FuzzCorp has been removed. Octane is now the default.
 
 **Usage**:
 
@@ -65,10 +65,10 @@ $ solana-conformance configure-fuzzcorp [OPTIONS]
 
 **Options**:
 
-* `--force`: Force reconfiguration even if config exists
-* `--clear`: Clear all cached configuration
-* `--validate`: Validate current configuration and token
-* `--use-ng`: (No-op, kept for compatibility)  [default: True]
+* `--force`: (Deprecated)
+* `--clear`: (Deprecated)
+* `--validate`: (Deprecated)
+* `--use-ng`: (Deprecated)  [default: True]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance create-env`
@@ -96,7 +96,7 @@ $ solana-conformance create-env [OPTIONS]
 * `-l, --section-limit INTEGER`: Limit number of fixture per section  [default: 0]
 * `-fd, --firedancer-repo PATH`: Path to firedancer repository
 * `-tv, --test-vectors-repo PATH`: Path to test-vectors repository
-* `--use-ng`: Use fuzz NG CLI (fuzz list/download repro) instead of API scraping  [default: True]
+* `--use-ng`: (Deprecated, removed - Octane is now the default)  [default: True]
 * `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
 * `--help`: Show this message and exit.
 
@@ -154,8 +154,8 @@ $ solana-conformance debug-mismatch [OPTIONS] REPRO_HASH
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
 * `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
 * `-d, --debug`: Enable debug mode for detailed output
-* `--use-ng`: (No-op, kept for compatibility)  [default: True]
-* `--use-octane`: Use Octane API instead of FuzzCorp NG (default endpoint: http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000)
+* `--use-ng`: (Deprecated, removed - Octane is now the default)  [default: True]
+* `--use-octane`: (Deprecated, Octane is now always enabled)  [default: True]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance debug-mismatches`
@@ -183,10 +183,10 @@ $ solana-conformance debug-mismatches [OPTIONS]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-l, --section-limit INTEGER`: Limit number of fixture per section  [default: 0]
-* `--use-ng`: Use fuzz NG CLI (fuzz list/download repro) instead of API scraping  [default: True]
+* `--use-ng`: (Deprecated, removed - Octane is now the default)  [default: True]
 * `-d, --debug-mode`: Enables debug mode, which spawns a single child process for easier debugging
 * `--all-artifacts`: (Deprecated, all artifacts are now always downloaded)
-* `--use-octane`: Use Octane API instead of FuzzCorp NG (default endpoint: http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000)
+* `--use-octane`: (Deprecated, Octane is now always enabled)  [default: True]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance decode-protobufs`
@@ -210,7 +210,7 @@ $ solana-conformance decode-protobufs [OPTIONS]
 
 ## `solana-conformance download-crash`
 
-Download a single crash file by hash from FuzzCorp NG or Octane.
+Download a single crash file by hash from Octane.
 
 **Usage**:
 
@@ -226,13 +226,13 @@ $ solana-conformance download-crash [OPTIONS] REPRO_HASH
 
 * `-l, --lineage TEXT`: Lineage name (e.g., sol_vm_syscall_cpi_rust_diff_hf)  [required]
 * `-o, --output-dir PATH`: Output directory for downloaded crash  [default: fuzzcorp_downloads]
-* `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
-* `--use-octane`: Use Octane API instead of FuzzCorp NG (default endpoint: http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000)
+* `--interactive / --no-interactive`: (Deprecated, no longer needed for Octane)  [default: interactive]
+* `--use-octane`: (Deprecated, Octane is now always enabled)  [default: True]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance download-crashes`
 
-Download crash files for specified lineages from FuzzCorp NG or Octane.
+Download crash files for specified lineages from Octane.
 
 **Usage**:
 
@@ -246,13 +246,13 @@ $ solana-conformance download-crashes [OPTIONS]
 * `-n, --section-names TEXT`: Comma-delimited list of lineage names to download  [required]
 * `-l, --section-limit INTEGER`: Limit number of crashes per lineage (0 = all verified)  [default: 0]
 * `-p, --num-processes INTEGER`: Number of parallel download processes  [default: 4]
-* `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
-* `--use-octane`: Use Octane API instead of FuzzCorp NG (default endpoint: http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000)
+* `--interactive / --no-interactive`: (Deprecated, no longer needed for Octane)  [default: interactive]
+* `--use-octane`: (Deprecated, Octane is now always enabled)  [default: True]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance download-fixture`
 
-Download fixtures for a single repro hash from FuzzCorp NG or Octane.
+Download fixtures for a single repro hash from Octane.
 
 **Usage**:
 
@@ -268,14 +268,14 @@ $ solana-conformance download-fixture [OPTIONS] REPRO_HASH
 
 * `-l, --lineage TEXT`: Lineage name (e.g., sol_vm_syscall_cpi_rust_diff_hf)  [required]
 * `-o, --output-dir PATH`: Output directory for downloaded repro  [default: fuzzcorp_downloads]
-* `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
-* `--use-ng`: (No-op, kept for compatibility)  [default: True]
-* `--use-octane`: Use Octane API instead of FuzzCorp NG (default endpoint: http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000)
+* `--interactive / --no-interactive`: (Deprecated, no longer needed for Octane)  [default: interactive]
+* `--use-ng`: (Deprecated, removed - Octane is now the default)  [default: True]
+* `--use-octane`: (Deprecated, Octane is now always enabled)  [default: True]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance download-fixtures`
 
-Download fixtures for verified repros in specified lineages from FuzzCorp NG or Octane.
+Download fixtures for verified repros in specified lineages from Octane.
 
 **Usage**:
 
@@ -289,10 +289,10 @@ $ solana-conformance download-fixtures [OPTIONS]
 * `-n, --section-names TEXT`: Comma-delimited list of lineage names to download  [required]
 * `-l, --section-limit INTEGER`: Limit number of repros per lineage (0 = all verified)  [default: 0]
 * `-p, --num-processes INTEGER`: Number of parallel download processes  [default: 4]
-* `--use-ng`: Use fuzz NG CLI (fuzz list/download repro) instead of API scraping  [default: True]
-* `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
+* `--use-ng`: (Deprecated, removed - Octane is now the default)  [default: True]
+* `--interactive / --no-interactive`: (Deprecated, no longer needed for Octane)  [default: interactive]
 * `--all-artifacts`: (Deprecated, all artifacts are now always downloaded)
-* `--use-octane`: Use Octane API instead of FuzzCorp NG (default endpoint: http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000)
+* `--use-octane`: (Deprecated, Octane is now always enabled)  [default: True]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance exec-fixtures`
@@ -398,11 +398,10 @@ $ solana-conformance list-repros [OPTIONS]
 
 **Options**:
 
-* `--use-ng`: Use fuzz NG API instead of web scraping (deprecated, use --use-octane for Octane)  [default: True]
-* `--use-octane`: Use Octane API instead of FuzzCorp NG (default endpoint: http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000)
+* `--use-ng`: (Deprecated, removed - Octane is now the default)  [default: True]
+* `--use-octane`: (Deprecated, Octane is now always enabled)  [default: True]
 * `-l, --lineage TEXT`: Filter to specific lineage (shows all repros in that lineage)
-* `--interactive / --no-interactive`: Enable interactive configuration prompts if credentials are missing  [default: interactive]
-* `-f, --fuzzcorp-url TEXT`: FuzzCorp URL for web scraping (used when --use-ng is not set)  [default: https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/]
+* `--interactive / --no-interactive`: (Deprecated, no longer needed for Octane)  [default: interactive]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance mass-regenerate-fixtures`

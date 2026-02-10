@@ -136,7 +136,7 @@ FlatBuffers fixtures work transparently with all commands:
 solana-conformance run-tests -i fixtures/ -s agave.so -t firedancer.so
 
 # Download fixtures from Octane (may be FlatBuffers or Protobuf)
-solana-conformance download-fixtures --use-octane -n sol_elf_loader_diff
+solana-conformance download-fixtures -n sol_elf_loader_diff
 
 # Validate fixtures and check their format
 solana-conformance validate-fixtures -i fixtures/
@@ -237,16 +237,16 @@ is_flatbuffers_output_supported("sol_compat_instr_execute_v1")  # False
 
 ```sh
 # Download fixtures (prefers .fix files)
-solana-conformance download-fixtures --use-octane -n sol_elf_loader_diff -o fixtures/
+solana-conformance download-fixtures -n sol_elf_loader_diff -o fixtures/
 
 # Download crash inputs (prefers .fuzz files)
-solana-conformance download-crashes --use-octane -n sol_elf_loader_diff -o crashes/
+solana-conformance download-crashes -n sol_elf_loader_diff -o crashes/
 
 # Download a single repro by hash
-solana-conformance download-repro --use-octane <hash> -l sol_elf_loader_diff -o output/
+solana-conformance download-fixture <hash> -l sol_elf_loader_diff -o output/
 
 # Debug a mismatch
-solana-conformance debug-mismatch <hash> -l sol_elf_loader_diff --use-octane \
+solana-conformance debug-mismatch <hash> -l sol_elf_loader_diff \
     -s $SOLFUZZ_TARGET -t $FIREDANCER_TARGET -o debug_output/
 ```
 

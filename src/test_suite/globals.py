@@ -61,8 +61,8 @@ download_progress_bar = None
 # For downloads: whether to download all artifacts or only the latest
 download_all_artifacts: bool = False
 
-# For Octane API mode: use Octane API instead of FuzzCorp NG
-use_octane: bool = False
+# For Octane API mode: Octane is now always enabled (FuzzCorp NG removed)
+use_octane: bool = True
 
 # For downloads: input directory for fixtures
 inputs_dir = None

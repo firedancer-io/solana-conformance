@@ -24,6 +24,7 @@ _SANCOV_STUB_PATH: Optional[str] = None
 _SANCOV_STUB_CHECKED = False
 
 # Sanitizer coverage stub source - provides dummy symbols for coverage-instrumented binaries
+# This must match all __sanitizer_cov_* symbols exported by libhfuzz.so and similar runtimes
 _SANCOV_STUB_SOURCE = """\
 #include <stdint.h>
 #include <stddef.h>
@@ -32,24 +33,43 @@ _SANCOV_STUB_SOURCE = """\
 // This must be exported for libraries built with -fsanitize-coverage=stack-depth
 __thread uintptr_t __sancov_lowest_stack = 0;
 
+// Core coverage registration callbacks
 void __sanitizer_cov_8bit_counters_init(uint8_t *start, uint8_t *stop) {}
 void __sanitizer_cov_pcs_init(const uintptr_t *pcs_beg, const uintptr_t *pcs_end) {}
 void __sanitizer_cov_trace_pc_guard_init(uint32_t *start, uint32_t *stop) {}
 void __sanitizer_cov_trace_pc_guard(uint32_t *guard) {}
+
+// PC tracing
+void __sanitizer_cov_trace_pc(void) {}
+void __sanitizer_cov_trace_pc_indir(uintptr_t callee) {}
+
+// Comparison tracing (integer sizes)
+void __sanitizer_cov_trace_cmp(uint64_t size, uint64_t arg1, uint64_t arg2) {}
 void __sanitizer_cov_trace_cmp1(uint8_t arg1, uint8_t arg2) {}
 void __sanitizer_cov_trace_cmp2(uint16_t arg1, uint16_t arg2) {}
 void __sanitizer_cov_trace_cmp4(uint32_t arg1, uint32_t arg2) {}
 void __sanitizer_cov_trace_cmp8(uint64_t arg1, uint64_t arg2) {}
+
+// Comparison tracing (floating point)
+void __sanitizer_cov_trace_cmpf(float arg1, float arg2) {}
+void __sanitizer_cov_trace_cmpd(double arg1, double arg2) {}
+
+// Constant comparison tracing
 void __sanitizer_cov_trace_const_cmp1(uint8_t arg1, uint8_t arg2) {}
 void __sanitizer_cov_trace_const_cmp2(uint16_t arg1, uint16_t arg2) {}
 void __sanitizer_cov_trace_const_cmp4(uint32_t arg1, uint32_t arg2) {}
 void __sanitizer_cov_trace_const_cmp8(uint64_t arg1, uint64_t arg2) {}
+
+// Switch and division tracing
 void __sanitizer_cov_trace_switch(uint64_t val, uint64_t *cases) {}
 void __sanitizer_cov_trace_div4(uint32_t val) {}
 void __sanitizer_cov_trace_div8(uint64_t val) {}
+
+// GEP (Get Element Pointer) tracing
 void __sanitizer_cov_trace_gep(uintptr_t idx) {}
-void __sanitizer_cov_trace_pc(void) {}
-void __sanitizer_cov_trace_pc_indir(uintptr_t callee) {}
+
+// Indirect call tracing (used by -fsanitize-coverage=indirect-calls)
+void __sanitizer_cov_indir_call16(void *callee, uint32_t caller_loc) {}
 """
 
 
