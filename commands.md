@@ -18,7 +18,6 @@ $ solana-conformance [OPTIONS] COMMAND [ARGS]...
 **Commands**:
 
 * `check-deps`: Check FlatBuffers and other dependencies...
-* `configure-fuzzcorp`: [DEPRECATED] FuzzCorp has been removed.
 * `create-env`: Set up environment for debugging a...
 * `create-fixtures`: Create test fixtures from a directory of...
 * `debug-mismatch`: Debug a single repro by hash.
@@ -51,24 +50,6 @@ $ solana-conformance check-deps [OPTIONS]
 
 **Options**:
 
-* `--help`: Show this message and exit.
-
-## `solana-conformance configure-fuzzcorp`
-
-[DEPRECATED] FuzzCorp has been removed. Octane is now the default.
-
-**Usage**:
-
-```console
-$ solana-conformance configure-fuzzcorp [OPTIONS]
-```
-
-**Options**:
-
-* `--force`: (Deprecated)
-* `--clear`: (Deprecated)
-* `--validate`: (Deprecated)
-* `--use-ng`: (Deprecated)  [default: True]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance create-env`

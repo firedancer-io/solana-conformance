@@ -859,38 +859,6 @@ def validate_fixtures(
     return invalid_count == 0
 
 
-@app.command(help=f"[DEPRECATED] FuzzCorp has been removed. Octane is now the default.")
-def configure_fuzzcorp(
-    force: bool = typer.Option(
-        False,
-        "--force",
-        help="(Deprecated)",
-    ),
-    clear: bool = typer.Option(
-        False,
-        "--clear",
-        help="(Deprecated)",
-    ),
-    validate: bool = typer.Option(
-        False,
-        "--validate",
-        help="(Deprecated)",
-    ),
-    use_ng: bool = typer.Option(
-        True,
-        "--use-ng",
-        help="(Deprecated)",
-    ),
-):
-    """[DEPRECATED] FuzzCorp has been removed. Octane is now the default backend and requires no configuration."""
-    print("[ERROR] The configure-fuzzcorp command has been removed.")
-    print("Octane is now the default backend and requires no authentication.")
-    print("\nTo use Octane, simply run commands like:")
-    print("  solana-conformance list-repros")
-    print("  solana-conformance download-fixtures -n <lineage>")
-    raise typer.Exit(code=1)
-
-
 @app.command(help=f"List all available repro lineages.")
 def list_repros(
     use_ng: bool = typer.Option(
