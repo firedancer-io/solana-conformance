@@ -61,16 +61,6 @@ from test_suite.octane_api_client import (
 from test_suite.octane_utils import octane_api_call, get_octane_api_origin
 
 
-def _use_ng_callback(value: bool):
-    """Callback for deprecated --use-ng option that raises an error if specified."""
-    if value is False:  # User explicitly passed --no-use-ng or --use-ng=false
-        raise typer.BadParameter(
-            "The --use-ng option has been removed. Octane is now the default backend."
-        )
-    # If True (default), just ignore it
-    return value
-
-
 """
 Harness options:
 - InstrHarness
@@ -861,18 +851,6 @@ def validate_fixtures(
 
 @app.command(help=f"List all available repro lineages.")
 def list_repros(
-    use_ng: bool = typer.Option(
-        True,
-        "--use-ng",
-        help="(Deprecated, removed - Octane is now the default)",
-        callback=_use_ng_callback,
-        is_eager=True,
-    ),
-    use_octane: bool = typer.Option(
-        True,
-        "--use-octane",
-        help=f"(Deprecated, Octane is now always enabled)",
-    ),
     lineage: str = typer.Option(
         None,
         "--lineage",
@@ -975,23 +953,6 @@ def download_fixture(
         "-o",
         help="Output directory for downloaded repro",
     ),
-    interactive: bool = typer.Option(
-        True,
-        "--interactive/--no-interactive",
-        help="(Deprecated, no longer needed for Octane)",
-    ),
-    use_ng: bool = typer.Option(
-        True,
-        "--use-ng",
-        help="(Deprecated, removed - Octane is now the default)",
-        callback=_use_ng_callback,
-        is_eager=True,
-    ),
-    use_octane: bool = typer.Option(
-        True,
-        "--use-octane",
-        help=f"(Deprecated, Octane is now always enabled)",
-    ),
 ):
     """Download and extract fixture(s) for a single repro hash from Octane API."""
     # Create output directories
@@ -1085,28 +1046,6 @@ def download_fixtures(
         "-p",
         help="Number of parallel download processes",
     ),
-    use_ng: bool = typer.Option(
-        True,
-        "--use-ng",
-        help="(Deprecated, removed - Octane is now the default)",
-        callback=_use_ng_callback,
-        is_eager=True,
-    ),
-    interactive: bool = typer.Option(
-        True,
-        "--interactive/--no-interactive",
-        help="(Deprecated, no longer needed for Octane)",
-    ),
-    all_artifacts: bool = typer.Option(
-        False,
-        "--all-artifacts",
-        help="(Deprecated, all artifacts are now always downloaded)",
-    ),
-    use_octane: bool = typer.Option(
-        True,
-        "--use-octane",
-        help=f"(Deprecated, Octane is now always enabled)",
-    ),
 ):
     """Download and extract fixtures for verified repros from Octane API."""
     # Create output directories
@@ -1118,7 +1057,6 @@ def download_fixtures(
     # Set globals for download_and_process
     globals.output_dir = output_dir
     globals.inputs_dir = inputs_dir
-    globals.download_all_artifacts = all_artifacts
     globals.use_octane = True  # Always use Octane
 
     try:
@@ -1526,28 +1464,11 @@ def debug_mismatches(
     section_limit: int = typer.Option(
         0, "--section-limit", "-l", help="Limit number of fixture per section"
     ),
-    use_ng: bool = typer.Option(
-        True,
-        "--use-ng",
-        help="(Deprecated, removed - Octane is now the default)",
-        callback=_use_ng_callback,
-        is_eager=True,
-    ),
     debug_mode: bool = typer.Option(
         False,
         "--debug-mode",
         "-d",
         help="Enables debug mode, which spawns a single child process for easier debugging",
-    ),
-    all_artifacts: bool = typer.Option(
-        False,
-        "--all-artifacts",
-        help="(Deprecated, all artifacts are now always downloaded)",
-    ),
-    use_octane: bool = typer.Option(
-        True,
-        "--use-octane",
-        help=f"(Deprecated, Octane is now always enabled)",
     ),
 ):
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
@@ -1557,7 +1478,6 @@ def debug_mismatches(
 
     globals.inputs_dir = globals.output_dir / "inputs"
     globals.inputs_dir.mkdir(parents=True, exist_ok=True)
-    globals.download_all_artifacts = all_artifacts
     globals.use_octane = True  # Always use Octane
 
     repro_urls_list = repro_urls.split(",") if repro_urls else []
@@ -1781,18 +1701,6 @@ def debug_mismatch(
         "--debug",
         "-d",
         help="Enable debug mode for detailed output",
-    ),
-    use_ng: bool = typer.Option(
-        True,
-        "--use-ng",
-        help="(Deprecated, removed - Octane is now the default)",
-        callback=_use_ng_callback,
-        is_eager=True,
-    ),
-    use_octane: bool = typer.Option(
-        True,
-        "--use-octane",
-        help=f"(Deprecated, Octane is now always enabled)",
     ),
 ):
     """Debug a single repro by downloading and testing it."""
@@ -2384,13 +2292,6 @@ def create_env(
         "--test-vectors-repo",
         "-tv",
         help="Path to test-vectors repository",
-    ),
-    use_ng: bool = typer.Option(
-        True,
-        "--use-ng",
-        help="(Deprecated, removed - Octane is now the default)",
-        callback=_use_ng_callback,
-        is_eager=True,
     ),
     debug_mode: bool = typer.Option(
         False,

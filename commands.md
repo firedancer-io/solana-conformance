@@ -77,7 +77,6 @@ $ solana-conformance create-env [OPTIONS]
 * `-l, --section-limit INTEGER`: Limit number of fixture per section  [default: 0]
 * `-fd, --firedancer-repo PATH`: Path to firedancer repository
 * `-tv, --test-vectors-repo PATH`: Path to test-vectors repository
-* `--use-ng`: (Deprecated, removed - Octane is now the default)  [default: True]
 * `-d, --debug-mode`: Enables debug mode, which disables multiprocessing
 * `--help`: Show this message and exit.
 
@@ -135,8 +134,6 @@ $ solana-conformance debug-mismatch [OPTIONS] REPRO_HASH
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
 * `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
 * `-d, --debug`: Enable debug mode for detailed output
-* `--use-ng`: (Deprecated, removed - Octane is now the default)  [default: True]
-* `--use-octane`: (Deprecated, Octane is now always enabled)  [default: True]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance debug-mismatches`
@@ -164,10 +161,7 @@ $ solana-conformance debug-mismatches [OPTIONS]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
 * `-p, --num-processes INTEGER`: Number of processes to use  [default: 4]
 * `-l, --section-limit INTEGER`: Limit number of fixture per section  [default: 0]
-* `--use-ng`: (Deprecated, removed - Octane is now the default)  [default: True]
 * `-d, --debug-mode`: Enables debug mode, which spawns a single child process for easier debugging
-* `--all-artifacts`: (Deprecated, all artifacts are now always downloaded)
-* `--use-octane`: (Deprecated, Octane is now always enabled)  [default: True]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance decode-protobufs`
@@ -249,9 +243,6 @@ $ solana-conformance download-fixture [OPTIONS] REPRO_HASH
 
 * `-l, --lineage TEXT`: Lineage name (e.g., sol_vm_syscall_cpi_rust_diff_hf)  [required]
 * `-o, --output-dir PATH`: Output directory for downloaded repro  [default: fuzzcorp_downloads]
-* `--interactive / --no-interactive`: (Deprecated, no longer needed for Octane)  [default: interactive]
-* `--use-ng`: (Deprecated, removed - Octane is now the default)  [default: True]
-* `--use-octane`: (Deprecated, Octane is now always enabled)  [default: True]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance download-fixtures`
@@ -270,10 +261,6 @@ $ solana-conformance download-fixtures [OPTIONS]
 * `-n, --section-names TEXT`: Comma-delimited list of lineage names to download  [required]
 * `-l, --section-limit INTEGER`: Limit number of repros per lineage (0 = all verified)  [default: 0]
 * `-p, --num-processes INTEGER`: Number of parallel download processes  [default: 4]
-* `--use-ng`: (Deprecated, removed - Octane is now the default)  [default: True]
-* `--interactive / --no-interactive`: (Deprecated, no longer needed for Octane)  [default: interactive]
-* `--all-artifacts`: (Deprecated, all artifacts are now always downloaded)
-* `--use-octane`: (Deprecated, Octane is now always enabled)  [default: True]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance exec-fixtures`
@@ -379,8 +366,6 @@ $ solana-conformance list-repros [OPTIONS]
 
 **Options**:
 
-* `--use-ng`: (Deprecated, removed - Octane is now the default)  [default: True]
-* `--use-octane`: (Deprecated, Octane is now always enabled)  [default: True]
 * `-l, --lineage TEXT`: Filter to specific lineage (shows all repros in that lineage)
 * `--interactive / --no-interactive`: (Deprecated, no longer needed for Octane)  [default: interactive]
 * `--help`: Show this message and exit.
