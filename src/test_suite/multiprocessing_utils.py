@@ -168,7 +168,7 @@ def extract_fix_files_from_zip(
 
     fix_count = 0
 
-    # Try to open as ZIP first (FuzzCorp format)
+    # Try to open as ZIP first
     try:
         with zipfile.ZipFile(io.BytesIO(zip_data)) as z:
             # Check if any .fix files exist, otherwise fall back to .fuzz files

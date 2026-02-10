@@ -292,9 +292,7 @@ def _request_with_retries(
             if e.response is not None and e.response.status_code in [401, 403, 464]:
                 print(f"[ERROR] Authentication/authorization failed for {url}")
                 print(f"Status code: {e.response.status_code}")
-                print(
-                    f"Hint: Check that FUZZCORP_COOKIE environment variable is set correctly"
-                )
+                print(f"Hint: Check that your API credentials are configured correctly")
                 if raise_on_error:
                     raise RuntimeError(
                         f"Authentication failed for {url} (status {e.response.status_code})"

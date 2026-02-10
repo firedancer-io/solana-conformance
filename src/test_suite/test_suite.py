@@ -857,11 +857,6 @@ def list_repros(
         "-l",
         help="Filter to specific lineage (shows all repros in that lineage)",
     ),
-    interactive: bool = typer.Option(
-        True,
-        "--interactive/--no-interactive",
-        help="(Deprecated, no longer needed for Octane)",
-    ),
 ):
     """List all repro lineages with their counts, or all repros in a specific lineage."""
 
@@ -941,7 +936,7 @@ def download_fixture(
         help="Lineage name (e.g., sol_vm_syscall_cpi_rust_diff_hf)",
     ),
     output_dir: Path = typer.Option(
-        Path("./fuzzcorp_downloads"),
+        Path("./downloads"),
         "--output-dir",
         "-o",
         help="Output directory for downloaded repro",
@@ -1015,7 +1010,7 @@ def download_fixture(
 )
 def download_fixtures(
     output_dir: Path = typer.Option(
-        Path("./fuzzcorp_downloads"),
+        Path("./downloads"),
         "--output-dir",
         "-o",
         help="Output directory for downloaded repros",
@@ -1197,7 +1192,7 @@ def download_crash(
         help="Lineage name (e.g., sol_vm_syscall_cpi_rust_diff_hf)",
     ),
     output_dir: Path = typer.Option(
-        Path("./fuzzcorp_downloads"),
+        Path("./downloads"),
         "--output-dir",
         "-o",
         help="Output directory for downloaded crash",
@@ -1245,7 +1240,7 @@ def download_crash(
 @app.command(help="Download crash files for specified lineages from Octane.")
 def download_crashes(
     output_dir: Path = typer.Option(
-        Path("./fuzzcorp_downloads"),
+        Path("./downloads"),
         "--output-dir",
         "-o",
         help="Output directory for downloaded crashes",
@@ -1366,7 +1361,7 @@ def download_crashes(
 
 @app.command(
     help=f"""
-            Run tests on a set of targets with a list of FuzzCorp mismatch links.
+            Run tests on a set of targets with repros from Octane.
 
             Note: each `.so` target filename must be unique.
             """
@@ -1649,11 +1644,6 @@ def debug_mismatch(
         "--randomize-output-buffer",
         "-r",
         help="Randomizes bytes in output buffer before shared library execution",
-    ),
-    interactive: bool = typer.Option(
-        True,
-        "--interactive/--no-interactive",
-        help="Prompt for authentication if needed",
     ),
     debug_mode: bool = typer.Option(
         False,
@@ -2174,7 +2164,7 @@ def exec_fixtures(
 
 @app.command(
     help=f"""
-            Set up environment for debugging a mismatch from FuzzCorp
+            Set up environment for debugging a mismatch
             """
 )
 def create_env(

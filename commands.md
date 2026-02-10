@@ -18,10 +18,10 @@ $ solana-conformance [OPTIONS] COMMAND [ARGS]...
 **Commands**:
 
 * `check-deps`: Check FlatBuffers and other dependencies...
-* `create-env`: Set up environment for debugging a...
+* `create-env`: Set up environment for debugging a mismatch
 * `create-fixtures`: Create test fixtures from a directory of...
 * `debug-mismatch`: Debug a single repro by hash.
-* `debug-mismatches`: Run tests on a set of targets with a list...
+* `debug-mismatches`: Run tests on a set of targets with repros...
 * `decode-protobufs`: Convert Context and/or Fixture messages to...
 * `download-crash`: Download a single crash file by hash from...
 * `download-crashes`: Download crash files for specified...
@@ -54,7 +54,7 @@ $ solana-conformance check-deps [OPTIONS]
 
 ## `solana-conformance create-env`
 
-Set up environment for debugging a mismatch from FuzzCorp
+Set up environment for debugging a mismatch
 
 **Usage**:
 
@@ -131,13 +131,12 @@ $ solana-conformance debug-mismatch [OPTIONS] REPRO_HASH
 * `-h, --default-harness-type TEXT`: Harness type to use for Context protobufs  [default: InstrHarness]
 * `--log-level INTEGER`: FD logging level  [default: 5]
 * `-r, --randomize-output-buffer`: Randomizes bytes in output buffer before shared library execution
-* `--interactive / --no-interactive`: Prompt for authentication if needed  [default: interactive]
 * `-d, --debug`: Enable debug mode for detailed output
 * `--help`: Show this message and exit.
 
 ## `solana-conformance debug-mismatches`
 
-Run tests on a set of targets with a list of FuzzCorp mismatch links.
+Run tests on a set of targets with repros from Octane.
 
 Note: each `.so` target filename must be unique.
 
@@ -198,7 +197,7 @@ $ solana-conformance download-crash [OPTIONS] REPRO_HASH
 **Options**:
 
 * `-l, --lineage TEXT`: Lineage name (e.g., sol_vm_syscall_cpi_rust_diff_hf)  [required]
-* `-o, --output-dir PATH`: Output directory for downloaded crash  [default: fuzzcorp_downloads]
+* `-o, --output-dir PATH`: Output directory for downloaded crash  [default: downloads]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance download-crashes`
@@ -213,7 +212,7 @@ $ solana-conformance download-crashes [OPTIONS]
 
 **Options**:
 
-* `-o, --output-dir PATH`: Output directory for downloaded crashes  [default: fuzzcorp_downloads]
+* `-o, --output-dir PATH`: Output directory for downloaded crashes  [default: downloads]
 * `-n, --section-names TEXT`: Comma-delimited list of lineage names to download  [required]
 * `-l, --section-limit INTEGER`: Limit number of crashes per lineage (0 = all verified)  [default: 0]
 * `-p, --num-processes INTEGER`: Number of parallel download processes  [default: 4]
@@ -236,7 +235,7 @@ $ solana-conformance download-fixture [OPTIONS] REPRO_HASH
 **Options**:
 
 * `-l, --lineage TEXT`: Lineage name (e.g., sol_vm_syscall_cpi_rust_diff_hf)  [required]
-* `-o, --output-dir PATH`: Output directory for downloaded repro  [default: fuzzcorp_downloads]
+* `-o, --output-dir PATH`: Output directory for downloaded repro  [default: downloads]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance download-fixtures`
@@ -251,7 +250,7 @@ $ solana-conformance download-fixtures [OPTIONS]
 
 **Options**:
 
-* `-o, --output-dir PATH`: Output directory for downloaded repros  [default: fuzzcorp_downloads]
+* `-o, --output-dir PATH`: Output directory for downloaded repros  [default: downloads]
 * `-n, --section-names TEXT`: Comma-delimited list of lineage names to download  [required]
 * `-l, --section-limit INTEGER`: Limit number of repros per lineage (0 = all verified)  [default: 0]
 * `-p, --num-processes INTEGER`: Number of parallel download processes  [default: 4]
@@ -361,7 +360,6 @@ $ solana-conformance list-repros [OPTIONS]
 **Options**:
 
 * `-l, --lineage TEXT`: Filter to specific lineage (shows all repros in that lineage)
-* `--interactive / --no-interactive`: (Deprecated, no longer needed for Octane)  [default: interactive]
 * `--help`: Show this message and exit.
 
 ## `solana-conformance mass-regenerate-fixtures`
