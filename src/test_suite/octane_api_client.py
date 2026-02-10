@@ -98,7 +98,7 @@ class BugRecord:
         lineage = data.get("lineage") or data.get("target_name") or ""
 
         # Status can come from multiple fields:
-        # - "validation_statuses": array from Octane API (e.g., ["reproducible"])
+        # - "validation_statuses": array of statuses (e.g., ["reproducible"])
         # - "status": single string (fallback)
         validation_statuses = data.get("validation_statuses")
         if (

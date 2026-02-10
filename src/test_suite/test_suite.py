@@ -863,9 +863,9 @@ def list_repros(
     # Always use Octane API
     api_origin = get_octane_api_origin()
     if lineage:
-        print(f"Fetching repros for lineage '{lineage}' from Octane at {api_origin}...")
+        print(f"Fetching repros for lineage '{lineage}' at {api_origin}...")
     else:
-        print(f"Fetching repro index from Octane at {api_origin}...")
+        print(f"Fetching repro index at {api_origin}...")
 
     def fetch_repros(client):
         # Pass lineage filter to server for efficient filtering
@@ -923,7 +923,7 @@ def list_repros(
     return True
 
 
-@app.command(help="Download fixtures for a single repro hash from Octane.")
+@app.command(help="Download fixtures for a single repro hash.")
 def download_fixture(
     repro_hash: str = typer.Argument(
         ...,
@@ -942,7 +942,7 @@ def download_fixture(
         help="Output directory for downloaded repro",
     ),
 ):
-    """Download and extract fixture(s) for a single repro hash from Octane API."""
+    """Download and extract fixture(s) for a single repro hash."""
     # Create output directories
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1005,9 +1005,7 @@ def download_fixture(
         raise typer.Exit(code=1)
 
 
-@app.command(
-    help="Download fixtures for verified repros in specified lineages from Octane."
-)
+@app.command(help="Download fixtures for verified repros in specified lineages.")
 def download_fixtures(
     output_dir: Path = typer.Option(
         Path("./downloads"),
@@ -1034,7 +1032,7 @@ def download_fixtures(
         help="Number of parallel download processes",
     ),
 ):
-    """Download and extract fixtures for verified repros from Octane API."""
+    """Download and extract fixtures for verified repros."""
     # Create output directories
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1179,7 +1177,7 @@ def download_fixtures(
         raise typer.Exit(code=1)
 
 
-@app.command(help="Download a single crash file by hash from Octane.")
+@app.command(help="Download a single crash file by hash.")
 def download_crash(
     repro_hash: str = typer.Argument(
         ...,
@@ -1198,7 +1196,7 @@ def download_crash(
         help="Output directory for downloaded crash",
     ),
 ):
-    """Download a single crash (repro) file from Octane API."""
+    """Download a single crash (repro) file."""
     # Create output directories
     output_dir.mkdir(parents=True, exist_ok=True)
     crashes_dir = output_dir / "crashes" / lineage
@@ -1237,7 +1235,7 @@ def download_crash(
         raise typer.Exit(code=1)
 
 
-@app.command(help="Download crash files for specified lineages from Octane.")
+@app.command(help="Download crash files for specified lineages.")
 def download_crashes(
     output_dir: Path = typer.Option(
         Path("./downloads"),
@@ -1264,7 +1262,7 @@ def download_crashes(
         help="Number of parallel download processes",
     ),
 ):
-    """Download raw crash files (repros) for given lineages from Octane API."""
+    """Download raw crash files (repros) for given lineages."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Set globals
@@ -1361,7 +1359,7 @@ def download_crashes(
 
 @app.command(
     help=f"""
-            Run tests on a set of targets with repros from Octane.
+            Run tests on a set of targets with repros.
 
             Note: each `.so` target filename must be unique.
             """

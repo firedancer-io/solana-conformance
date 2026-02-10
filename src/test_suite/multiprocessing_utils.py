@@ -881,7 +881,6 @@ def download_single_crash(source):
                 "path": str(out_path),
             }
 
-        # Always use Octane API - no auth required
         # Use download_crash_data to prefer .fuzz files over .fix files
         api_origin = get_octane_api_origin()
         with OctaneAPIClient(

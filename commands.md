@@ -21,11 +21,11 @@ $ solana-conformance [OPTIONS] COMMAND [ARGS]...
 * `create-env`: Set up environment for debugging a mismatch
 * `create-fixtures`: Create test fixtures from a directory of...
 * `debug-mismatch`: Debug a single repro by hash.
-* `debug-mismatches`: Run tests on a set of targets with repros...
+* `debug-mismatches`: Run tests on a set of targets with repros.
 * `decode-protobufs`: Convert Context and/or Fixture messages to...
-* `download-crash`: Download a single crash file by hash from...
-* `download-crashes`: Download crash files for specified...
-* `download-fixture`: Download fixtures for a single repro hash...
+* `download-crash`: Download a single crash file by hash.
+* `download-crashes`: Download crash files for specified lineages.
+* `download-fixture`: Download fixtures for a single repro hash.
 * `download-fixtures`: Download fixtures for verified repros in...
 * `exec-fixtures`: Execute fixtures and check for correct...
 * `execute`: Execute Context or Fixture message(s) and...
@@ -135,7 +135,7 @@ $ solana-conformance debug-mismatch [OPTIONS] REPRO_HASH
 
 ## `solana-conformance debug-mismatches`
 
-Run tests on a set of targets with repros from Octane.
+Run tests on a set of targets with repros.
 
 Note: each `.so` target filename must be unique.
 
@@ -181,7 +181,7 @@ $ solana-conformance decode-protobufs [OPTIONS]
 
 ## `solana-conformance download-crash`
 
-Download a single crash file by hash from Octane.
+Download a single crash file by hash.
 
 **Usage**:
 
@@ -201,7 +201,7 @@ $ solana-conformance download-crash [OPTIONS] REPRO_HASH
 
 ## `solana-conformance download-crashes`
 
-Download crash files for specified lineages from Octane.
+Download crash files for specified lineages.
 
 **Usage**:
 
@@ -219,7 +219,7 @@ $ solana-conformance download-crashes [OPTIONS]
 
 ## `solana-conformance download-fixture`
 
-Download fixtures for a single repro hash from Octane.
+Download fixtures for a single repro hash.
 
 **Usage**:
 
@@ -239,7 +239,7 @@ $ solana-conformance download-fixture [OPTIONS] REPRO_HASH
 
 ## `solana-conformance download-fixtures`
 
-Download fixtures for verified repros in specified lineages from Octane.
+Download fixtures for verified repros in specified lineages.
 
 **Usage**:
 
