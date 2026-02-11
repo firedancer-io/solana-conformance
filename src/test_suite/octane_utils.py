@@ -2,7 +2,7 @@
 Octane API utility functions for solana-conformance.
 
 This module provides helper functions for making API calls to the Octane
-orchestrator, similar to fuzzcorp_utils.py but for the Octane backend.
+orchestrator.
 """
 
 import functools

@@ -6,7 +6,7 @@ import filecmp
 from glob import glob
 import itertools
 from pathlib import Path
-import subprocess
+
 from concurrent.futures.process import BrokenProcessPool
 from test_suite.constants import LOG_FILE_SEPARATOR_LENGTH
 from test_suite.fixture_utils import (
@@ -53,15 +53,13 @@ import time
 import test_suite.features_utils as features_utils
 import traceback
 import httpx
-from test_suite.fuzzcorp_auth import get_fuzzcorp_auth, FuzzCorpAuth
-from test_suite.fuzzcorp_api_client import FuzzCorpAPIClient
-from test_suite.fuzzcorp_utils import fuzzcorp_api_call
 from test_suite.octane_api_client import (
     OctaneAPIClient,
     DEFAULT_OCTANE_API_ORIGIN,
     ReproMetadata,
 )
 from test_suite.octane_utils import octane_api_call, get_octane_api_origin
+
 
 """
 Harness options:
@@ -851,136 +849,29 @@ def validate_fixtures(
     return invalid_count == 0
 
 
-@app.command(help=f"Configure FuzzCorp API credentials (interactive).")
-def configure_fuzzcorp(
-    force: bool = typer.Option(
-        False,
-        "--force",
-        help="Force reconfiguration even if config exists",
-    ),
-    clear: bool = typer.Option(
-        False,
-        "--clear",
-        help="Clear all cached configuration",
-    ),
-    validate: bool = typer.Option(
-        False,
-        "--validate",
-        help="Validate current configuration and token",
-    ),
-    use_ng: bool = typer.Option(
-        True,
-        "--use-ng",
-        help="(No-op, kept for compatibility)",
-    ),
-):
-    """Configure FuzzCorp API credentials interactively or manage configuration."""
-    config = FuzzCorpAuth()
-
-    if clear:
-        config.clear_all()
-        print("Configuration cleared from:", config.config_file)
-        return True
-
-    if validate:
-        print("Checking configuration...")
-        print(f"  API Origin: {config.get_api_origin()}")
-        print(f"  Organization: {config.get_organization()}")
-        print(f"  Project: {config.get_project()}")
-
-        if config.get_token():
-            print(f"  Token: (cached)")
-            print("\nValidating token...")
-            if config.validate_token():
-                print("Token is valid!")
-                return True
-            else:
-                print("Token is invalid or expired")
-                print(
-                    "\nRun 'solana-conformance configure-fuzzcorp' to re-authenticate."
-                )
-                raise typer.Exit(code=1)
-        else:
-            print("No token cached")
-            missing_auth = config.get_missing_auth()
-            if missing_auth:
-                print(f"\nPlease set: {missing_auth}")
-            print("\nOr run 'solana-conformance configure-fuzzcorp' to authenticate.")
-            raise typer.Exit(code=1)
-
-    # Interactive setup
-    if config.interactive_setup(force=force):
-        return True
-    else:
-        print("[ERROR] Configuration setup failed")
-        raise typer.Exit(code=1)
-
-
 @app.command(help=f"List all available repro lineages.")
 def list_repros(
-    use_ng: bool = typer.Option(
-        True,
-        "--use-ng",
-        help="Use fuzz NG API instead of web scraping (deprecated, use --use-octane for Octane)",
-    ),
-    use_octane: bool = typer.Option(
-        False,
-        "--use-octane",
-        help=f"Use Octane API instead of FuzzCorp NG (default endpoint: {DEFAULT_OCTANE_API_ORIGIN})",
-    ),
     lineage: str = typer.Option(
         None,
         "--lineage",
         "-l",
         help="Filter to specific lineage (shows all repros in that lineage)",
     ),
-    interactive: bool = typer.Option(
-        True,
-        "--interactive/--no-interactive",
-        help="Enable interactive configuration prompts if credentials are missing",
-    ),
-    fuzzcorp_url: str = typer.Option(
-        os.getenv(
-            "FUZZCORP_URL",
-            "https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/",
-        ),
-        "--fuzzcorp-url",
-        "-f",
-        help="FuzzCorp URL for web scraping (used when --use-ng is not set)",
-    ),
 ):
     """List all repro lineages with their counts, or all repros in a specific lineage."""
 
-    if use_octane:
-        # Use Octane API
-        api_origin = get_octane_api_origin()
-        if lineage:
-            print(
-                f"Fetching repros for lineage '{lineage}' from Octane at {api_origin}..."
-            )
-        else:
-            print(f"Fetching repro index from Octane at {api_origin}...")
-
-        def fetch_repros(client):
-            # Pass lineage filter to server for efficient filtering
-            lineages_filter = [lineage] if lineage else None
-            return client.list_repros(lineages=lineages_filter)
-
-        response = octane_api_call(fetch_repros, api_origin=api_origin)
+    api_origin = get_octane_api_origin()
+    if lineage:
+        print(f"Fetching repros for lineage '{lineage}' at {api_origin}...")
     else:
-        # Use FuzzCorp HTTP API directly with interactive configuration
-        # Get configuration (with interactive prompts if needed)
-        config = get_fuzzcorp_auth(interactive=interactive)
-        if not config:
-            raise typer.Exit(code=1)
+        print(f"Fetching repro index at {api_origin}...")
 
-        # Fetch repros using the API wrapper
-        print(f"Fetching repro index from {config.get_api_origin()}...")
+    def fetch_repros(client):
+        # Pass lineage filter to server for efficient filtering
+        lineages_filter = [lineage] if lineage else None
+        return client.list_repros(lineages=lineages_filter)
 
-        def fetch_repros(client):
-            return client.list_repros()
-
-        response = fuzzcorp_api_call(config, fetch_repros, interactive=interactive)
+    response = octane_api_call(fetch_repros, api_origin=api_origin)
 
     # Display the results in a nice table format
     print(f"\nBundle ID: {response.bundle_id}\n")
@@ -1031,9 +922,7 @@ def list_repros(
     return True
 
 
-@app.command(
-    help="Download fixtures for a single repro hash from FuzzCorp NG or Octane."
-)
+@app.command(help="Download fixtures for a single repro hash.")
 def download_fixture(
     repro_hash: str = typer.Argument(
         ...,
@@ -1046,28 +935,13 @@ def download_fixture(
         help="Lineage name (e.g., sol_vm_syscall_cpi_rust_diff_hf)",
     ),
     output_dir: Path = typer.Option(
-        Path("./fuzzcorp_downloads"),
+        Path("./downloads"),
         "--output-dir",
         "-o",
         help="Output directory for downloaded repro",
     ),
-    interactive: bool = typer.Option(
-        True,
-        "--interactive/--no-interactive",
-        help="Prompt for authentication if needed",
-    ),
-    use_ng: bool = typer.Option(
-        True,
-        "--use-ng",
-        help="(No-op, kept for compatibility)",
-    ),
-    use_octane: bool = typer.Option(
-        False,
-        "--use-octane",
-        help=f"Use Octane API instead of FuzzCorp NG (default endpoint: {DEFAULT_OCTANE_API_ORIGIN})",
-    ),
 ):
-    """Download and extract fixture(s) for a single repro hash from FuzzCorp NG or Octane API."""
+    """Download and extract fixture(s) for a single repro hash."""
     # Create output directories
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1077,18 +951,10 @@ def download_fixture(
     # Set globals for download_and_process
     globals.output_dir = output_dir
     globals.inputs_dir = inputs_dir
-    globals.use_octane = use_octane
 
     try:
-        if use_octane:
-            api_origin = get_octane_api_origin()
-            print(f"\nUsing Octane API at {api_origin}")
-        else:
-            # Get configuration
-            config = get_fuzzcorp_auth(interactive=interactive)
-            if not config:
-                print("[ERROR] Failed to authenticate with FuzzCorp API")
-                raise typer.Exit(code=1)
+        api_origin = get_octane_api_origin()
+        print(f"\nUsing Octane API at {api_origin}")
 
         print(
             f"\nDownloading fixture(s) for repro {repro_hash} from lineage {lineage}...\n"
@@ -1138,12 +1004,10 @@ def download_fixture(
         raise typer.Exit(code=1)
 
 
-@app.command(
-    help="Download fixtures for verified repros in specified lineages from FuzzCorp NG or Octane."
-)
+@app.command(help="Download fixtures for verified repros in specified lineages.")
 def download_fixtures(
     output_dir: Path = typer.Option(
-        Path("./fuzzcorp_downloads"),
+        Path("./downloads"),
         "--output-dir",
         "-o",
         help="Output directory for downloaded repros",
@@ -1166,28 +1030,8 @@ def download_fixtures(
         "-p",
         help="Number of parallel download processes",
     ),
-    use_ng: bool = typer.Option(
-        True,
-        "--use-ng",
-        help="Use fuzz NG CLI (fuzz list/download repro) instead of API scraping",
-    ),
-    interactive: bool = typer.Option(
-        True,
-        "--interactive/--no-interactive",
-        help="Prompt for authentication if needed",
-    ),
-    all_artifacts: bool = typer.Option(
-        False,
-        "--all-artifacts",
-        help="(Deprecated, all artifacts are now always downloaded)",
-    ),
-    use_octane: bool = typer.Option(
-        False,
-        "--use-octane",
-        help=f"Use Octane API instead of FuzzCorp NG (default endpoint: {DEFAULT_OCTANE_API_ORIGIN})",
-    ),
 ):
-    """Download and extract fixtures for verified repros from FuzzCorp NG or Octane API."""
+    """Download and extract fixtures for verified repros."""
     # Create output directories
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1197,38 +1041,20 @@ def download_fixtures(
     # Set globals for download_and_process
     globals.output_dir = output_dir
     globals.inputs_dir = inputs_dir
-    globals.download_all_artifacts = all_artifacts
-    globals.use_octane = use_octane
 
     try:
         # Create HTTP client and fetch repros
         section_names_list = section_names.split(",")
         download_list = []
 
-        if use_octane:
-            # Use Octane API
-            api_origin = get_octane_api_origin()
-            print(f"Using Octane API at {api_origin}")
-            print(f"Fetching repro index...")
+        api_origin = get_octane_api_origin()
+        print(f"Using Octane API at {api_origin}")
+        print(f"Fetching repro index...")
 
-            def fetch_repros(client):
-                return client.list_repros(lineages=section_names_list)
+        def fetch_repros(client):
+            return client.list_repros(lineages=section_names_list)
 
-            response = octane_api_call(fetch_repros, api_origin=api_origin)
-        else:
-            # Get configuration
-            config = get_fuzzcorp_auth(interactive=interactive)
-            if not config:
-                print("[ERROR] Failed to authenticate with FuzzCorp API")
-                raise typer.Exit(code=1)
-
-            # Fetch all repros using API wrapper
-            print(f"Fetching repro index ...")
-
-            def fetch_repros(client):
-                return client.list_repros()
-
-            response = fuzzcorp_api_call(config, fetch_repros, interactive=interactive)
+        response = octane_api_call(fetch_repros, api_origin=api_origin)
 
         print(f"Bundle ID: {response.bundle_id}\n")
 
@@ -1258,8 +1084,8 @@ def download_fixtures(
             # Add to download list and cache metadata in one pass
             for repro in verified_repros:
                 download_list.append((section_name, repro.hash))
-                # Cache metadata directly (Octane provides BugRecord, FuzzCorp doesn't)
-                if use_octane and repro.bug_record:
+                # Cache metadata directly
+                if repro.bug_record:
                     metadata = ReproMetadata.from_bug_record(repro.bug_record)
                     metadata_cache[repro.hash] = metadata
 
@@ -1269,41 +1095,13 @@ def download_fixtures(
             print("\n[ERROR] No repros to download")
             raise typer.Exit(code=1)
 
-        # For Octane, metadata cache is already built above
-        if use_octane:
+        print(
+            f"\nCached metadata for {len(metadata_cache)} repro(s) from initial fetch"
+        )
+        for repro_hash, metadata in metadata_cache.items():
             print(
-                f"\nCached metadata for {len(metadata_cache)} repro(s) from initial fetch"
+                f"    Repro {repro_hash[:8]} ({metadata.lineage}): {len(metadata.artifact_hashes)} artifact(s)"
             )
-            for repro_hash, metadata in metadata_cache.items():
-                print(
-                    f"    Repro {repro_hash[:8]} ({metadata.lineage}): {len(metadata.artifact_hashes)} artifact(s)"
-                )
-        else:
-            # FuzzCorp: need to fetch full metadata separately
-            print(f"\nFetching metadata for selected repros...")
-            lineages_to_fetch = {lineage for lineage, _ in download_list}
-            with FuzzCorpAPIClient(
-                api_origin=config.get_api_origin(),
-                token=config.get_token(),
-                org=config.get_organization(),
-                project=config.get_project(),
-                http2=True,
-            ) as client:
-                # Fetch metadata per lineage
-                for lineage in lineages_to_fetch:
-                    lineage_repros = client.list_repros_full(
-                        lineage=lineage,
-                    )
-                    print(
-                        f"  Fetched {len(lineage_repros)} repro(s) for lineage {lineage}"
-                    )
-                    for repro in lineage_repros:
-                        if repro.hash in download_hashes:
-                            metadata_cache[repro.hash] = repro
-                            # Log artifact count for this repro
-                            print(
-                                f"    Repro {repro.hash[:8]}: {len(repro.artifact_hashes)} artifact(s)"
-                            )
 
         print(f"  Cached metadata for {len(metadata_cache)} repro(s)\n")
 
@@ -1376,7 +1174,7 @@ def download_fixtures(
         raise typer.Exit(code=1)
 
 
-@app.command(help="Download a single crash file by hash from FuzzCorp NG or Octane.")
+@app.command(help="Download a single crash file by hash.")
 def download_crash(
     repro_hash: str = typer.Argument(
         ...,
@@ -1389,74 +1187,38 @@ def download_crash(
         help="Lineage name (e.g., sol_vm_syscall_cpi_rust_diff_hf)",
     ),
     output_dir: Path = typer.Option(
-        Path("./fuzzcorp_downloads"),
+        Path("./downloads"),
         "--output-dir",
         "-o",
         help="Output directory for downloaded crash",
     ),
-    interactive: bool = typer.Option(
-        True,
-        "--interactive/--no-interactive",
-        help="Prompt for authentication if needed",
-    ),
-    use_octane: bool = typer.Option(
-        False,
-        "--use-octane",
-        help=f"Use Octane API instead of FuzzCorp NG (default endpoint: {DEFAULT_OCTANE_API_ORIGIN})",
-    ),
 ):
-    """Download a single crash (repro) file from FuzzCorp NG or Octane API."""
+    """Download a single crash (repro) file."""
     # Create output directories
     output_dir.mkdir(parents=True, exist_ok=True)
     crashes_dir = output_dir / "crashes" / lineage
     crashes_dir.mkdir(parents=True, exist_ok=True)
 
     # Set globals
-    globals.use_octane = use_octane
 
     try:
-        if use_octane:
-            api_origin = get_octane_api_origin()
-            print(f"Using Octane API at {api_origin}")
-            with OctaneAPIClient(
-                api_origin=api_origin,
-                http2=True,
-            ) as client:
-                print(f"Downloading crash {repro_hash} from lineage {lineage}...")
-                # Use download_crash_data to prefer .fuzz files over .fix files
-                data = client.download_crash_data(
-                    repro_hash,
-                    lineage,
-                    desc=f"Downloading {repro_hash[:8]}.crash",
-                )
-                out_path = crashes_dir / f"{repro_hash}.crash"
-                with open(out_path, "wb") as f:
-                    f.write(data)
-                print(f"Saved: {out_path}")
-        else:
-            # Auth/config
-            config = get_fuzzcorp_auth(interactive=interactive)
-            if not config:
-                print("[ERROR] Failed to authenticate with FuzzCorp API")
-                raise typer.Exit(code=1)
-
-            with FuzzCorpAPIClient(
-                api_origin=config.get_api_origin(),
-                token=config.get_token(),
-                org=config.get_organization(),
-                project=config.get_project(),
-                http2=True,
-            ) as client:
-                print(f"Downloading crash {repro_hash} from lineage {lineage}...")
-                data = client.download_repro_data(
-                    repro_hash,
-                    lineage,
-                    desc=f"Downloading {repro_hash[:8]}.crash",
-                )
-                out_path = crashes_dir / f"{repro_hash}.crash"
-                with open(out_path, "wb") as f:
-                    f.write(data)
-                print(f"Saved: {out_path}")
+        api_origin = get_octane_api_origin()
+        print(f"Using Octane API at {api_origin}")
+        with OctaneAPIClient(
+            api_origin=api_origin,
+            http2=True,
+        ) as client:
+            print(f"Downloading crash {repro_hash} from lineage {lineage}...")
+            # Use download_crash_data to prefer .fuzz files over .fix files
+            data = client.download_crash_data(
+                repro_hash,
+                lineage,
+                desc=f"Downloading {repro_hash[:8]}.crash",
+            )
+            out_path = crashes_dir / f"{repro_hash}.crash"
+            with open(out_path, "wb") as f:
+                f.write(data)
+            print(f"Saved: {out_path}")
     except httpx.HTTPError as e:
         print(f"[ERROR] HTTP request failed: {e}")
         if hasattr(e, "response") and e.response:
@@ -1470,12 +1232,10 @@ def download_crash(
         raise typer.Exit(code=1)
 
 
-@app.command(
-    help="Download crash files for specified lineages from FuzzCorp NG or Octane."
-)
+@app.command(help="Download crash files for specified lineages.")
 def download_crashes(
     output_dir: Path = typer.Option(
-        Path("./fuzzcorp_downloads"),
+        Path("./downloads"),
         "--output-dir",
         "-o",
         help="Output directory for downloaded crashes",
@@ -1498,50 +1258,25 @@ def download_crashes(
         "-p",
         help="Number of parallel download processes",
     ),
-    interactive: bool = typer.Option(
-        True,
-        "--interactive/--no-interactive",
-        help="Prompt for authentication if needed",
-    ),
-    use_octane: bool = typer.Option(
-        False,
-        "--use-octane",
-        help=f"Use Octane API instead of FuzzCorp NG (default endpoint: {DEFAULT_OCTANE_API_ORIGIN})",
-    ),
 ):
     """Download raw crash files (repros) for given lineages."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Set globals
-    globals.use_octane = use_octane
 
     try:
         section_names_list = [s.strip() for s in section_names.split(",") if s.strip()]
 
-        # Fetch repros
-        if use_octane:
-            api_origin = get_octane_api_origin()
-            print(f"Using Octane API at {api_origin}")
-            print(f"Fetching repro index...")
+        api_origin = get_octane_api_origin()
+        print(f"Using Octane API at {api_origin}")
+        print(f"Fetching repro index...")
 
-            def fetch_repros(client):
-                return client.list_repros(
-                    lineages=section_names_list if section_names_list else None
-                )
+        def fetch_repros(client):
+            return client.list_repros(
+                lineages=section_names_list if section_names_list else None
+            )
 
-            response = octane_api_call(fetch_repros, api_origin=api_origin)
-        else:
-            # Auth/config
-            print("Fetching repro index ...")
-            config = get_fuzzcorp_auth(interactive=interactive)
-            if not config:
-                print("[ERROR] Failed to authenticate with FuzzCorp API")
-                raise typer.Exit(code=1)
-
-            def fetch_repros(client):
-                return client.list_repros()
-
-            response = fuzzcorp_api_call(config, fetch_repros, interactive=interactive)
+        response = octane_api_call(fetch_repros, api_origin=api_origin)
 
         # Prepare worker globals and task list, building metadata cache in one pass
         globals.output_dir = output_dir
@@ -1561,48 +1296,20 @@ def download_crashes(
                 continue
             for repro in verified:
                 download_list.append((lineage, repro.hash))
-                # Cache metadata directly for Octane
-                if use_octane and repro.bug_record:
+                # Cache metadata directly
+                if repro.bug_record:
                     metadata = ReproMetadata.from_bug_record(repro.bug_record)
                     metadata_cache[repro.hash] = metadata
 
-        # Build metadata cache for non-Octane or report cached count
+        # Build metadata cache
         if download_list:
-            if use_octane:
+            print(
+                f"\nCached metadata for {len(metadata_cache)} repro(s) from initial fetch"
+            )
+            for repro_hash, metadata in metadata_cache.items():
                 print(
-                    f"\nCached metadata for {len(metadata_cache)} repro(s) from initial fetch"
+                    f"    Repro {repro_hash[:8]} ({metadata.lineage}): {len(metadata.artifact_hashes)} artifact(s)"
                 )
-                for repro_hash, metadata in metadata_cache.items():
-                    print(
-                        f"    Repro {repro_hash[:8]} ({metadata.lineage}): {len(metadata.artifact_hashes)} artifact(s)"
-                    )
-            else:
-                # FuzzCorp: need to fetch full metadata separately
-                print("\nFetching metadata for selected repros...")
-                lineages_to_fetch = {lineage for lineage, _ in download_list}
-                from test_suite.fuzzcorp_api_client import FuzzCorpAPIClient as _FCA
-
-                with _FCA(
-                    api_origin=config.get_api_origin(),
-                    token=config.get_token(),
-                    org=config.get_organization(),
-                    project=config.get_project(),
-                    http2=True,
-                ) as client:
-                    for lineage in lineages_to_fetch:
-                        lineage_repros = client.list_repros_full(
-                            lineage=lineage,
-                        )
-                        print(
-                            f"  Fetched {len(lineage_repros)} repro(s) for lineage {lineage}"
-                        )
-                        for repro in lineage_repros:
-                            if repro.hash in selection:
-                                metadata_cache[repro.hash] = repro
-                                print(
-                                    f"    Repro {repro.hash[:8]}: {len(repro.artifact_hashes)} artifact(s)"
-                                )
-                print(f"  Cached metadata for {len(metadata_cache)} repro(s)")
             globals.repro_metadata_cache = metadata_cache
 
         from test_suite.multiprocessing_utils import download_single_crash
@@ -1648,7 +1355,7 @@ def download_crashes(
 
 @app.command(
     help=f"""
-            Run tests on a set of targets with a list of FuzzCorp mismatch links.
+            Run tests on a set of targets with repros.
 
             Note: each `.so` target filename must be unique.
             """
@@ -1680,22 +1387,13 @@ def debug_mismatches(
         help=f"Output directory for messages",
     ),
     repro_urls: str = typer.Option(
-        "", "--repro-urls", "-u", help="Comma-delimited list of FuzzCorp mismatch links"
+        "", "--repro-urls", "-u", help="Comma-delimited list of repro URLs"
     ),
     section_names: str = typer.Option(
         "",
         "--section-names",
         "-n",
-        help="Comma-delimited list of FuzzCorp section names",
-    ),
-    fuzzcorp_url: str = typer.Option(
-        os.getenv(
-            "FUZZCORP_URL",
-            "https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/",
-        ),
-        "--fuzzcorp-url",
-        "-f",
-        help="Comma-delimited list of FuzzCorp section names",
+        help="Comma-delimited list of lineage names",
     ),
     log_level: int = typer.Option(
         5,
@@ -1715,26 +1413,11 @@ def debug_mismatches(
     section_limit: int = typer.Option(
         0, "--section-limit", "-l", help="Limit number of fixture per section"
     ),
-    use_ng: bool = typer.Option(
-        True,
-        "--use-ng",
-        help="Use fuzz NG CLI (fuzz list/download repro) instead of API scraping",
-    ),
     debug_mode: bool = typer.Option(
         False,
         "--debug-mode",
         "-d",
         help="Enables debug mode, which spawns a single child process for easier debugging",
-    ),
-    all_artifacts: bool = typer.Option(
-        False,
-        "--all-artifacts",
-        help="(Deprecated, all artifacts are now always downloaded)",
-    ),
-    use_octane: bool = typer.Option(
-        False,
-        "--use-octane",
-        help=f"Use Octane API instead of FuzzCorp NG (default endpoint: {DEFAULT_OCTANE_API_ORIGIN})",
     ),
 ):
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
@@ -1744,42 +1427,22 @@ def debug_mismatches(
 
     globals.inputs_dir = globals.output_dir / "inputs"
     globals.inputs_dir.mkdir(parents=True, exist_ok=True)
-    globals.download_all_artifacts = all_artifacts
-    globals.use_octane = use_octane
 
-    fuzzcorp_cookie = os.getenv("FUZZCORP_COOKIE")
     repro_urls_list = repro_urls.split(",") if repro_urls else []
     section_names_list = section_names.split(",") if section_names else []
 
     custom_data_urls = []
 
-    # Use Octane or FuzzCorp HTTP API to list repros
-    if use_octane:
-        api_origin = get_octane_api_origin()
-        print(f"Using Octane API at {api_origin}")
-        print(f"Fetching repro index...")
+    api_origin = get_octane_api_origin()
+    print(f"Using Octane API at {api_origin}")
+    print(f"Fetching repro index...")
 
-        def fetch_repros(client):
-            return client.list_repros(
-                lineages=section_names_list if section_names_list else None
-            )
+    def fetch_repros(client):
+        return client.list_repros(
+            lineages=section_names_list if section_names_list else None
+        )
 
-        response = octane_api_call(fetch_repros, api_origin=api_origin)
-        config = None  # Not needed for Octane
-    else:
-        # Get configuration (interactive if needed)
-        config = get_fuzzcorp_auth(interactive=True)
-        if not config:
-            print("[ERROR] Failed to authenticate with FuzzCorp API")
-            raise typer.Exit(code=1)
-
-        # Fetch all repros using API wrapper
-        print(f"Fetching repro index from {config.get_api_origin()}...")
-
-        def fetch_repros(client):
-            return client.list_repros()
-
-        response = fuzzcorp_api_call(config, fetch_repros, interactive=True)
+    response = octane_api_call(fetch_repros, api_origin=api_origin)
 
     # Process each requested lineage and build metadata cache in one pass
     metadata_cache = {}
@@ -1806,8 +1469,8 @@ def debug_mismatches(
         # Add to download list and cache metadata in one pass
         for repro in verified_repros:
             custom_data_urls.append((section_name, repro.hash))
-            # Cache metadata directly for Octane
-            if use_octane and repro.bug_record:
+            # Cache metadata directly
+            if repro.bug_record:
                 metadata = ReproMetadata.from_bug_record(repro.bug_record)
                 metadata_cache[repro.hash] = metadata
 
@@ -1816,40 +1479,11 @@ def debug_mismatches(
     num_test_cases = len(custom_data_urls)
 
     if num_test_cases > 0:
-        if use_octane:
-            # Octane: metadata already cached above
+        print(f"Cached metadata for {len(metadata_cache)} repro(s) from initial fetch")
+        for repro_hash, metadata in metadata_cache.items():
             print(
-                f"Cached metadata for {len(metadata_cache)} repro(s) from initial fetch"
+                f"    Repro {repro_hash[:8]} ({metadata.lineage}): {len(metadata.artifact_hashes)} artifact(s)"
             )
-            for repro_hash, metadata in metadata_cache.items():
-                print(
-                    f"    Repro {repro_hash[:8]} ({metadata.lineage}): {len(metadata.artifact_hashes)} artifact(s)"
-                )
-        else:
-            # FuzzCorp: need to fetch full metadata separately
-            print(f"Fetching metadata for selected repros...")
-            lineages_to_fetch = {lineage for lineage, _ in custom_data_urls}
-            with FuzzCorpAPIClient(
-                api_origin=config.get_api_origin(),
-                token=config.get_token(),
-                org=config.get_organization(),
-                project=config.get_project(),
-                http2=True,
-            ) as client:
-                # Fetch metadata per lineage
-                for lineage in lineages_to_fetch:
-                    lineage_repros = client.list_repros_full(
-                        lineage=lineage,
-                    )
-                    print(
-                        f"  Fetched {len(lineage_repros)} repro(s) for lineage {lineage}"
-                    )
-                    for repro in lineage_repros:
-                        if repro.hash in download_hashes:
-                            metadata_cache[repro.hash] = repro
-                            print(
-                                f"    Repro {repro.hash[:8]}: {len(repro.artifact_hashes)} artifact(s)"
-                            )
 
         print(f"  Cached metadata for {len(metadata_cache)} repro(s)")
 
@@ -2003,33 +1637,17 @@ def debug_mismatch(
         "-r",
         help="Randomizes bytes in output buffer before shared library execution",
     ),
-    interactive: bool = typer.Option(
-        True,
-        "--interactive/--no-interactive",
-        help="Prompt for authentication if needed",
-    ),
     debug_mode: bool = typer.Option(
         False,
         "--debug",
         "-d",
         help="Enable debug mode for detailed output",
     ),
-    use_ng: bool = typer.Option(
-        True,
-        "--use-ng",
-        help="(No-op, kept for compatibility)",
-    ),
-    use_octane: bool = typer.Option(
-        False,
-        "--use-octane",
-        help=f"Use Octane API instead of FuzzCorp NG (default endpoint: {DEFAULT_OCTANE_API_ORIGIN})",
-    ),
 ):
     """Debug a single repro by downloading and testing it."""
     initialize_process_output_buffers(randomize_output_buffer=randomize_output_buffer)
 
     globals.output_dir = output_dir
-    globals.use_octane = use_octane
 
     if globals.output_dir.exists():
         shutil.rmtree(globals.output_dir)
@@ -2041,15 +1659,8 @@ def debug_mismatch(
     globals.inputs_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        if use_octane:
-            api_origin = get_octane_api_origin()
-            print(f"\nUsing Octane API at {api_origin}")
-        else:
-            # Get configuration
-            config = get_fuzzcorp_auth(interactive=interactive)
-            if not config:
-                print("[ERROR] Failed to authenticate with FuzzCorp API")
-                raise typer.Exit(code=1)
+        api_origin = get_octane_api_origin()
+        print(f"\nUsing Octane API at {api_origin}")
 
         print(f"\nDownloading repro {repro_hash} from lineage {lineage}...")
 
@@ -2545,7 +2156,7 @@ def exec_fixtures(
 
 @app.command(
     help=f"""
-            Set up environment for debugging a mismatch from FuzzCorp
+            Set up environment for debugging a mismatch
             """
 )
 def create_env(
@@ -2575,22 +2186,13 @@ def create_env(
         help=f"Output directory for messages",
     ),
     repro_urls: str = typer.Option(
-        "", "--repro-urls", "-u", help="Comma-delimited list of FuzzCorp mismatch links"
+        "", "--repro-urls", "-u", help="Comma-delimited list of repro URLs"
     ),
     section_names: str = typer.Option(
         "",
         "--section-names",
         "-n",
-        help="Comma-delimited list of FuzzCorp section names",
-    ),
-    fuzzcorp_url: str = typer.Option(
-        os.getenv(
-            "FUZZCORP_URL",
-            "https://api.dev.fuzzcorp.asymmetric.re/uglyweb/firedancer-io/solfuzz/bugs/",
-        ),
-        "--fuzzcorp-url",
-        "-f",
-        help="Comma-delimited list of FuzzCorp section names",
+        help="Comma-delimited list of lineage names",
     ),
     log_level: int = typer.Option(
         5,
@@ -2621,11 +2223,6 @@ def create_env(
         "--test-vectors-repo",
         "-tv",
         help="Path to test-vectors repository",
-    ),
-    use_ng: bool = typer.Option(
-        True,
-        "--use-ng",
-        help="Use fuzz NG CLI (fuzz list/download repro) instead of API scraping",
     ),
     debug_mode: bool = typer.Option(
         False,
@@ -2677,12 +2274,10 @@ def create_env(
         output_dir=output_dir,
         repro_urls=repro_urls,
         section_names=section_names,
-        fuzzcorp_url=fuzzcorp_url,
         log_level=log_level,
         randomize_output_buffer=randomize_output_buffer,
         num_processes=num_processes,
         section_limit=section_limit,
-        use_ng=use_ng,
         debug_mode=debug_mode,
     )
 
@@ -2716,69 +2311,6 @@ def create_env(
     print(f"Updated list file: {list_path}")
     print(f"Copied fixtures to: {test_vectors_repos_path}")
     return True
-
-
-@app.command(
-    context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
-    help="Run the fuzzcorp 'fuzz' binary with the provided arguments.",
-)
-def fuzz(
-    ctx: typer.Context,
-):
-    """
-    Pass-through command to run the fuzzcorp 'fuzz' binary.
-
-    This command looks for the 'fuzz' binary in:
-    1. FUZZCORP_FUZZ_BINARY environment variable (if set)
-    2. System PATH
-
-    All arguments after 'fuzz' are passed directly to the binary.
-
-    Examples:
-        ./solana-conformance fuzz help
-        ./solana-conformance fuzz version
-        ./solana-conformance fuzz list repros --org myorg --project myproject
-
-    Note: Use 'fuzz help' instead of 'fuzz --help' to get the fuzz binary's help.
-    """
-    # Check for FUZZCORP_FUZZ_BINARY environment variable
-    fuzz_binary = os.getenv("FUZZCORP_FUZZ_BINARY")
-    if fuzz_binary:
-        if not os.path.exists(fuzz_binary):
-            print(
-                f"[ERROR] FUZZCORP_FUZZ_BINARY is set but file not found: {fuzz_binary}"
-            )
-            raise typer.Exit(code=1)
-        if not os.access(fuzz_binary, os.X_OK):
-            print(
-                f"[ERROR] FUZZCORP_FUZZ_BINARY is set but file is not executable: {fuzz_binary}"
-            )
-            raise typer.Exit(code=1)
-    else:
-        # Look for 'fuzz' in PATH
-        fuzz_binary = shutil.which("fuzz")
-        if not fuzz_binary:
-            print("[ERROR] 'fuzz' binary not found in PATH")
-            print("\nPlease either:")
-            print("  1. Add the 'fuzz' binary to your PATH, or")
-            print("  2. Set FUZZCORP_FUZZ_BINARY environment variable to the full path")
-            print("\nExample:")
-            print("  export FUZZCORP_FUZZ_BINARY=/path/to/fuzz")
-            raise typer.Exit(code=1)
-
-    # Build command with all extra arguments
-    cmd = [fuzz_binary] + ctx.args
-
-    # Run the fuzz binary with all arguments
-    try:
-        result = subprocess.run(cmd, check=False)
-        raise typer.Exit(code=result.returncode)
-    except FileNotFoundError:
-        print(f"[ERROR] Failed to execute: {fuzz_binary}")
-        raise typer.Exit(code=1)
-    except KeyboardInterrupt:
-        print("\n[INFO] Interrupted by user")
-        raise typer.Exit(code=130)
 
 
 if __name__ == "__main__":

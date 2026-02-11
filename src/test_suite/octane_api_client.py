@@ -2,7 +2,7 @@
 Octane API client for solana-conformance.
 
 This module provides an API client that uses the native Octane orchestrator API
-endpoints directly (not the FuzzCorp NG compatibility layer).
+endpoints directly.
 
 Native API endpoints used:
 - /api/bugs - List all bugs with full metadata (supports filters: lineages, hashes, statuses, run_id, bundle_id)
@@ -28,7 +28,7 @@ from datetime import datetime
 from typing import Optional, Dict, List, Any, Callable
 import httpx
 
-# Default Octane API endpoint
+# Default API endpoint
 DEFAULT_OCTANE_API_ORIGIN = "http://gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000"
 
 # Native Octane API endpoints
@@ -98,7 +98,7 @@ class BugRecord:
         lineage = data.get("lineage") or data.get("target_name") or ""
 
         # Status can come from multiple fields:
-        # - "validation_statuses": array from Octane API (e.g., ["reproducible"])
+        # - "validation_statuses": array of statuses (e.g., ["reproducible"])
         # - "status": single string (fallback)
         validation_statuses = data.get("validation_statuses")
         if (
@@ -321,7 +321,7 @@ class LineageRepro:
     Represents a repro/bug within a lineage.
 
     This is a compatibility wrapper that provides the same interface
-    as the FuzzCorpAPIClient for use with existing test_suite code.
+    for use with existing test_suite code.
     """
 
     hash: str
@@ -353,7 +353,7 @@ class ReproIndexResponse:
     """
     Compatibility wrapper for list_repros response.
 
-    Groups bugs by lineage to match FuzzCorpAPIClient interface.
+    Groups bugs by lineage.
     """
 
     bundle_id: str
@@ -389,7 +389,7 @@ class ReproMetadata:
     """
     Compatibility wrapper for repro metadata.
 
-    Provides the same interface as FuzzCorpAPIClient.ReproMetadata.
+    Repro metadata wrapper.
     """
 
     hash: str
@@ -425,8 +425,6 @@ class OctaneAPIClient:
     API client for the native Octane orchestrator API.
 
     This client uses the native Octane API endpoints (/api/bugs, etc.)
-    instead of the FuzzCorp NG compatibility layer.
-
     IMPORTANT: All artifact downloads are performed directly from cloud storage
     (GCS/S3). The Octane API only provides metadata and download URLs, it never
     proxies artifact bytes.
@@ -727,7 +725,7 @@ class OctaneAPIClient:
         )
 
     # ========================================================================
-    # Compatibility methods (same interface as FuzzCorpAPIClient)
+    # Compatibility methods
     # ========================================================================
 
     def list_repros(
