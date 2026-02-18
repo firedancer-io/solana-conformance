@@ -23,7 +23,7 @@ from . import metadata_pb2 as metadata__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x0cinvoke.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\x0emetadata.proto"_\n\tInstrAcct\x12\x14\n\x05index\x18\x01 \x01(\rR\x05index\x12\x1f\n\x0bis_writable\x18\x02 \x01(\x08R\nisWritable\x12\x1b\n\tis_signer\x18\x03 \x01(\x08R\x08isSigner"\xf8\x02\n\x0cInstrContext\x12\x1d\n\nprogram_id\x18\x01 \x01(\x0cR\tprogramId\x12=\n\x08\x61\x63\x63ounts\x18\x03 \x03(\x0b\x32!.org.solana.sealevel.v1.AcctStateR\x08\x61\x63\x63ounts\x12H\n\x0einstr_accounts\x18\x04 \x03(\x0b\x32!.org.solana.sealevel.v1.InstrAcctR\rinstrAccounts\x12\x12\n\x04\x64\x61ta\x18\x05 \x01(\x0cR\x04\x64\x61ta\x12\x19\n\x08\x63u_avail\x18\x06 \x01(\x04R\x07\x63uAvail\x12\x46\n\x0cslot_context\x18\x08 \x01(\x0b\x32#.org.solana.sealevel.v1.SlotContextR\x0bslotContext\x12I\n\repoch_context\x18\t \x01(\x0b\x32$.org.solana.sealevel.v1.EpochContextR\x0c\x65pochContext"\xd1\x01\n\x0cInstrEffects\x12\x16\n\x06result\x18\x01 \x01(\x05R\x06result\x12\x1d\n\ncustom_err\x18\x02 \x01(\rR\tcustomErr\x12N\n\x11modified_accounts\x18\x03 \x03(\x0b\x32!.org.solana.sealevel.v1.AcctStateR\x10modifiedAccounts\x12\x19\n\x08\x63u_avail\x18\x04 \x01(\x04R\x07\x63uAvail\x12\x1f\n\x0breturn_data\x18\x05 \x01(\x0cR\nreturnData"\xcd\x01\n\x0cInstrFixture\x12\x43\n\x08metadata\x18\x01 \x01(\x0b\x32\'.org.solana.sealevel.v1.FixtureMetadataR\x08metadata\x12:\n\x05input\x18\x02 \x01(\x0b\x32$.org.solana.sealevel.v1.InstrContextR\x05input\x12<\n\x06output\x18\x03 \x01(\x0b\x32$.org.solana.sealevel.v1.InstrEffectsR\x06outputb\x06proto3'
+    b'\n\x0cinvoke.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\x0emetadata.proto"_\n\tInstrAcct\x12\x14\n\x05index\x18\x01 \x01(\rR\x05index\x12\x1f\n\x0bis_writable\x18\x02 \x01(\x08R\nisWritable\x12\x1b\n\tis_signer\x18\x03 \x01(\x08R\x08isSigner"\xb6\x02\n\x0cInstrContext\x12\x1d\n\nprogram_id\x18\x01 \x01(\x0cR\tprogramId\x12=\n\x08\x61\x63\x63ounts\x18\x03 \x03(\x0b\x32!.org.solana.sealevel.v1.AcctStateR\x08\x61\x63\x63ounts\x12H\n\x0einstr_accounts\x18\x04 \x03(\x0b\x32!.org.solana.sealevel.v1.InstrAcctR\rinstrAccounts\x12\x12\n\x04\x64\x61ta\x18\x05 \x01(\x0cR\x04\x64\x61ta\x12\x19\n\x08\x63u_avail\x18\x06 \x01(\x04R\x07\x63uAvail\x12I\n\repoch_context\x18\t \x01(\x0b\x32$.org.solana.sealevel.v1.EpochContextR\x0c\x65pochContextJ\x04\x08\x08\x10\t"\xd1\x01\n\x0cInstrEffects\x12\x16\n\x06result\x18\x01 \x01(\x05R\x06result\x12\x1d\n\ncustom_err\x18\x02 \x01(\rR\tcustomErr\x12N\n\x11modified_accounts\x18\x03 \x03(\x0b\x32!.org.solana.sealevel.v1.AcctStateR\x10modifiedAccounts\x12\x19\n\x08\x63u_avail\x18\x04 \x01(\x04R\x07\x63uAvail\x12\x1f\n\x0breturn_data\x18\x05 \x01(\x0cR\nreturnData"\xcd\x01\n\x0cInstrFixture\x12\x43\n\x08metadata\x18\x01 \x01(\x0b\x32\'.org.solana.sealevel.v1.FixtureMetadataR\x08metadata\x12:\n\x05input\x18\x02 \x01(\x0b\x32$.org.solana.sealevel.v1.InstrContextR\x05input\x12<\n\x06output\x18\x03 \x01(\x0b\x32$.org.solana.sealevel.v1.InstrEffectsR\x06outputb\x06proto3'
 )
 
 _globals = globals()
@@ -34,9 +34,9 @@ if not _descriptor._USE_C_DESCRIPTORS:
     _globals["_INSTRACCT"]._serialized_start = 71
     _globals["_INSTRACCT"]._serialized_end = 166
     _globals["_INSTRCONTEXT"]._serialized_start = 169
-    _globals["_INSTRCONTEXT"]._serialized_end = 545
-    _globals["_INSTREFFECTS"]._serialized_start = 548
-    _globals["_INSTREFFECTS"]._serialized_end = 757
-    _globals["_INSTRFIXTURE"]._serialized_start = 760
-    _globals["_INSTRFIXTURE"]._serialized_end = 965
+    _globals["_INSTRCONTEXT"]._serialized_end = 479
+    _globals["_INSTREFFECTS"]._serialized_start = 482
+    _globals["_INSTREFFECTS"]._serialized_end = 691
+    _globals["_INSTRFIXTURE"]._serialized_start = 694
+    _globals["_INSTRFIXTURE"]._serialized_end = 899
 # @@protoc_insertion_point(module_scope)
