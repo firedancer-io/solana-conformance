@@ -613,6 +613,320 @@ def convert_fb_to_pb_elf_fixture(
 
 
 # ============================================================================
+# FlatBuffers Native Operations (no Protobuf intermediary)
+# ============================================================================
+
+
+def extract_fb_elf_features(fb_fixture) -> list:
+    """
+    Extract the features list from a parsed FlatBuffers ELFLoaderFixture.
+
+    Args:
+        fb_fixture: Parsed FlatBuffers ELFLoaderFixture object (from parse_fb_elf_fixture)
+
+    Returns:
+        List of uint64 feature IDs, or empty list if no features present
+    """
+    fb_input = fb_fixture.Input()
+    if fb_input is None:
+        return []
+
+    fb_features = fb_input.Features()
+    if fb_features is None:
+        return []
+
+    return _get_fb_uint64_array(
+        fb_features,
+        fb_features.Features,
+        fb_features.FeaturesLength,
+        numpy_fn=(
+            fb_features.FeaturesAsNumpy
+            if hasattr(fb_features, "FeaturesAsNumpy")
+            else None
+        ),
+    )
+
+
+def extract_fb_elf_ctx_fields(fb_fixture) -> dict:
+    """
+    Extract all input context fields from a parsed FlatBuffers ELFLoaderFixture.
+
+    Args:
+        fb_fixture: Parsed FlatBuffers ELFLoaderFixture object
+
+    Returns:
+        Dict with keys: elf_data (bytes), features (list[int]), deploy_checks (bool)
+    """
+    fb_input = fb_fixture.Input()
+    elf_data = b""
+    deploy_checks = False
+
+    if fb_input is not None:
+        elf_data_len = fb_input.ElfDataLength()
+        if elf_data_len > 0:
+            elf_data = _get_fb_byte_array(
+                fb_input,
+                fb_input.ElfData,
+                fb_input.ElfDataLength,
+                numpy_fn=(
+                    fb_input.ElfDataAsNumpy
+                    if hasattr(fb_input, "ElfDataAsNumpy")
+                    else None
+                ),
+            )
+        deploy_checks = fb_input.DeployChecks()
+
+    return {
+        "elf_data": elf_data,
+        "features": extract_fb_elf_features(fb_fixture),
+        "deploy_checks": deploy_checks,
+    }
+
+
+def extract_fb_elf_effects_fields(fb_fixture) -> Optional[dict]:
+    """
+    Extract all output effects fields from a parsed FlatBuffers ELFLoaderFixture.
+
+    Args:
+        fb_fixture: Parsed FlatBuffers ELFLoaderFixture object
+
+    Returns:
+        Dict with effect fields, or None if no output present
+    """
+    fb_output = fb_fixture.Output()
+    if fb_output is None:
+        return None
+
+    rodata_hash = None
+    fb_rodata_hash = fb_output.RodataHash()
+    if fb_rodata_hash:
+        rodata_hash = bytes(fb_rodata_hash.Hash())
+
+    calldests_hash = None
+    fb_calldests_hash = fb_output.CalldestsHash()
+    if fb_calldests_hash:
+        calldests_hash = bytes(fb_calldests_hash.Hash())
+
+    return {
+        "err_code": fb_output.ErrCode(),
+        "rodata_hash": rodata_hash,
+        "text_cnt": fb_output.TextCnt(),
+        "text_off": fb_output.TextOff(),
+        "entry_pc": fb_output.EntryPc(),
+        "calldests_hash": calldests_hash,
+    }
+
+
+def extract_fb_elf_entrypoint(fb_fixture) -> str:
+    """
+    Extract the fn_entrypoint from a parsed FlatBuffers ELFLoaderFixture.
+
+    Args:
+        fb_fixture: Parsed FlatBuffers ELFLoaderFixture object
+
+    Returns:
+        The entrypoint string (v2 format), or empty string if not present
+    """
+    fb_metadata = fb_fixture.Metadata()
+    if fb_metadata is None:
+        return ""
+    fn_entrypoint = fb_metadata.FnEntrypoint()
+    if fn_entrypoint is None:
+        return ""
+    if isinstance(fn_entrypoint, bytes):
+        return fn_entrypoint.decode("utf-8")
+    return fn_entrypoint
+
+
+def build_fb_elf_ctx(elf_data: bytes, features: list, deploy_checks: bool) -> bytes:
+    """
+    Build a standalone FlatBuffers ELFLoaderCtx message.
+
+    Suitable for passing directly to the shared library's _v2 entrypoint.
+
+    Args:
+        elf_data: Raw ELF binary data
+        features: List of uint64 feature IDs
+        deploy_checks: Whether deploy checks are enabled
+
+    Returns:
+        Serialized FlatBuffers bytes for ELFLoaderCtx
+    """
+    if not FLATBUFFERS_AVAILABLE:
+        raise RuntimeError("FlatBuffers support not available")
+
+    import flatbuffers
+    from org.solana.sealevel.v2 import ELFLoaderCtx as FB_ELFLoaderCtx_mod
+    from org.solana.sealevel.v2 import FeatureSet as FB_FeatureSet_mod
+
+    builder = flatbuffers.Builder(max(1024, len(elf_data) + 512))
+
+    # elf_data and features are required fields in the schema
+    elf_data_offset = builder.CreateByteVector(elf_data if elf_data else b"")
+
+    if features:
+        FB_FeatureSet_mod.StartFeaturesVector(builder, len(features))
+        for f in reversed(features):
+            builder.PrependUint64(f)
+        features_vector = builder.EndVector()
+        FB_FeatureSet_mod.Start(builder)
+        FB_FeatureSet_mod.AddFeatures(builder, features_vector)
+    else:
+        FB_FeatureSet_mod.Start(builder)
+    features_offset = FB_FeatureSet_mod.End(builder)
+
+    FB_ELFLoaderCtx_mod.Start(builder)
+    FB_ELFLoaderCtx_mod.AddElfData(builder, elf_data_offset)
+    FB_ELFLoaderCtx_mod.AddFeatures(builder, features_offset)
+    FB_ELFLoaderCtx_mod.AddDeployChecks(builder, deploy_checks)
+    ctx_offset = FB_ELFLoaderCtx_mod.End(builder)
+
+    builder.Finish(ctx_offset)
+    return bytes(builder.Output())
+
+
+def parse_fb_elf_effects(data: bytes) -> Optional[dict]:
+    """
+    Parse raw bytes as FlatBuffers ELFLoaderEffects (e.g. from shared library output).
+
+    Args:
+        data: FlatBuffers encoded ELFLoaderEffects bytes
+
+    Returns:
+        Dict with keys: err_code, rodata_hash, text_cnt, text_off, entry_pc, calldests_hash.
+        None if parsing fails.
+    """
+    if not FLATBUFFERS_AVAILABLE:
+        return None
+
+    try:
+        fb_effects = FB_ELFLoaderEffects.GetRootAs(data, 0)
+
+        rodata_hash = None
+        fb_rodata_hash = fb_effects.RodataHash()
+        if fb_rodata_hash:
+            rodata_hash = bytes(fb_rodata_hash.Hash())
+
+        calldests_hash = None
+        fb_calldests_hash = fb_effects.CalldestsHash()
+        if fb_calldests_hash:
+            calldests_hash = bytes(fb_calldests_hash.Hash())
+
+        return {
+            "err_code": fb_effects.ErrCode(),
+            "rodata_hash": rodata_hash,
+            "text_cnt": fb_effects.TextCnt(),
+            "text_off": fb_effects.TextOff(),
+            "entry_pc": fb_effects.EntryPc(),
+            "calldests_hash": calldests_hash,
+        }
+    except Exception as e:
+        print(f"Failed to parse FlatBuffers effects: {e}")
+        return None
+
+
+def build_fb_elf_fixture(
+    fn_entrypoint: str,
+    elf_data: bytes,
+    features: list,
+    deploy_checks: bool,
+    effects: Optional[dict] = None,
+) -> bytes:
+    """
+    Build a complete FlatBuffers ELFLoaderFixture from individual field values.
+
+    Args:
+        fn_entrypoint: Entrypoint string (will be stored as-is, caller should
+                        handle v1/v2 conversion)
+        elf_data: Raw ELF binary data
+        features: List of uint64 feature IDs
+        deploy_checks: Whether deploy checks are enabled
+        effects: Dict with keys: err_code, rodata_hash, text_cnt, text_off,
+                 entry_pc, calldests_hash. None for no output.
+
+    Returns:
+        Serialized FlatBuffers bytes for the complete ELFLoaderFixture
+    """
+    if not FLATBUFFERS_AVAILABLE:
+        raise RuntimeError("FlatBuffers support not available")
+
+    import flatbuffers
+    from org.solana.sealevel.v2 import ELFLoaderFixture as FB_ELFLoaderFixture_mod
+    from org.solana.sealevel.v2 import ELFLoaderCtx as FB_ELFLoaderCtx_mod
+    from org.solana.sealevel.v2 import ELFLoaderEffects as FB_ELFLoaderEffects_mod
+    from org.solana.sealevel.v2 import FixtureMetadata as FB_FixtureMetadata_mod
+    from org.solana.sealevel.v2 import FeatureSet as FB_FeatureSet_mod
+    from org.solana.sealevel.v2 import XXHash as FB_XXHash_mod
+
+    builder = flatbuffers.Builder(max(1024, len(elf_data) + 512))
+
+    # Build metadata (fn_entrypoint is required)
+    fn_entrypoint_offset = builder.CreateString(fn_entrypoint or "")
+    FB_FixtureMetadata_mod.Start(builder)
+    FB_FixtureMetadata_mod.AddFnEntrypoint(builder, fn_entrypoint_offset)
+    metadata_offset = FB_FixtureMetadata_mod.End(builder)
+
+    # Build input (ELFLoaderCtx) -- elf_data and features are required
+    elf_data_offset = builder.CreateByteVector(elf_data if elf_data else b"")
+
+    if features:
+        FB_FeatureSet_mod.StartFeaturesVector(builder, len(features))
+        for f in reversed(features):
+            builder.PrependUint64(f)
+        features_vector = builder.EndVector()
+        FB_FeatureSet_mod.Start(builder)
+        FB_FeatureSet_mod.AddFeatures(builder, features_vector)
+    else:
+        FB_FeatureSet_mod.Start(builder)
+    features_offset = FB_FeatureSet_mod.End(builder)
+
+    FB_ELFLoaderCtx_mod.Start(builder)
+    FB_ELFLoaderCtx_mod.AddElfData(builder, elf_data_offset)
+    FB_ELFLoaderCtx_mod.AddFeatures(builder, features_offset)
+    FB_ELFLoaderCtx_mod.AddDeployChecks(builder, deploy_checks)
+    input_offset = FB_ELFLoaderCtx_mod.End(builder)
+
+    # Build output (ELFLoaderEffects)
+    # XXHash is an inline struct -- CreateXXHash must be called immediately
+    # before the corresponding Add call (between Start and End).
+    output_offset = None
+    if effects is not None:
+        rodata_hash_bytes = effects.get("rodata_hash")
+        calldests_hash_bytes = effects.get("calldests_hash")
+
+        FB_ELFLoaderEffects_mod.Start(builder)
+        FB_ELFLoaderEffects_mod.AddErrCode(builder, effects.get("err_code", 0))
+        if rodata_hash_bytes and len(rodata_hash_bytes) >= 8:
+            rodata_hash_offset = FB_XXHash_mod.CreateXXHash(
+                builder, list(rodata_hash_bytes[:8])
+            )
+            FB_ELFLoaderEffects_mod.AddRodataHash(builder, rodata_hash_offset)
+        FB_ELFLoaderEffects_mod.AddTextCnt(builder, effects.get("text_cnt", 0))
+        FB_ELFLoaderEffects_mod.AddTextOff(builder, effects.get("text_off", 0))
+        FB_ELFLoaderEffects_mod.AddEntryPc(builder, effects.get("entry_pc", 0))
+        if calldests_hash_bytes and len(calldests_hash_bytes) >= 8:
+            calldests_hash_offset = FB_XXHash_mod.CreateXXHash(
+                builder, list(calldests_hash_bytes[:8])
+            )
+            FB_ELFLoaderEffects_mod.AddCalldestsHash(builder, calldests_hash_offset)
+        output_offset = FB_ELFLoaderEffects_mod.End(builder)
+
+    # Build the fixture (metadata, input, output are all required)
+    if output_offset is None:
+        FB_ELFLoaderEffects_mod.Start(builder)
+        output_offset = FB_ELFLoaderEffects_mod.End(builder)
+
+    FB_ELFLoaderFixture_mod.Start(builder)
+    FB_ELFLoaderFixture_mod.AddMetadata(builder, metadata_offset)
+    FB_ELFLoaderFixture_mod.AddInput(builder, input_offset)
+    FB_ELFLoaderFixture_mod.AddOutput(builder, output_offset)
+    fixture_offset = FB_ELFLoaderFixture_mod.End(builder)
+
+    builder.Finish(fixture_offset)
+    return bytes(builder.Output())
+
+
+# ============================================================================
 # Protobuf to FlatBuffers Conversion (for output)
 # ============================================================================
 
@@ -670,88 +984,30 @@ def convert_pb_to_fb_elf_fixture(pb_fixture) -> Tuple[Optional[bytes], Optional[
             )
 
     try:
-        import flatbuffers
-
-        # Import builder functions
-        from org.solana.sealevel.v2 import ELFLoaderFixture as FB_ELFLoaderFixture_mod
-        from org.solana.sealevel.v2 import ELFLoaderCtx as FB_ELFLoaderCtx_mod
-        from org.solana.sealevel.v2 import ELFLoaderEffects as FB_ELFLoaderEffects_mod
-        from org.solana.sealevel.v2 import FixtureMetadata as FB_FixtureMetadata_mod
-        from org.solana.sealevel.v2 import FeatureSet as FB_FeatureSet_mod
-        from org.solana.sealevel.v2 import XXHash as FB_XXHash_mod
-
-        builder = flatbuffers.Builder(1024)
-
-        # Build metadata - convert v1 entrypoint to v2 for FlatBuffers format
-        # Convention: _v1 = Protobuf, _v2 = FlatBuffers
         fn_entrypoint = entrypoint_to_v2(pb_fixture.metadata.fn_entrypoint)
-        fn_entrypoint_offset = (
-            builder.CreateString(fn_entrypoint) if fn_entrypoint else None
-        )
-
-        FB_FixtureMetadata_mod.Start(builder)
-        if fn_entrypoint_offset:
-            FB_FixtureMetadata_mod.AddFnEntrypoint(builder, fn_entrypoint_offset)
-        metadata_offset = FB_FixtureMetadata_mod.End(builder)
-
-        # Build input (ELFLoaderCtx)
-        # First, build elf_data vector
         elf_data = pb_fixture.input.elf.data if pb_fixture.input.elf else b""
-        if elf_data:
-            elf_data_offset = builder.CreateByteVector(elf_data)
-        else:
-            elf_data_offset = None
-
-        # Build features
         features_list = (
             list(pb_fixture.input.features.features)
             if pb_fixture.input.features
             else []
         )
-        features_offset = None
-        if features_list:
-            FB_FeatureSet_mod.StartFeaturesVector(builder, len(features_list))
-            for f in reversed(features_list):
-                builder.PrependUint64(f)
-            features_vector = builder.EndVector()
+        deploy_checks = pb_fixture.input.deploy_checks
 
-            FB_FeatureSet_mod.Start(builder)
-            FB_FeatureSet_mod.AddFeatures(builder, features_vector)
-            features_offset = FB_FeatureSet_mod.End(builder)
+        effects = {
+            "err_code": pb_fixture.output.error,
+            "rodata_hash": (
+                pb_fixture.output.rodata if pb_fixture.output.rodata else None
+            ),
+            "text_cnt": pb_fixture.output.text_cnt,
+            "text_off": pb_fixture.output.text_off,
+            "entry_pc": pb_fixture.output.entry_pc,
+            "calldests_hash": None,
+        }
 
-        FB_ELFLoaderCtx_mod.Start(builder)
-        if elf_data_offset:
-            FB_ELFLoaderCtx_mod.AddElfData(builder, elf_data_offset)
-        if features_offset:
-            FB_ELFLoaderCtx_mod.AddFeatures(builder, features_offset)
-        FB_ELFLoaderCtx_mod.AddDeployChecks(builder, pb_fixture.input.deploy_checks)
-        input_offset = FB_ELFLoaderCtx_mod.End(builder)
-
-        # Build output (ELFLoaderEffects)
-        # Build rodata_hash (XXHash is 8 bytes)
-        rodata_hash_offset = None
-        if pb_fixture.output.rodata and len(pb_fixture.output.rodata) >= 8:
-            rodata_hash_bytes = list(pb_fixture.output.rodata[:8])
-            rodata_hash_offset = FB_XXHash_mod.CreateXXHash(builder, rodata_hash_bytes)
-
-        FB_ELFLoaderEffects_mod.Start(builder)
-        FB_ELFLoaderEffects_mod.AddErrCode(builder, pb_fixture.output.error)
-        if rodata_hash_offset:
-            FB_ELFLoaderEffects_mod.AddRodataHash(builder, rodata_hash_offset)
-        FB_ELFLoaderEffects_mod.AddTextCnt(builder, pb_fixture.output.text_cnt)
-        FB_ELFLoaderEffects_mod.AddTextOff(builder, pb_fixture.output.text_off)
-        FB_ELFLoaderEffects_mod.AddEntryPc(builder, pb_fixture.output.entry_pc)
-        output_offset = FB_ELFLoaderEffects_mod.End(builder)
-
-        # Build the fixture
-        FB_ELFLoaderFixture_mod.Start(builder)
-        FB_ELFLoaderFixture_mod.AddMetadata(builder, metadata_offset)
-        FB_ELFLoaderFixture_mod.AddInput(builder, input_offset)
-        FB_ELFLoaderFixture_mod.AddOutput(builder, output_offset)
-        fixture_offset = FB_ELFLoaderFixture_mod.End(builder)
-
-        builder.Finish(fixture_offset)
-        return bytes(builder.Output()), None
+        fb_bytes = build_fb_elf_fixture(
+            fn_entrypoint, elf_data, features_list, deploy_checks, effects
+        )
+        return fb_bytes, None
 
     except Exception as e:
         return None, f"FlatBuffers build error: {type(e).__name__}: {e}"
