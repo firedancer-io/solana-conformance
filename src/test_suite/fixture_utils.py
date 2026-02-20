@@ -15,6 +15,7 @@ from test_suite.multiprocessing_utils import (
     read_context,
     read_fixture,
     process_single_test_case,
+    process_target_raw,
 )
 import test_suite.globals as globals
 import test_suite.protos.context_pb2 as context_pb
@@ -23,11 +24,19 @@ import test_suite.protos.metadata_pb2 as metadata_pb
 from google.protobuf import text_format
 from pathlib import Path
 from test_suite.fuzz_interface import ContextType, FixtureType
+from test_suite.fuzz_context import entrypoint_to_v2
 from test_suite.flatbuffers_utils import (
     convert_pb_to_fb_elf_fixture,
     detect_format,
     is_flatbuffers_output_supported,
     FLATBUFFERS_AVAILABLE,
+    parse_fb_elf_fixture,
+    extract_fb_elf_features,
+    extract_fb_elf_ctx_fields,
+    extract_fb_elf_entrypoint,
+    build_fb_elf_ctx,
+    build_fb_elf_fixture,
+    parse_fb_elf_effects,
 )
 
 
@@ -285,21 +294,133 @@ def get_program_type(instr_fixture: invoke_pb.InstrFixture) -> str:
     return "unknown"
 
 
+def _compute_new_feature_set(original_features: list) -> list:
+    """
+    Apply globals-driven feature additions, removals, and rekeying to a feature list.
+
+    Returns:
+        Sorted list of uint64 feature IDs after applying all transformations.
+    """
+    new_feature_set = (
+        set(original_features) | globals.features_to_add
+    ) - globals.features_to_remove
+
+    for old_feature, new_feature in globals.rekey_features:
+        if old_feature in new_feature_set:
+            new_feature_set.remove(old_feature)
+            new_feature_set.add(new_feature)
+
+    return sorted(new_feature_set)
+
+
+def _regenerate_fb_fixture(test_file: Path, raw_data: bytes) -> int:
+    """
+    Regenerate a FlatBuffers ELF loader fixture entirely in FlatBuffers-native mode.
+
+    Parses the fixture, updates features, re-executes through the shared library's
+    v2 entrypoint, and writes the result back as FlatBuffers.
+
+    Args:
+        test_file: Path to the fixture file
+        raw_data: Raw bytes of the fixture file
+
+    Returns:
+        1 on success, 0 on failure
+    """
+    fb_fixture = parse_fb_elf_fixture(raw_data)
+    if fb_fixture is None:
+        print(f"Failed to parse FlatBuffers fixture: {test_file}")
+        return 0
+
+    # Extract fields from the parsed FlatBuffers fixture
+    entrypoint = extract_fb_elf_entrypoint(fb_fixture)
+    ctx_fields = extract_fb_elf_ctx_fields(fb_fixture)
+    original_features = ctx_fields["features"]
+
+    new_features = _compute_new_feature_set(original_features)
+
+    if globals.regenerate_dry_run:
+        if globals.regenerate_verbose:
+            print(f"Would regenerate {test_file}")
+        return 1
+
+    if globals.regenerate_verbose:
+        print(f"Regenerating {test_file}")
+
+    # Build FlatBuffers context with updated features for re-execution
+    v2_entrypoint = entrypoint_to_v2(entrypoint)
+    ctx_bytes = build_fb_elf_ctx(
+        ctx_fields["elf_data"], new_features, ctx_fields["deploy_checks"]
+    )
+
+    # Re-execute through the reference shared library
+    reference_lib = globals.target_libraries.get(globals.reference_shared_library)
+    if reference_lib is None:
+        print(f"Reference shared library not found: {globals.reference_shared_library}")
+        return 0
+
+    try:
+        if globals.regenerate_verbose:
+            has_fn = hasattr(reference_lib, v2_entrypoint)
+            print(
+                f"  Calling {v2_entrypoint} (exists={has_fn}) "
+                f"with {len(ctx_bytes)} byte ctx "
+                f"({len(ctx_fields['elf_data'])} byte elf, "
+                f"{len(new_features)} features, "
+                f"deploy_checks={ctx_fields['deploy_checks']})"
+            )
+        effects_bytes = process_target_raw(v2_entrypoint, reference_lib, ctx_bytes)
+    except AttributeError:
+        print(
+            f"Shared library does not export '{v2_entrypoint}'. "
+            f"Cannot regenerate FlatBuffers fixture: {test_file}"
+        )
+        return 0
+    except Exception as e:
+        print(f"Error executing {v2_entrypoint} for {test_file}: {e}")
+        return 0
+
+    if effects_bytes is None:
+        if globals.regenerate_verbose:
+            print(f"  {v2_entrypoint} returned failure for {test_file}")
+        return 0
+
+    effects = parse_fb_elf_effects(effects_bytes)
+    if effects is None:
+        print(f"Failed to parse FlatBuffers effects for {test_file}")
+        return 0
+
+    # Build the complete FlatBuffers fixture and write to disk
+    fixture_bytes = build_fb_elf_fixture(
+        entrypoint,
+        ctx_fields["elf_data"],
+        new_features,
+        ctx_fields["deploy_checks"],
+        effects,
+    )
+
+    output_dir = globals.output_dir
+    with open(output_dir / (test_file.stem + FIXTURE_EXTENSION), "wb") as f:
+        f.write(fixture_bytes)
+
+    return 1
+
+
 def regenerate_fixture(test_file: Path) -> int:
     if test_file.is_dir():
         return 0
 
-    # Detect the source format to preserve it in output
-    source_format = "protobuf"
-    try:
-        with open(test_file, "rb") as f:
-            raw_data = f.read()
-        source_format = detect_format(raw_data)
-        if source_format == "unknown":
-            source_format = "protobuf"
-    except Exception:
+    with open(test_file, "rb") as f:
+        raw_data = f.read()
+    source_format = detect_format(raw_data)
+    if source_format == "unknown":
         source_format = "protobuf"
 
+    # FlatBuffers-native path for ELF loader fixtures
+    if source_format == "flatbuffers" and FLATBUFFERS_AVAILABLE:
+        return _regenerate_fb_fixture(test_file, raw_data)
+
+    # Existing Protobuf path for all other fixture types
     fixture = read_fixture(test_file)
     harness_ctx = get_harness_for_entrypoint(fixture.metadata.fn_entrypoint)
 
@@ -312,15 +433,8 @@ def regenerate_fixture(test_file: Path) -> int:
     features_path = features_path[0]
 
     features = pb_utils.access_nested_field_safe(fixture.input, features_path)
-    original_feature_set = set(features.features) if features else set()
-    new_feature_set = (
-        original_feature_set | globals.features_to_add
-    ) - globals.features_to_remove
-
-    for old_feature, new_feature in globals.rekey_features:
-        if old_feature in new_feature_set:
-            new_feature_set.remove(old_feature)
-            new_feature_set.add(new_feature)
+    original_feature_set = list(features.features) if features else []
+    new_feature_set = _compute_new_feature_set(original_feature_set)
 
     if globals.regenerate_dry_run:
         if globals.regenerate_verbose:
@@ -329,11 +443,9 @@ def regenerate_fixture(test_file: Path) -> int:
         if globals.regenerate_verbose:
             print(f"Regenerating {test_file}")
 
-        # Apply minimum compatible features
         if features is not None:
-            features.features[:] = sorted(list(new_feature_set))
+            features.features[:] = new_feature_set
 
-        # Apply any custom transformations to the data
         harness_ctx.regenerate_transformation_fn(fixture)
 
         regenerated_fixture = create_fixture_from_context(harness_ctx, fixture.input)

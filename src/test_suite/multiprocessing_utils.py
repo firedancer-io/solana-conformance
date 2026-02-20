@@ -204,6 +204,47 @@ def process_target(
     return output_object
 
 
+def process_target_raw(
+    fn_name: str, library: ctypes.CDLL, ctx_bytes: bytes
+) -> bytes | None:
+    """
+    Process raw bytes through a shared library function and return raw output bytes.
+
+    Unlike process_target, this operates on raw bytes without any Protobuf
+    serialization/deserialization, making it suitable for FlatBuffers payloads.
+
+    Args:
+        - fn_name: Name of the shared library function to call
+        - library: Shared library handle
+        - ctx_bytes: Raw input bytes (e.g. FlatBuffers-encoded context)
+
+    Returns:
+        - bytes | None: Raw output bytes from the shared library, or None on failure
+    """
+    in_ptr = (ctypes.c_uint8 * len(ctx_bytes))(*ctx_bytes)
+    in_sz = len(ctx_bytes)
+    out_sz = ctypes.c_uint64(OUTPUT_BUFFER_SIZE)
+
+    sol_compat_fn = getattr(library, fn_name)
+
+    sol_compat_fn.argtypes = [
+        POINTER(ctypes.c_uint8),  # out_ptr
+        POINTER(c_uint64),  # out_psz
+        POINTER(ctypes.c_uint8),  # in_ptr
+        c_uint64,  # in_sz
+    ]
+    sol_compat_fn.restype = c_int
+
+    result = sol_compat_fn(
+        globals.output_buffer_pointer, ctypes.byref(out_sz), in_ptr, in_sz
+    )
+    # v2 (FlatBuffers) convention: 0 = success, non-zero = failure
+    if result != 0:
+        return None
+
+    return bytes(globals.output_buffer_pointer[: out_sz.value])
+
+
 def extract_metadata(fixture_file: Path) -> str | None:
     """
     Extracts metadata from a fixture file.
