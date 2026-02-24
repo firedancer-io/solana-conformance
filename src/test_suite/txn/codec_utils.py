@@ -86,13 +86,16 @@ def decode_input(txn_context: txn_pb.TxnContext):
     """
     decode_sanitized_tx(txn_context.tx)
 
-    # Blockhash queue
-    for i in range(len(txn_context.blockhash_queue)):
-        txn_context.blockhash_queue[i] = fd58.dec32(txn_context.blockhash_queue[i])
-
     # Account shared data
     for i in range(len(txn_context.account_shared_data)):
         decode_acct_state(txn_context.account_shared_data[i])
+
+    # Bank blockhash queue entries
+    for i in range(len(txn_context.bank.blockhash_queue)):
+        if txn_context.bank.blockhash_queue[i].blockhash:
+            txn_context.bank.blockhash_queue[i].blockhash = fd58.dec32(
+                txn_context.bank.blockhash_queue[i].blockhash
+            )
 
 
 def encode_input(txn_context: txn_pb.TxnContext):
@@ -105,13 +108,16 @@ def encode_input(txn_context: txn_pb.TxnContext):
     """
     encode_sanitized_tx(txn_context.tx)
 
-    # Blockhash queue
-    for i in range(len(txn_context.blockhash_queue)):
-        txn_context.blockhash_queue[i] = fd58.enc32(txn_context.blockhash_queue[i])
-
     # Account shared data
     for i in range(len(txn_context.account_shared_data)):
         encode_acct_state(txn_context.account_shared_data[i])
+
+    # Bank blockhash queue entries
+    for i in range(len(txn_context.bank.blockhash_queue)):
+        if txn_context.bank.blockhash_queue[i].blockhash:
+            txn_context.bank.blockhash_queue[i].blockhash = fd58.enc32(
+                txn_context.bank.blockhash_queue[i].blockhash
+            )
 
 
 def encode_output(txn_result: txn_pb.TxnResult):
@@ -123,6 +129,14 @@ def encode_output(txn_result: txn_pb.TxnResult):
         - txn_result (txn_pb.TxnResult): Transaction result (will be modified).
     """
 
-    # Account states
-    for i in range(len(txn_result.resulting_state.acct_states)):
-        encode_acct_state(txn_result.resulting_state.acct_states[i])
+    # Modified account states
+    for i in range(len(txn_result.modified_accounts)):
+        encode_acct_state(txn_result.modified_accounts[i])
+
+    # Rollback account states
+    for i in range(len(txn_result.rollback_accounts)):
+        encode_acct_state(txn_result.rollback_accounts[i])
+
+    # Return data
+    if txn_result.return_data:
+        txn_result.return_data = encode_hex_compact(txn_result.return_data)
