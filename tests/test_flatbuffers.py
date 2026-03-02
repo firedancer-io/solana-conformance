@@ -535,7 +535,10 @@ class TestEntrypointV1V2Convention:
             FixtureLoader,
             FLATBUFFERS_AVAILABLE,
         )
-        from test_suite.fuzz_context import ENTRYPOINT_HARNESS_MAP
+        from test_suite.fuzz_context import (
+            ENTRYPOINT_HARNESS_MAP,
+            get_harness_for_entrypoint,
+        )
         import test_suite.protos.elf_pb2 as elf_pb
         import tempfile
         from pathlib import Path
@@ -559,11 +562,10 @@ class TestEntrypointV1V2Convention:
             loader = FixtureLoader(temp_path)
             assert loader.is_valid
 
-            # The entrypoint should be _v1, which exists in the harness map
+            # The entrypoint should resolve to the ELF loader harness
             fn_entrypoint = loader.fn_entrypoint
-            assert fn_entrypoint in ENTRYPOINT_HARNESS_MAP
-            harness = ENTRYPOINT_HARNESS_MAP[fn_entrypoint]
-            assert harness.fuzz_fn_name == "sol_compat_elf_loader_v1"
+            harness = get_harness_for_entrypoint(fn_entrypoint)
+            assert harness.fuzz_fn_name == "sol_compat_elf_loader_v2"
         finally:
             temp_path.unlink()
 
@@ -678,7 +680,6 @@ class TestEntrypointV1V2Convention:
             entrypoint_to_v2,
             is_flatbuffers_supported,
             get_harness_for_entrypoint,
-            FLATBUFFERS_HARNESSES,
         )
 
         # v1 -> v2
@@ -712,26 +713,27 @@ class TestEntrypointV1V2Convention:
         assert is_flatbuffers_supported("sol_compat_elf_loader_v2") is True
         assert is_flatbuffers_supported("sol_compat_instr_execute_v1") is False
 
-        # FLATBUFFERS_HARNESSES should contain ElfLoaderHarness
-        assert "ElfLoaderHarness" in FLATBUFFERS_HARNESSES
+        # ElfLoaderHarness should have supports_flatbuffers=True
+        harness = get_harness_for_entrypoint("sol_compat_elf_loader_v2")
+        assert harness.supports_flatbuffers is True
 
     def test_get_harness_for_entrypoint_safe_lookup(self):
         """Test that get_harness_for_entrypoint handles v1/v2 and errors gracefully."""
         from test_suite.fuzz_context import get_harness_for_entrypoint
 
-        # v1 entrypoint works
+        # v1 entrypoint is normalized to v2 and works
         harness = get_harness_for_entrypoint("sol_compat_elf_loader_v1")
-        assert harness.fuzz_fn_name == "sol_compat_elf_loader_v1"
+        assert harness.fuzz_fn_name == "sol_compat_elf_loader_v2"
 
-        # v2 entrypoint is normalized to v1 and works
+        # v2 entrypoint works directly
         harness = get_harness_for_entrypoint("sol_compat_elf_loader_v2")
-        assert harness.fuzz_fn_name == "sol_compat_elf_loader_v1"
+        assert harness.fuzz_fn_name == "sol_compat_elf_loader_v2"
 
         # Unknown entrypoint raises KeyError with helpful message
         with pytest.raises(KeyError) as exc_info:
             get_harness_for_entrypoint("unknown_entrypoint")
         assert "Unknown entrypoint" in str(exc_info.value)
-        assert "sol_compat_elf_loader_v1" in str(exc_info.value)  # Shows valid options
+        assert "sol_compat_elf_loader_v2" in str(exc_info.value)  # Shows valid options
 
         # Empty entrypoint raises KeyError
         with pytest.raises(KeyError) as exc_info:
