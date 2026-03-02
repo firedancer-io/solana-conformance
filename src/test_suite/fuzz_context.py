@@ -28,12 +28,13 @@ import test_suite.elf_loader.codec_utils as elf_codec
 import test_suite.type.diff_utils as type_diff
 
 ElfLoaderHarness = HarnessCtx(
-    fuzz_fn_name="sol_compat_elf_loader_v1",
+    fuzz_fn_name="sol_compat_elf_loader_v2",
     fixture_desc=elf_pb.ELFLoaderFixture.DESCRIPTOR,
     context_extension=".elfctx",
     context_human_encode_fn=elf_codec.encode_input,
     context_human_decode_fn=elf_codec.decode_input,
     effects_human_encode_fn=elf_codec.encode_output,
+    supports_flatbuffers=True,
 )
 
 InstrHarness = HarnessCtx(
@@ -130,14 +131,6 @@ DEFAULT_OUTPUT_FORMAT = "auto"
 # FlatBuffers Support
 # ============================================================================
 
-# FlatBuffers is only supported for ELFLoaderHarness (schema exists in protosol)
-# When adding FlatBuffers support for other harnesses, add them to FLATBUFFERS_HARNESSES below
-
-# Add harnesses here when their FlatBuffers schemas are added to protosol
-FLATBUFFERS_HARNESSES = {
-    "ElfLoaderHarness",
-}
-
 
 def entrypoint_to_v2(entrypoint: str) -> str:
     """Convert a v1 entrypoint to v2 (for FlatBuffers output).
@@ -159,33 +152,20 @@ def entrypoint_to_v1(entrypoint: str) -> str:
     return entrypoint
 
 
-# Cached set of entrypoints that support FlatBuffers (computed once at module load)
-_FLATBUFFERS_ENTRYPOINTS: set[str] = None
-
-
-def _get_flatbuffers_entrypoints() -> set[str]:
-    """Get the set of entrypoints that support FlatBuffers (cached)."""
-    global _FLATBUFFERS_ENTRYPOINTS
-    if _FLATBUFFERS_ENTRYPOINTS is None:
-        _FLATBUFFERS_ENTRYPOINTS = {
-            HARNESS_MAP[h].fuzz_fn_name
-            for h in FLATBUFFERS_HARNESSES
-            if h in HARNESS_MAP
-        }
-    return _FLATBUFFERS_ENTRYPOINTS
-
-
 def is_flatbuffers_supported(entrypoint: str) -> bool:
     """Check if an entrypoint supports FlatBuffers format.
 
-    Currently only ELFLoaderFixture has FlatBuffers schema in protosol.
-    To add support for new fixture types, add the harness name to FLATBUFFERS_HARNESSES.
+    Looks up the harness for the given entrypoint and checks its
+    supports_flatbuffers field. Set supports_flatbuffers=True on
+    a HarnessCtx to enable FlatBuffers for that harness.
     """
     if not entrypoint:
         return False
-    # Normalize to v1 for lookup (handles both v1 and v2 inputs)
-    normalized = entrypoint_to_v1(entrypoint)
-    return normalized in _get_flatbuffers_entrypoints()
+    try:
+        harness = get_harness_for_entrypoint(entrypoint)
+        return harness.supports_flatbuffers
+    except KeyError:
+        return False
 
 
 def get_harness_for_entrypoint(entrypoint: str) -> HarnessCtx:
@@ -215,6 +195,11 @@ def get_harness_for_entrypoint(entrypoint: str) -> HarnessCtx:
 
     # Try normalizing v2 -> v1
     normalized = entrypoint_to_v1(entrypoint)
+    if normalized in ENTRYPOINT_HARNESS_MAP:
+        return ENTRYPOINT_HARNESS_MAP[normalized]
+
+    # Try normalizing v1 -> v2
+    normalized = entrypoint_to_v2(entrypoint)
     if normalized in ENTRYPOINT_HARNESS_MAP:
         return ENTRYPOINT_HARNESS_MAP[normalized]
 

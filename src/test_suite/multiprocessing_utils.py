@@ -6,6 +6,17 @@ from test_suite.fuzz_context import (
     FIXTURE_EXTENSION,
     HarnessCtx,
     get_harness_for_entrypoint,
+    entrypoint_to_v2,
+)
+from test_suite.flatbuffers_utils import (
+    detect_format,
+    FLATBUFFERS_AVAILABLE,
+    parse_fb_elf_fixture,
+    extract_fb_elf_ctx_fields,
+    extract_fb_elf_effects_fields,
+    extract_fb_elf_entrypoint,
+    build_fb_elf_ctx,
+    parse_fb_elf_effects,
 )
 from test_suite.fuzz_interface import ContextType, EffectsType
 import test_suite.protos.invoke_pb2 as invoke_pb
@@ -575,6 +586,170 @@ def build_test_results(
     return 1 if all_passed else -1, outputs
 
 
+# ============================================================================
+# FlatBuffers-native test execution (no Protobuf conversion)
+# ============================================================================
+
+_FB_EFFECTS_KEYS = (
+    "err_code",
+    "text_cnt",
+    "text_off",
+    "entry_pc",
+    "rodata_hash",
+    "calldests_hash",
+)
+
+
+def format_fb_effects(effects: dict | None) -> str:
+    """Format a FlatBuffers ELF effects dict as human-readable text."""
+    if effects is None:
+        return "None\n"
+    lines = []
+    for key in _FB_EFFECTS_KEYS:
+        val = effects.get(key)
+        if isinstance(val, bytes):
+            lines.append(f"{key}: {val.hex()}")
+        elif val is not None:
+            lines.append(f"{key}: {val}")
+    return "\n".join(lines) + "\n"
+
+
+def build_test_results_fb(
+    results: dict[Path, dict | None], reference_target: Path
+) -> tuple[int, dict | None]:
+    """
+    Build test results for FlatBuffers effects (dict comparison).
+
+    Parallel to build_test_results() but operates on parsed FB effects dicts
+    instead of serialized Protobuf messages.
+
+    Args:
+        - results: Dict mapping target library paths to parsed effects dicts
+                   (from parse_fb_elf_effects), or None on execution failure.
+        - reference_target: Path to the reference target library.
+
+    Returns:
+        - tuple[int, dict | None]: (status, outputs_dict)
+            - 1 if passed, -1 if failed, 0 if skipped
+    """
+    if results is None:
+        return 0, None
+
+    ref_result = results.get(reference_target)
+    if ref_result is None:
+        print("Skipping test case due to reference target rejection")
+        return 0, None
+
+    outputs = {}
+    all_passed = True
+
+    for target, result in results.items():
+        if target == reference_target:
+            continue
+        if result is not None:
+            all_passed &= ref_result == result
+            outputs[target] = format_fb_effects(result)
+        else:
+            all_passed = False
+            outputs[target] = "None\n"
+
+    outputs[reference_target] = format_fb_effects(ref_result)
+
+    return 1 if all_passed else -1, outputs
+
+
+def run_test_fb(test_file: Path, raw_data: bytes) -> tuple[str, int, dict | None]:
+    """
+    Run a single FlatBuffers ELF fixture natively (no Protobuf conversion).
+
+    Extracts the FB context, calls the v2 entrypoint on each target library
+    via process_target_raw(), parses FB effects, and compares them.
+
+    Args:
+        - test_file: Path to the .fix fixture file.
+        - raw_data: Raw bytes already read from the file.
+
+    Returns:
+        - tuple[str, int, dict | None]: Same shape as run_test().
+    """
+    fb_fixture = parse_fb_elf_fixture(raw_data)
+    if fb_fixture is None:
+        return test_file.stem, 0, None
+
+    entrypoint = extract_fb_elf_entrypoint(fb_fixture)
+    v2_entrypoint = entrypoint_to_v2(entrypoint)
+
+    ctx_fields = extract_fb_elf_ctx_fields(fb_fixture)
+    ctx_bytes = build_fb_elf_ctx(
+        ctx_fields["elf_data"], ctx_fields["features"], ctx_fields["deploy_checks"]
+    )
+
+    results = {}
+    for target_name, target_lib in globals.target_libraries.items():
+        try:
+            effects_bytes = process_target_raw(v2_entrypoint, target_lib, ctx_bytes)
+        except Exception as e:
+            print(f"Error calling {v2_entrypoint} on {target_name}: {e}")
+            effects_bytes = None
+
+        if effects_bytes is not None:
+            results[target_name] = parse_fb_elf_effects(effects_bytes)
+        else:
+            results[target_name] = None
+
+    return test_file.stem, *build_test_results_fb(
+        results, globals.reference_shared_library
+    )
+
+
+def execute_fixture_fb(
+    test_file: Path, raw_data: bytes
+) -> tuple[str, int, dict | None]:
+    """
+    Execute a FlatBuffers ELF fixture and compare against expected output.
+
+    Parallel to execute_fixture() for the exec-fixtures command. Extracts
+    expected effects from the fixture, re-executes the context through
+    the reference library, and compares actual vs expected.
+
+    Args:
+        - test_file: Path to the .fix fixture file.
+        - raw_data: Raw bytes already read from the file.
+
+    Returns:
+        - tuple[str, int, dict | None]: Same shape as execute_fixture().
+    """
+    fb_fixture = parse_fb_elf_fixture(raw_data)
+    if fb_fixture is None:
+        return test_file.stem, 0, None
+
+    entrypoint = extract_fb_elf_entrypoint(fb_fixture)
+    v2_entrypoint = entrypoint_to_v2(entrypoint)
+
+    expected_effects = extract_fb_elf_effects_fields(fb_fixture)
+
+    ctx_fields = extract_fb_elf_ctx_fields(fb_fixture)
+    ctx_bytes = build_fb_elf_ctx(
+        ctx_fields["elf_data"], ctx_fields["features"], ctx_fields["deploy_checks"]
+    )
+
+    ref_lib = globals.target_libraries[globals.reference_shared_library]
+    try:
+        effects_bytes = process_target_raw(v2_entrypoint, ref_lib, ctx_bytes)
+    except Exception as e:
+        print(f"Error calling {v2_entrypoint}: {e}")
+        effects_bytes = None
+
+    actual_effects = parse_fb_elf_effects(effects_bytes) if effects_bytes else None
+
+    results = {
+        Path("expected"): expected_effects,
+        Path("actual"): actual_effects,
+    }
+
+    return test_file.stem, *build_test_results_fb(results, Path("expected"))
+
+
 def initialize_process_output_buffers(randomize_output_buffer=False):
     """
     Initialize shared memory and pointers for output buffers for each process.
@@ -691,7 +866,14 @@ def run_test(test_file: Path) -> tuple[str, int, dict | None]:
             - 1 if passed, -1 if failed, 0 if skipped
             - Dictionary of target library names and file-dumpable serialized instruction effects
     """
-    # Process fixtures through this entrypoint as well
+    # FlatBuffers-native path: skip Protobuf conversion entirely
+    if test_file.suffix == FIXTURE_EXTENSION and FLATBUFFERS_AVAILABLE:
+        with open(test_file, "rb") as f:
+            raw_data = f.read()
+        if detect_format(raw_data) == "flatbuffers":
+            return run_test_fb(test_file, raw_data)
+
+    # Protobuf path
     if test_file.suffix == FIXTURE_EXTENSION:
         fn_entrypoint = extract_metadata(test_file).fn_entrypoint
         harness_ctx = get_harness_for_entrypoint(fn_entrypoint)
@@ -716,6 +898,14 @@ def execute_fixture(test_file: Path) -> tuple[str, int, dict | None]:
         print(f"File {test_file} is not a fixture")
         return test_file.stem, None
 
+    # FlatBuffers-native path
+    if FLATBUFFERS_AVAILABLE:
+        with open(test_file, "rb") as f:
+            raw_data = f.read()
+        if detect_format(raw_data) == "flatbuffers":
+            return execute_fixture_fb(test_file, raw_data)
+
+    # Protobuf path
     fn_entrypoint = extract_metadata(test_file).fn_entrypoint
     harness_ctx = get_harness_for_entrypoint(fn_entrypoint)
     fixture = read_fixture(test_file)
