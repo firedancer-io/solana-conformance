@@ -19,22 +19,22 @@ def decode_input(context: block_pb.BlockContext):
         decode_acct_state(context.acct_states[i])
 
     # POH hash
-    context.slot_ctx.poh = fd58.dec32(context.slot_ctx.poh)
+    context.bank.poh = fd58.dec32(context.slot_ctx.poh)
 
     # Parent bank hash
-    context.slot_ctx.parent_bank_hash = fd58.dec32(context.slot_ctx.parent_bank_hash)
+    context.bank.parent_bank_hash = fd58.dec32(context.bank.parent_bank_hash)
 
     # T-1 Vote accounts
-    for i in range(len(context.epoch_ctx.vote_accounts_t_1)):
-        decode_acct_state(context.epoch_ctx.vote_accounts_t_1[i].vote_account)
+    for i in range(len(context.bank.vote_accounts_t_1)):
+        decode_acct_state(context.bank.vote_accounts_t_1[i].vote_account)
 
     # T-2 Vote accounts
-    for i in range(len(context.epoch_ctx.vote_accounts_t_2)):
-        decode_acct_state(context.epoch_ctx.vote_accounts_t_2[i].vote_account)
+    for i in range(len(context.bank.vote_accounts_t_2)):
+        decode_acct_state(context.bank.vote_accounts_t_2[i].vote_account)
 
     # Blockhash queue
-    for i in range(len(context.blockhash_queue)):
-        context.blockhash_queue[i] = fd58.dec32(context.blockhash_queue[i])
+    for i in range(len(context.bank.blockhash_queue)):
+        context.bank.blockhash_queue[i] = fd58.dec32(context.bank.blockhash_queue[i])
 
 
 def encode_input(context: block_pb.BlockContext):
@@ -52,22 +52,22 @@ def encode_input(context: block_pb.BlockContext):
         encode_acct_state(context.acct_states[i])
 
     # POH hash
-    context.slot_ctx.poh = fd58.enc32(context.slot_ctx.poh)
+    context.bank.poh = fd58.enc32(context.bank.poh)
 
     # Parent bank hash
-    context.slot_ctx.parent_bank_hash = fd58.enc32(context.slot_ctx.parent_bank_hash)
+    context.bank.parent_bank_hash = fd58.enc32(context.bank.parent_bank_hash)
 
     # T-1 Vote accounts
-    for i in range(len(context.epoch_ctx.vote_accounts_t_1)):
-        encode_acct_state(context.epoch_ctx.vote_accounts_t_1[i].vote_account)
+    for i in range(len(context.bank.vote_accounts_t_1)):
+        encode_acct_state(context.bank.vote_accounts_t_1[i].vote_account)
 
     # T-2 Vote accounts
-    for i in range(len(context.epoch_ctx.vote_accounts_t_2)):
-        encode_acct_state(context.epoch_ctx.vote_accounts_t_2[i].vote_account)
+    for i in range(len(context.bank.vote_accounts_t_2)):
+        encode_acct_state(context.bank.vote_accounts_t_2[i].vote_account)
 
     # Blockhash queue
-    for i in range(len(context.blockhash_queue)):
-        context.blockhash_queue[i] = fd58.enc32(context.blockhash_queue[i])
+    for i in range(len(context.bank.blockhash_queue)):
+        context.bank.blockhash_queue[i] = fd58.enc32(context.bank.blockhash_queue[i])
 
 
 def encode_output(effects: block_pb.BlockEffects):
