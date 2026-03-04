@@ -24,7 +24,7 @@ from . import metadata_pb2 as metadata__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x0b\x62lock.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\ttxn.proto\x1a\x0emetadata.proto"I\n\x0b\x43ostTracker\x12\x1d\n\nblock_cost\x18\x01 \x01(\x04R\tblockCost\x12\x1b\n\tvote_cost\x18\x02 \x01(\x04R\x08voteCost"\xc0\x02\n\x0c\x42lockContext\x12@\n\x04txns\x18\x01 \x03(\x0b\x32,.org.solana.sealevel.v1.SanitizedTransactionR\x04txns\x12\x42\n\x0b\x61\x63\x63t_states\x18\x02 \x03(\x0b\x32!.org.solana.sealevel.v1.AcctStateR\nacctStates\x12\'\n\x0f\x62lockhash_queue\x18\x03 \x03(\x0cR\x0e\x62lockhashQueue\x12>\n\x08slot_ctx\x18\x04 \x01(\x0b\x32#.org.solana.sealevel.v1.SlotContextR\x07slotCtx\x12\x41\n\tepoch_ctx\x18\x05 \x01(\x0b\x32$.org.solana.sealevel.v1.EpochContextR\x08\x65pochCtx"\x8f\x02\n\x15LeaderScheduleEffects\x12#\n\rleaders_epoch\x18\x01 \x01(\x04R\x0cleadersEpoch\x12#\n\rleaders_slot0\x18\x02 \x01(\x04R\x0cleadersSlot0\x12(\n\x10leaders_slot_cnt\x18\x03 \x01(\x04R\x0eleadersSlotCnt\x12$\n\x0eleader_pub_cnt\x18\x04 \x01(\x04R\x0cleaderPubCnt\x12*\n\x11leaders_sched_cnt\x18\x05 \x01(\x04R\x0fleadersSchedCnt\x12\x30\n\x14leader_schedule_hash\x18\x06 \x01(\x0cR\x12leaderScheduleHash"\x99\x02\n\x0c\x42lockEffects\x12\x1b\n\thas_error\x18\x01 \x01(\x08R\x08hasError\x12/\n\x13slot_capitalization\x18\x02 \x01(\x04R\x12slotCapitalization\x12\x1b\n\tbank_hash\x18\x03 \x01(\x0cR\x08\x62\x61nkHash\x12\x46\n\x0c\x63ost_tracker\x18\x04 \x01(\x0b\x32#.org.solana.sealevel.v1.CostTrackerR\x0b\x63ostTracker\x12V\n\x0fleader_schedule\x18\x05 \x01(\x0b\x32-.org.solana.sealevel.v1.LeaderScheduleEffectsR\x0eleaderSchedule"\xcd\x01\n\x0c\x42lockFixture\x12\x43\n\x08metadata\x18\x01 \x01(\x0b\x32\'.org.solana.sealevel.v1.FixtureMetadataR\x08metadata\x12:\n\x05input\x18\x02 \x01(\x0b\x32$.org.solana.sealevel.v1.BlockContextR\x05input\x12<\n\x06output\x18\x03 \x01(\x0b\x32$.org.solana.sealevel.v1.BlockEffectsR\x06outputb\x06proto3'
+    b'\n\x0b\x62lock.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\ttxn.proto\x1a\x0emetadata.proto"I\n\x0b\x43ostTracker\x12\x1d\n\nblock_cost\x18\x01 \x01(\x04R\tblockCost\x12\x1b\n\tvote_cost\x18\x02 \x01(\x04R\x08voteCost"\xa0\x01\n\tInflation\x12\x18\n\x07initial\x18\x01 \x01(\x01R\x07initial\x12\x1a\n\x08terminal\x18\x02 \x01(\x01R\x08terminal\x12\x14\n\x05taper\x18\x03 \x01(\x01R\x05taper\x12\x1e\n\nfoundation\x18\x04 \x01(\x01R\nfoundation\x12\'\n\x0f\x66oundation_term\x18\x05 \x01(\x01R\x0e\x66oundationTerm"\x82\x01\n\x0fPrevVoteAccount\x12\x18\n\x07\x61\x64\x64ress\x18\x01 \x01(\x0cR\x07\x61\x64\x64ress\x12\x1f\n\x0bnode_pubkey\x18\x02 \x01(\x0cR\nnodePubkey\x12\x14\n\x05stake\x18\x03 \x01(\x04R\x05stake\x12\x1e\n\ncommission\x18\x04 \x01(\rR\ncommission"\xd2\x02\n\x0fStakeDelegation\x12#\n\rstake_account\x18\x01 \x01(\x0cR\x0cstakeAccount\x12!\n\x0cvote_account\x18\x02 \x01(\x0cR\x0bvoteAccount\x12\x14\n\x05stake\x18\x03 \x01(\x04R\x05stake\x12)\n\x10\x63redits_observed\x18\x04 \x01(\x04R\x0f\x63reditsObserved\x12)\n\x10\x61\x63tivation_epoch\x18\x05 \x01(\x04R\x0f\x61\x63tivationEpoch\x12-\n\x12\x64\x65\x61\x63tivation_epoch\x18\x06 \x01(\x04R\x11\x64\x65\x61\x63tivationEpoch\x12\\\n\x14warmup_cooldown_rate\x18\x07 \x01(\x0e\x32*.org.solana.sealevel.v1.WarmupCooldownRateR\x12warmupCooldownRate"\xfc\x07\n\tBlockBank\x12T\n\x0f\x62lockhash_queue\x18\x01 \x03(\x0b\x32+.org.solana.sealevel.v1.BlockhashQueueEntryR\x0e\x62lockhashQueue\x12;\n\x1arbh_lamports_per_signature\x18\x02 \x01(\rR\x17rbhLamportsPerSignature\x12S\n\x11\x66\x65\x65_rate_governor\x18\x03 \x01(\x0b\x32\'.org.solana.sealevel.v1.FeeRateGovernorR\x0f\x66\x65\x65RateGovernor\x12\x1f\n\x0bparent_slot\x18\x04 \x01(\x04R\nparentSlot\x12&\n\x0e\x63\x61pitalization\x18\x05 \x01(\x04R\x0e\x63\x61pitalization\x12?\n\tinflation\x18\x06 \x01(\x0b\x32!.org.solana.sealevel.v1.InflationR\tinflation\x12!\n\x0c\x62lock_height\x18\x07 \x01(\x04R\x0b\x62lockHeight\x12\x10\n\x03poh\x18\x08 \x01(\x0cR\x03poh\x12(\n\x10parent_bank_hash\x18\t \x01(\x0cR\x0eparentBankHash\x12$\n\x0eparent_lt_hash\x18\n \x01(\x0cR\x0cparentLtHash\x12\x34\n\x16parent_signature_count\x18\x0b \x01(\x04R\x14parentSignatureCount\x12L\n\x0e\x65poch_schedule\x18\x0c \x01(\x0b\x32%.org.solana.sealevel.v1.EpochScheduleR\repochSchedule\x12\x30\n\x04rent\x18\r \x01(\x0b\x32\x1c.org.solana.sealevel.v1.RentR\x04rent\x12>\n\x08\x66\x65\x61tures\x18\x0e \x01(\x0b\x32".org.solana.sealevel.v1.FeatureSetR\x08\x66\x65\x61tures\x12R\n\x11vote_accounts_t_1\x18\x0f \x03(\x0b\x32\'.org.solana.sealevel.v1.PrevVoteAccountR\x0evoteAccountsT1\x12R\n\x11vote_accounts_t_2\x18\x10 \x03(\x0b\x32\'.org.solana.sealevel.v1.PrevVoteAccountR\x0evoteAccountsT2\x12Z\n\x15stake_delegations_t_1\x18\x11 \x03(\x0b\x32\'.org.solana.sealevel.v1.StakeDelegationR\x12stakeDelegationsT1"\xdd\x01\n\x0c\x42lockContext\x12@\n\x04txns\x18\x01 \x03(\x0b\x32,.org.solana.sealevel.v1.SanitizedTransactionR\x04txns\x12\x42\n\x0b\x61\x63\x63t_states\x18\x02 \x03(\x0b\x32!.org.solana.sealevel.v1.AcctStateR\nacctStates\x12\x35\n\x04\x62\x61nk\x18\x06 \x01(\x0b\x32!.org.solana.sealevel.v1.BlockBankR\x04\x62\x61nkJ\x04\x08\x03\x10\x04J\x04\x08\x04\x10\x05J\x04\x08\x05\x10\x06"\x8f\x02\n\x15LeaderScheduleEffects\x12#\n\rleaders_epoch\x18\x01 \x01(\x04R\x0cleadersEpoch\x12#\n\rleaders_slot0\x18\x02 \x01(\x04R\x0cleadersSlot0\x12(\n\x10leaders_slot_cnt\x18\x03 \x01(\x04R\x0eleadersSlotCnt\x12$\n\x0eleader_pub_cnt\x18\x04 \x01(\x04R\x0cleaderPubCnt\x12*\n\x11leaders_sched_cnt\x18\x05 \x01(\x04R\x0fleadersSchedCnt\x12\x30\n\x14leader_schedule_hash\x18\x06 \x01(\x0cR\x12leaderScheduleHash"\x99\x02\n\x0c\x42lockEffects\x12\x1b\n\thas_error\x18\x01 \x01(\x08R\x08hasError\x12/\n\x13slot_capitalization\x18\x02 \x01(\x04R\x12slotCapitalization\x12\x1b\n\tbank_hash\x18\x03 \x01(\x0cR\x08\x62\x61nkHash\x12\x46\n\x0c\x63ost_tracker\x18\x04 \x01(\x0b\x32#.org.solana.sealevel.v1.CostTrackerR\x0b\x63ostTracker\x12V\n\x0fleader_schedule\x18\x05 \x01(\x0b\x32-.org.solana.sealevel.v1.LeaderScheduleEffectsR\x0eleaderSchedule"\xcd\x01\n\x0c\x42lockFixture\x12\x43\n\x08metadata\x18\x01 \x01(\x0b\x32\'.org.solana.sealevel.v1.FixtureMetadataR\x08metadata\x12:\n\x05input\x18\x02 \x01(\x0b\x32$.org.solana.sealevel.v1.BlockContextR\x05input\x12<\n\x06output\x18\x03 \x01(\x0b\x32$.org.solana.sealevel.v1.BlockEffectsR\x06output*0\n\x12WarmupCooldownRate\x12\x0c\n\x08RATE_025\x10\x00\x12\x0c\n\x08RATE_009\x10\x01\x62\x06proto3'
 )
 
 _globals = globals()
@@ -32,14 +32,24 @@ _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "block_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
+    _globals["_WARMUPCOOLDOWNRATE"]._serialized_start = 2806
+    _globals["_WARMUPCOOLDOWNRATE"]._serialized_end = 2854
     _globals["_COSTTRACKER"]._serialized_start = 81
     _globals["_COSTTRACKER"]._serialized_end = 154
-    _globals["_BLOCKCONTEXT"]._serialized_start = 157
-    _globals["_BLOCKCONTEXT"]._serialized_end = 477
-    _globals["_LEADERSCHEDULEEFFECTS"]._serialized_start = 480
-    _globals["_LEADERSCHEDULEEFFECTS"]._serialized_end = 751
-    _globals["_BLOCKEFFECTS"]._serialized_start = 754
-    _globals["_BLOCKEFFECTS"]._serialized_end = 1035
-    _globals["_BLOCKFIXTURE"]._serialized_start = 1038
-    _globals["_BLOCKFIXTURE"]._serialized_end = 1243
+    _globals["_INFLATION"]._serialized_start = 157
+    _globals["_INFLATION"]._serialized_end = 317
+    _globals["_PREVVOTEACCOUNT"]._serialized_start = 320
+    _globals["_PREVVOTEACCOUNT"]._serialized_end = 450
+    _globals["_STAKEDELEGATION"]._serialized_start = 453
+    _globals["_STAKEDELEGATION"]._serialized_end = 791
+    _globals["_BLOCKBANK"]._serialized_start = 794
+    _globals["_BLOCKBANK"]._serialized_end = 1814
+    _globals["_BLOCKCONTEXT"]._serialized_start = 1817
+    _globals["_BLOCKCONTEXT"]._serialized_end = 2038
+    _globals["_LEADERSCHEDULEEFFECTS"]._serialized_start = 2041
+    _globals["_LEADERSCHEDULEEFFECTS"]._serialized_end = 2312
+    _globals["_BLOCKEFFECTS"]._serialized_start = 2315
+    _globals["_BLOCKEFFECTS"]._serialized_end = 2596
+    _globals["_BLOCKFIXTURE"]._serialized_start = 2599
+    _globals["_BLOCKFIXTURE"]._serialized_end = 2804
 # @@protoc_insertion_point(module_scope)
