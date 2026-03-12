@@ -20,7 +20,6 @@ from test_suite.flatbuffers_utils import (
 )
 from test_suite.fuzz_interface import ContextType, EffectsType
 import test_suite.protos.invoke_pb2 as invoke_pb
-import test_suite.protos.type_pb2 as type_pb
 import test_suite.protos.metadata_pb2 as metadata_pb2
 import ctypes
 from ctypes import c_uint64, c_int, POINTER
@@ -873,7 +872,6 @@ def run_test(test_file: Path) -> tuple[str, int, dict | None]:
         if detect_format(raw_data) == "flatbuffers":
             return run_test_fb(test_file, raw_data)
 
-    # Protobuf path
     if test_file.suffix == FIXTURE_EXTENSION:
         fn_entrypoint = extract_metadata(test_file).fn_entrypoint
         harness_ctx = get_harness_for_entrypoint(fn_entrypoint)
@@ -905,7 +903,6 @@ def execute_fixture(test_file: Path) -> tuple[str, int, dict | None]:
         if detect_format(raw_data) == "flatbuffers":
             return execute_fixture_fb(test_file, raw_data)
 
-    # Protobuf path
     fn_entrypoint = extract_metadata(test_file).fn_entrypoint
     harness_ctx = get_harness_for_entrypoint(fn_entrypoint)
     fixture = read_fixture(test_file)

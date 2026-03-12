@@ -823,12 +823,9 @@ def validate_fixtures(
             format_counts[loader.format_type] += 1
             if verbose:
                 entrypoint = loader.fn_entrypoint or "N/A"
-                elf_size = len(loader.elf_data) if loader.elf_data else 0
                 print(f"[OK] {filepath.name}")
                 print(f"     Format: {loader.format_type}")
                 print(f"     Entrypoint: {entrypoint}")
-                if elf_size > 0:
-                    print(f"     ELF size: {elf_size} bytes")
         else:
             invalid_count += 1
             format_counts["unknown"] += 1
