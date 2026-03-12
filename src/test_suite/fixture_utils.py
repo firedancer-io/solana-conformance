@@ -138,11 +138,6 @@ def write_fixture_to_disk(
     Writes instruction fixtures to disk. This function outputs in binary format unless
     specified otherwise with the --readable flag.
 
-    Output format is controlled by globals.output_format:
-    - 'auto': Upgrade to FlatBuffers when supported, otherwise Protobuf
-    - 'protobuf': Binary Protobuf format (.fix) or human-readable (.fix.txt with -r)
-    - 'flatbuffers': FlatBuffers binary format (.fix)
-
     Args:
         - harness_ctx (HarnessCtx): Harness context
         - file_stem (str): File stem
