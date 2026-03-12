@@ -24,7 +24,12 @@ def decode_input(msg: gossip_pb.GossipMessageBinary):
     if msg.data:
         text = msg.data.decode("ascii")
         if text.startswith("["):
-            _, hex_str = text.split("] ", 1)
+            delimiter_index = text.find("] ")
+            if delimiter_index == -1:
+                raise ValueError(
+                    f"Malformed encoded GossipMessageBinary data: missing '] ' delimiter in {text!r}"
+                )
+            hex_str = text[delimiter_index + 2:]
         else:
             hex_str = text
         msg.data = bytes.fromhex(hex_str)

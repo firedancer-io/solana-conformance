@@ -16,13 +16,6 @@ Usage:
 import hashlib
 import os
 import struct
-import sys
-
-src_dir = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"
-)
-if src_dir not in sys.path:
-    sys.path.insert(0, src_dir)
 
 import test_suite.protos.gossip_pb2 as gossip_pb
 

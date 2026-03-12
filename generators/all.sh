@@ -91,7 +91,7 @@ solana-conformance create-fixtures -i ${TESTS_PATH}/log_data -o ${FIXTS_PATH}/lo
 GOSSIP_TESTS_PATH=./test-vectors/gossip/tests
 GOSSIP_FIXTS_PATH=./test-vectors/gossip/fixtures
 
-rm -r ${GOSSIP_TESTS_PATH} ; mkdir -p ${GOSSIP_TESTS_PATH}
+rm -rf ${GOSSIP_TESTS_PATH} ; mkdir -p ${GOSSIP_TESTS_PATH}
 python3 generators/gossip.py
-rm -r ${GOSSIP_FIXTS_PATH} ; mkdir -p ${GOSSIP_FIXTS_PATH}
+rm -rf ${GOSSIP_FIXTS_PATH} ; mkdir -p ${GOSSIP_FIXTS_PATH}
 solana-conformance create-fixtures -i ${GOSSIP_TESTS_PATH} -o ${GOSSIP_FIXTS_PATH} -s ${LIB_SOLFUZZ_AGAVE} -h GossipHarness
