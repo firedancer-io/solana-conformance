@@ -29,7 +29,7 @@ def decode_input(msg: gossip_pb.GossipMessageBinary):
                 raise ValueError(
                     f"Malformed encoded GossipMessageBinary data: missing '] ' delimiter in {text!r}"
                 )
-            hex_str = text[delimiter_index + 2:]
+            hex_str = text[delimiter_index + 2 :]
         else:
             hex_str = text
         msg.data = bytes.fromhex(hex_str)
