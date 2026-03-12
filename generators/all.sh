@@ -87,3 +87,11 @@ solana-conformance create-fixtures -i ${TESTS_PATH}/panic -o ${FIXTS_PATH}/panic
 solana-conformance create-fixtures -i ${TESTS_PATH}/abort -o ${FIXTS_PATH}/abort -s ${LIB_SOLFUZZ_AGAVE} -h SyscallHarness
 solana-conformance create-fixtures -i ${TESTS_PATH}/log -o ${FIXTS_PATH}/log -s ${LIB_SOLFUZZ_AGAVE} -h SyscallHarness
 solana-conformance create-fixtures -i ${TESTS_PATH}/log_data -o ${FIXTS_PATH}/log_data -s ${LIB_SOLFUZZ_AGAVE} -h SyscallHarness
+
+GOSSIP_TESTS_PATH=./test-vectors/gossip/tests
+GOSSIP_FIXTS_PATH=./test-vectors/gossip/fixtures
+
+rm -r ${GOSSIP_TESTS_PATH} ; mkdir -p ${GOSSIP_TESTS_PATH}
+python3 generators/gossip.py
+rm -r ${GOSSIP_FIXTS_PATH} ; mkdir -p ${GOSSIP_FIXTS_PATH}
+solana-conformance create-fixtures -i ${GOSSIP_TESTS_PATH} -o ${GOSSIP_FIXTS_PATH} -s ${LIB_SOLFUZZ_AGAVE} -h GossipHarness
