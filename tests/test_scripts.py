@@ -152,7 +152,6 @@ class TestRawBinaryIO:
         from test_suite.test_suite import _convert_raw_crashes_to_contexts
         from test_suite.fuzz_context import GossipHarness, FIXTURE_EXTENSION
         import test_suite.protos.gossip_pb2 as gossip_pb
-        import test_suite.protos.metadata_pb2 as metadata_pb
 
         fixture = gossip_pb.GossipMessageFixture()
         fixture.metadata.fn_entrypoint = "sol_compat_gossip_message_deserialize_v1"

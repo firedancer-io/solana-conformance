@@ -1623,9 +1623,10 @@ def _convert_raw_crashes_to_contexts(inputs_dir: Path, harness: "HarnessCtx") ->
 
     converted = 0
     for fix_file in list(inputs_dir.rglob(f"*{FIXTURE_EXTENSION}")):
+        with open(fix_file, "rb") as f:
+            raw = f.read()
+
         try:
-            with open(fix_file, "rb") as f:
-                raw = f.read()
             meta = _MetadataOnlyFixture()
             meta.ParseFromString(raw)
             if meta.HasField("metadata") and meta.metadata.fn_entrypoint:
@@ -1634,10 +1635,8 @@ def _convert_raw_crashes_to_contexts(inputs_dir: Path, harness: "HarnessCtx") ->
             pass
 
         try:
-            with open(fix_file, "rb") as f:
-                crash_data = f.read()
             ctx = harness.context_type()
-            ctx.data = crash_data
+            ctx.data = raw
             ctx_path = fix_file.with_suffix(harness.context_extension)
             with open(ctx_path, "wb") as f:
                 f.write(ctx.SerializeToString(deterministic=True))
