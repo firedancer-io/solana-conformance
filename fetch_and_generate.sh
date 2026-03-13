@@ -171,7 +171,10 @@ if [ ! -f "buf.gen.yaml" ]; then
     exit 1
 fi
 
-# Ensure output directory exists
+# Clean previous generation so removed proto definitions don't leave stale files
+if [ -d "$PROTO_OUTPUT_DIR" ]; then
+    rm -rf "$PROTO_OUTPUT_DIR"
+fi
 mkdir -p "$PROTO_OUTPUT_DIR"
 
 # Generate

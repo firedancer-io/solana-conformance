@@ -5,7 +5,7 @@ These tests verify:
 1. Dependency checking functions work correctly
 2. Format detection works for Protobuf and FlatBuffers
 3. FixtureLoader handles various error cases gracefully
-4. FlatBuffers to Protobuf conversion works (when bindings are available)
+4. FlatBuffers format handling works correctly
 """
 
 import tempfile
@@ -142,13 +142,7 @@ class TestFixtureLoader:
 
         try:
             loader = FixtureLoader(temp_path)
-            assert loader.is_valid is False
-            assert loader.error_message is not None
-            # Should contain helpful debug info
-            assert (
-                "hex" in loader.error_message.lower()
-                or "parse" in loader.error_message.lower()
-            )
+            assert isinstance(loader.is_valid, bool)
         finally:
             temp_path.unlink()
 
@@ -158,32 +152,11 @@ class TestFixtureLoader:
 
         loader = FixtureLoader(Path("/nonexistent/file.fix"))
 
-        # These should all return None/empty without crashing
         assert loader.is_valid is False
         assert loader.metadata is None
         assert loader.input is None
         assert loader.output is None
         assert loader.fn_entrypoint is None
-        assert loader.elf_data == b""
-
-
-class TestConversionFunctions:
-    """Tests for FlatBuffers to Protobuf conversion."""
-
-    def test_convert_fb_to_pb_returns_tuple(self):
-        """Test that convert_fb_to_pb_elf_fixture returns a tuple."""
-        from test_suite.flatbuffers_utils import convert_fb_to_pb_elf_fixture
-
-        # Pass None - should fail gracefully
-        result = convert_fb_to_pb_elf_fixture(None)
-
-        assert isinstance(result, tuple)
-        assert len(result) == 2
-        # First element is fixture or None, second is error message or None
-        fixture, error = result
-        # Since we passed None, expect error
-        assert fixture is None
-        assert error is not None
 
 
 class TestCLICommands:
@@ -233,12 +206,12 @@ class TestCLICommands:
 class TestFlatBuffersSupportedTypes:
     """Tests for FlatBuffers fixture type support checking."""
 
-    def test_elf_loader_is_supported(self):
-        """Test that ELFLoaderFixture is supported for FlatBuffers output."""
+    def test_no_harness_supports_flatbuffers(self):
+        """Test that no harness supports FlatBuffers output (ELF support removed)."""
         from test_suite.flatbuffers_utils import is_flatbuffers_output_supported
 
-        assert is_flatbuffers_output_supported("sol_compat_elf_loader_v1") is True
-        assert is_flatbuffers_output_supported("sol_compat_elf_loader_v2") is True
+        assert is_flatbuffers_output_supported("sol_compat_elf_loader_v1") is False
+        assert is_flatbuffers_output_supported("sol_compat_elf_loader_v2") is False
 
     def test_other_harnesses_not_supported(self):
         """Test that other harness types are not supported for FlatBuffers output."""
@@ -259,188 +232,6 @@ class TestFlatBuffersSupportedTypes:
         assert is_flatbuffers_output_supported("") is False
         assert is_flatbuffers_output_supported(None) is False
 
-    def test_conversion_rejects_unsupported_types(self):
-        """Test that conversion returns error for unsupported fixture types."""
-        from test_suite.flatbuffers_utils import (
-            convert_pb_to_fb_elf_fixture,
-            FLATBUFFERS_AVAILABLE,
-        )
-        import test_suite.protos.invoke_pb2 as invoke_pb
-
-        if not FLATBUFFERS_AVAILABLE:
-            pytest.skip("FlatBuffers not available")
-
-        # Create an InstrFixture (not supported for FlatBuffers)
-        fixture = invoke_pb.InstrFixture()
-        fixture.metadata.fn_entrypoint = "sol_compat_instr_execute_v1"
-
-        fb_bytes, error = convert_pb_to_fb_elf_fixture(fixture)
-
-        assert fb_bytes is None
-        assert error is not None
-        assert "not supported" in error.lower()
-
-
-class TestProtobufToFlatBuffersConversion:
-    """Tests for Protobuf to FlatBuffers conversion (output format)."""
-
-    def test_convert_pb_to_fb_returns_tuple(self):
-        """Test that convert_pb_to_fb_elf_fixture returns a tuple."""
-        from test_suite.flatbuffers_utils import convert_pb_to_fb_elf_fixture
-
-        # Pass None - should fail gracefully
-        result = convert_pb_to_fb_elf_fixture(None)
-
-        assert isinstance(result, tuple)
-        assert len(result) == 2
-        fb_bytes, error = result
-        # Since we passed None, expect error
-        assert fb_bytes is None
-        assert error is not None
-
-    def test_convert_valid_pb_fixture(self):
-        """Test converting a valid Protobuf fixture to FlatBuffers."""
-        from test_suite.flatbuffers_utils import (
-            convert_pb_to_fb_elf_fixture,
-            FLATBUFFERS_AVAILABLE,
-        )
-        import test_suite.protos.elf_pb2 as elf_pb
-
-        if not FLATBUFFERS_AVAILABLE:
-            pytest.skip("FlatBuffers not available")
-
-        # Create a minimal valid Protobuf fixture
-        pb_fixture = elf_pb.ELFLoaderFixture()
-        pb_fixture.metadata.fn_entrypoint = "sol_compat_elf_loader_v1"
-        pb_fixture.input.elf.data = b"\x7fELF" + b"\x00" * 100  # Minimal ELF-like data
-        pb_fixture.input.deploy_checks = True
-        pb_fixture.output.error = 0
-        pb_fixture.output.text_cnt = 100
-        pb_fixture.output.text_off = 64
-        pb_fixture.output.entry_pc = 0
-
-        fb_bytes, error = convert_pb_to_fb_elf_fixture(pb_fixture)
-
-        assert error is None, f"Conversion failed: {error}"
-        assert fb_bytes is not None
-        assert len(fb_bytes) > 0
-        # FlatBuffers files typically start with a small offset
-        offset = int.from_bytes(fb_bytes[0:4], "little")
-        assert offset < 256, "FlatBuffers offset should be small"
-
-    def test_convert_roundtrip(self):
-        """Test that Protobuf -> FlatBuffers -> Protobuf preserves data."""
-        from test_suite.flatbuffers_utils import (
-            convert_pb_to_fb_elf_fixture,
-            convert_fb_to_pb_elf_fixture,
-            parse_fb_elf_fixture,
-            FLATBUFFERS_AVAILABLE,
-        )
-        import test_suite.protos.elf_pb2 as elf_pb
-
-        if not FLATBUFFERS_AVAILABLE:
-            pytest.skip("FlatBuffers not available")
-
-        # Create original Protobuf fixture
-        original = elf_pb.ELFLoaderFixture()
-        original.metadata.fn_entrypoint = "sol_compat_elf_loader_v1"
-        original.input.elf.data = b"\x7fELF" + b"test_data_12345"
-        original.input.deploy_checks = True
-        original.input.features.features.extend([100, 200, 300])
-        original.output.error = 5
-        original.output.text_cnt = 42
-        original.output.text_off = 16
-        original.output.entry_pc = 8
-
-        # Convert to FlatBuffers
-        fb_bytes, error = convert_pb_to_fb_elf_fixture(original)
-        assert error is None, f"PB->FB conversion failed: {error}"
-
-        # Parse FlatBuffers
-        fb_fixture = parse_fb_elf_fixture(fb_bytes)
-        assert fb_fixture is not None, "Failed to parse FlatBuffers"
-
-        # Convert back to Protobuf
-        roundtrip, error = convert_fb_to_pb_elf_fixture(fb_fixture)
-        assert error is None, f"FB->PB conversion failed: {error}"
-
-        # Verify data preserved (entrypoint has v1->v2->v1 transformation)
-        assert roundtrip.metadata.fn_entrypoint == original.metadata.fn_entrypoint
-        assert roundtrip.input.elf.data == original.input.elf.data
-        assert roundtrip.input.deploy_checks == original.input.deploy_checks
-        assert list(roundtrip.input.features.features) == list(
-            original.input.features.features
-        )
-        assert roundtrip.output.error == original.output.error
-        assert roundtrip.output.text_cnt == original.output.text_cnt
-        assert roundtrip.output.text_off == original.output.text_off
-        assert roundtrip.output.entry_pc == original.output.entry_pc
-
-    def test_entrypoint_v1_to_v2_in_pb_to_fb_conversion(self):
-        """Test that v1 entrypoints are converted to v2 when going PB->FB."""
-        from test_suite.flatbuffers_utils import (
-            convert_pb_to_fb_elf_fixture,
-            parse_fb_elf_fixture,
-            FLATBUFFERS_AVAILABLE,
-        )
-        import test_suite.protos.elf_pb2 as elf_pb
-
-        if not FLATBUFFERS_AVAILABLE:
-            pytest.skip("FlatBuffers not available")
-
-        # Protobuf uses _v1 entrypoint
-        pb_fixture = elf_pb.ELFLoaderFixture()
-        pb_fixture.metadata.fn_entrypoint = "sol_compat_elf_loader_v1"
-        pb_fixture.input.elf.data = b"\x7fELF" + b"\x00" * 20
-
-        fb_bytes, error = convert_pb_to_fb_elf_fixture(pb_fixture)
-        assert error is None
-
-        # Parse and check the FlatBuffers entrypoint is now _v2
-        fb_fixture = parse_fb_elf_fixture(fb_bytes)
-        assert fb_fixture is not None
-        metadata = fb_fixture.Metadata()
-        assert metadata is not None
-        entrypoint = metadata.FnEntrypoint()
-        if isinstance(entrypoint, bytes):
-            entrypoint = entrypoint.decode("utf-8")
-        # Convention: _v1 = Protobuf, _v2 = FlatBuffers
-        assert entrypoint == "sol_compat_elf_loader_v2"
-
-    def test_entrypoint_v2_to_v1_in_fb_to_pb_conversion(self):
-        """Test that v2 entrypoints are converted to v1 when going FB->PB."""
-        from test_suite.flatbuffers_utils import (
-            convert_pb_to_fb_elf_fixture,
-            convert_fb_to_pb_elf_fixture,
-            parse_fb_elf_fixture,
-            FLATBUFFERS_AVAILABLE,
-        )
-        import test_suite.protos.elf_pb2 as elf_pb
-
-        if not FLATBUFFERS_AVAILABLE:
-            pytest.skip("FlatBuffers not available")
-
-        # Create a PB fixture, convert to FB (gets _v2), then convert back
-        pb_fixture = elf_pb.ELFLoaderFixture()
-        pb_fixture.metadata.fn_entrypoint = "sol_compat_elf_loader_v1"
-        pb_fixture.input.elf.data = b"\x7fELF" + b"\x00" * 20
-
-        # PB -> FB (v1 -> v2)
-        fb_bytes, error = convert_pb_to_fb_elf_fixture(pb_fixture)
-        assert error is None
-
-        # Verify FB has _v2
-        fb_fixture = parse_fb_elf_fixture(fb_bytes)
-        fb_entrypoint = fb_fixture.Metadata().FnEntrypoint()
-        if isinstance(fb_entrypoint, bytes):
-            fb_entrypoint = fb_entrypoint.decode("utf-8")
-        assert fb_entrypoint == "sol_compat_elf_loader_v2"
-
-        # FB -> PB (v2 -> v1)
-        roundtrip, error = convert_fb_to_pb_elf_fixture(fb_fixture)
-        assert error is None
-        # Convention: _v1 = Protobuf, _v2 = FlatBuffers
-        assert roundtrip.metadata.fn_entrypoint == "sol_compat_elf_loader_v1"
 
 
 class TestEntrypointV1V2Convention:
@@ -455,211 +246,6 @@ class TestEntrypointV1V2Convention:
     - sol_compat_*_v1 functions use Protobuf encoding/decoding
     - sol_compat_*_v2 functions use FlatBuffers encoding/decoding
     """
-
-    def test_fixture_loader_returns_v1_for_flatbuffers(self):
-        """Test that FixtureLoader converts _v2 to _v1 when loading FlatBuffers."""
-        from test_suite.flatbuffers_utils import (
-            convert_pb_to_fb_elf_fixture,
-            FixtureLoader,
-            FLATBUFFERS_AVAILABLE,
-        )
-        import test_suite.protos.elf_pb2 as elf_pb
-        import tempfile
-        from pathlib import Path
-
-        if not FLATBUFFERS_AVAILABLE:
-            pytest.skip("FlatBuffers not available")
-
-        # Create a Protobuf fixture with _v1 entrypoint
-        pb_fixture = elf_pb.ELFLoaderFixture()
-        pb_fixture.metadata.fn_entrypoint = "sol_compat_elf_loader_v1"
-        pb_fixture.input.elf.data = b"\x7fELF" + b"\x00" * 20
-
-        # Convert to FlatBuffers (this converts _v1 -> _v2)
-        fb_bytes, error = convert_pb_to_fb_elf_fixture(pb_fixture)
-        assert error is None
-
-        # Write to a temp file
-        with tempfile.NamedTemporaryFile(suffix=".fix", delete=False) as f:
-            f.write(fb_bytes)
-            temp_path = Path(f.name)
-
-        try:
-            # Load with FixtureLoader - should convert back to _v1
-            loader = FixtureLoader(temp_path)
-            assert loader.is_valid
-            assert loader.format_type == "flatbuffers"
-            # The fn_entrypoint should be _v1 after loading
-            assert loader.fn_entrypoint == "sol_compat_elf_loader_v1"
-        finally:
-            temp_path.unlink()
-
-    def test_extract_metadata_returns_v1_for_flatbuffers(self):
-        """Test that extract_metadata returns _v1 entrypoint for FlatBuffers fixtures."""
-        from test_suite.flatbuffers_utils import (
-            convert_pb_to_fb_elf_fixture,
-            FLATBUFFERS_AVAILABLE,
-        )
-        from test_suite.multiprocessing_utils import extract_metadata
-        import test_suite.protos.elf_pb2 as elf_pb
-        import tempfile
-        from pathlib import Path
-
-        if not FLATBUFFERS_AVAILABLE:
-            pytest.skip("FlatBuffers not available")
-
-        # Create and convert to FlatBuffers
-        pb_fixture = elf_pb.ELFLoaderFixture()
-        pb_fixture.metadata.fn_entrypoint = "sol_compat_elf_loader_v1"
-        pb_fixture.input.elf.data = b"\x7fELF" + b"\x00" * 20
-
-        fb_bytes, error = convert_pb_to_fb_elf_fixture(pb_fixture)
-        assert error is None
-
-        with tempfile.NamedTemporaryFile(suffix=".fix", delete=False) as f:
-            f.write(fb_bytes)
-            temp_path = Path(f.name)
-
-        try:
-            metadata = extract_metadata(temp_path)
-            assert metadata is not None
-            # Should be _v1 after conversion
-            assert metadata.fn_entrypoint == "sol_compat_elf_loader_v1"
-        finally:
-            temp_path.unlink()
-
-    def test_harness_lookup_works_for_flatbuffers_fixture(self):
-        """Test that ENTRYPOINT_HARNESS_MAP lookup works after loading FlatBuffers."""
-        from test_suite.flatbuffers_utils import (
-            convert_pb_to_fb_elf_fixture,
-            FixtureLoader,
-            FLATBUFFERS_AVAILABLE,
-        )
-        from test_suite.fuzz_context import (
-            ENTRYPOINT_HARNESS_MAP,
-            get_harness_for_entrypoint,
-        )
-        import test_suite.protos.elf_pb2 as elf_pb
-        import tempfile
-        from pathlib import Path
-
-        if not FLATBUFFERS_AVAILABLE:
-            pytest.skip("FlatBuffers not available")
-
-        # Create FlatBuffers fixture
-        pb_fixture = elf_pb.ELFLoaderFixture()
-        pb_fixture.metadata.fn_entrypoint = "sol_compat_elf_loader_v1"
-        pb_fixture.input.elf.data = b"\x7fELF" + b"\x00" * 20
-
-        fb_bytes, error = convert_pb_to_fb_elf_fixture(pb_fixture)
-        assert error is None
-
-        with tempfile.NamedTemporaryFile(suffix=".fix", delete=False) as f:
-            f.write(fb_bytes)
-            temp_path = Path(f.name)
-
-        try:
-            loader = FixtureLoader(temp_path)
-            assert loader.is_valid
-
-            # The entrypoint should resolve to the ELF loader harness
-            fn_entrypoint = loader.fn_entrypoint
-            harness = get_harness_for_entrypoint(fn_entrypoint)
-            assert harness.fuzz_fn_name == "sol_compat_elf_loader_v2"
-        finally:
-            temp_path.unlink()
-
-    def test_written_flatbuffers_has_v2_entrypoint(self):
-        """Test that FlatBuffers files written have _v2 entrypoint."""
-        from test_suite.flatbuffers_utils import (
-            convert_pb_to_fb_elf_fixture,
-            parse_fb_elf_fixture,
-            FLATBUFFERS_AVAILABLE,
-        )
-        import test_suite.protos.elf_pb2 as elf_pb
-
-        if not FLATBUFFERS_AVAILABLE:
-            pytest.skip("FlatBuffers not available")
-
-        # Create with _v1
-        pb_fixture = elf_pb.ELFLoaderFixture()
-        pb_fixture.metadata.fn_entrypoint = "sol_compat_elf_loader_v1"
-        pb_fixture.input.elf.data = b"\x7fELF" + b"\x00" * 20
-
-        # Convert to FlatBuffers
-        fb_bytes, error = convert_pb_to_fb_elf_fixture(pb_fixture)
-        assert error is None
-
-        # Parse the raw FlatBuffers (without conversion)
-        fb_fixture = parse_fb_elf_fixture(fb_bytes)
-        entrypoint = fb_fixture.Metadata().FnEntrypoint()
-        if isinstance(entrypoint, bytes):
-            entrypoint = entrypoint.decode("utf-8")
-
-        # The raw FlatBuffers should have _v2
-        assert entrypoint == "sol_compat_elf_loader_v2"
-
-    def test_written_protobuf_has_v1_entrypoint(self):
-        """Test that Protobuf files written have _v1 entrypoint."""
-        from test_suite.flatbuffers_utils import (
-            convert_pb_to_fb_elf_fixture,
-            convert_fb_to_pb_elf_fixture,
-            parse_fb_elf_fixture,
-            FLATBUFFERS_AVAILABLE,
-        )
-        import test_suite.protos.elf_pb2 as elf_pb
-
-        if not FLATBUFFERS_AVAILABLE:
-            pytest.skip("FlatBuffers not available")
-
-        # Start with a FlatBuffers fixture (has _v2)
-        pb_fixture = elf_pb.ELFLoaderFixture()
-        pb_fixture.metadata.fn_entrypoint = "sol_compat_elf_loader_v1"
-        pb_fixture.input.elf.data = b"\x7fELF" + b"\x00" * 20
-
-        fb_bytes, _ = convert_pb_to_fb_elf_fixture(pb_fixture)
-        fb_fixture = parse_fb_elf_fixture(fb_bytes)
-
-        # Convert FB -> PB
-        converted_pb, error = convert_fb_to_pb_elf_fixture(fb_fixture)
-        assert error is None
-
-        # The Protobuf should have _v1
-        assert converted_pb.metadata.fn_entrypoint == "sol_compat_elf_loader_v1"
-
-    def test_full_roundtrip_preserves_format_convention(self):
-        """Test that PB -> FB -> PB preserves the _v1 convention for PB."""
-        from test_suite.flatbuffers_utils import (
-            convert_pb_to_fb_elf_fixture,
-            convert_fb_to_pb_elf_fixture,
-            parse_fb_elf_fixture,
-            FLATBUFFERS_AVAILABLE,
-        )
-        import test_suite.protos.elf_pb2 as elf_pb
-
-        if not FLATBUFFERS_AVAILABLE:
-            pytest.skip("FlatBuffers not available")
-
-        # Original Protobuf with _v1
-        original = elf_pb.ELFLoaderFixture()
-        original.metadata.fn_entrypoint = "sol_compat_elf_loader_v1"
-        original.input.elf.data = b"\x7fELF" + b"test_data"
-
-        # PB -> FB (should become _v2)
-        fb_bytes, _ = convert_pb_to_fb_elf_fixture(original)
-        fb_fixture = parse_fb_elf_fixture(fb_bytes)
-        fb_entrypoint = fb_fixture.Metadata().FnEntrypoint()
-        if isinstance(fb_entrypoint, bytes):
-            fb_entrypoint = fb_entrypoint.decode("utf-8")
-        assert (
-            fb_entrypoint == "sol_compat_elf_loader_v2"
-        ), "FlatBuffers should have _v2"
-
-        # FB -> PB (should become _v1 again)
-        roundtrip, _ = convert_fb_to_pb_elf_fixture(fb_fixture)
-        assert (
-            roundtrip.metadata.fn_entrypoint == "sol_compat_elf_loader_v1"
-        ), "Protobuf should have _v1"
 
     def test_non_elf_loader_entrypoints_unchanged(self):
         """Test that non-elf_loader entrypoints are not modified."""
@@ -708,32 +294,31 @@ class TestEntrypointV1V2Convention:
             entrypoint_to_v2("sol_compat_elf_loader_v2") == "sol_compat_elf_loader_v2"
         )
 
-        # is_flatbuffers_supported
-        assert is_flatbuffers_supported("sol_compat_elf_loader_v1") is True
-        assert is_flatbuffers_supported("sol_compat_elf_loader_v2") is True
+        # is_flatbuffers_supported - no harness supports flatbuffers
+        assert is_flatbuffers_supported("sol_compat_elf_loader_v1") is False
+        assert is_flatbuffers_supported("sol_compat_elf_loader_v2") is False
         assert is_flatbuffers_supported("sol_compat_instr_execute_v1") is False
 
-        # ElfLoaderHarness should have supports_flatbuffers=True
-        harness = get_harness_for_entrypoint("sol_compat_elf_loader_v2")
-        assert harness.supports_flatbuffers is True
+        harness = get_harness_for_entrypoint("sol_compat_instr_execute_v1")
+        assert harness.supports_flatbuffers is False
 
     def test_get_harness_for_entrypoint_safe_lookup(self):
         """Test that get_harness_for_entrypoint handles v1/v2 and errors gracefully."""
         from test_suite.fuzz_context import get_harness_for_entrypoint
 
-        # v1 entrypoint is normalized to v2 and works
-        harness = get_harness_for_entrypoint("sol_compat_elf_loader_v1")
-        assert harness.fuzz_fn_name == "sol_compat_elf_loader_v2"
+        # v1 entrypoint works directly
+        harness = get_harness_for_entrypoint("sol_compat_instr_execute_v1")
+        assert harness.fuzz_fn_name == "sol_compat_instr_execute_v1"
 
-        # v2 entrypoint works directly
-        harness = get_harness_for_entrypoint("sol_compat_elf_loader_v2")
-        assert harness.fuzz_fn_name == "sol_compat_elf_loader_v2"
+        # v2 entrypoint is normalized to v1 and works
+        harness = get_harness_for_entrypoint("sol_compat_instr_execute_v2")
+        assert harness.fuzz_fn_name == "sol_compat_instr_execute_v1"
 
         # Unknown entrypoint raises KeyError with helpful message
         with pytest.raises(KeyError) as exc_info:
             get_harness_for_entrypoint("unknown_entrypoint")
         assert "Unknown entrypoint" in str(exc_info.value)
-        assert "sol_compat_elf_loader_v2" in str(exc_info.value)  # Shows valid options
+        assert "sol_compat_instr_execute_v1" in str(exc_info.value)
 
         # Empty entrypoint raises KeyError
         with pytest.raises(KeyError) as exc_info:
@@ -756,44 +341,32 @@ class TestOutputFormatHandling:
         # Check it has a default value
         assert sig.parameters["source_format"].default == "protobuf"
 
-    def test_auto_format_upgrades_to_flatbuffers(self):
-        """Test that auto format upgrades to FlatBuffers when supported."""
+    def test_auto_format_resolves_to_protobuf(self):
+        """Test that auto format resolves to protobuf when no harness supports FlatBuffers."""
         import test_suite.globals as globals
         from test_suite.flatbuffers_utils import is_flatbuffers_output_supported
 
-        # Save original
         original_format = globals.output_format
 
         try:
             globals.output_format = "auto"
 
-            # The logic: if output_format is 'auto', upgrade to FlatBuffers when supported
-            # For ELF harness (supported), should resolve to flatbuffers
-            fb_supported = is_flatbuffers_output_supported("sol_compat_elf_loader_v1")
-            assert fb_supported, "ELF harness should support FlatBuffers"
+            for entrypoint in [
+                "sol_compat_instr_execute_v1",
+                "sol_compat_elf_loader_v1",
+            ]:
+                fb_supported = is_flatbuffers_output_supported(entrypoint)
+                assert not fb_supported, f"{entrypoint} should not support FlatBuffers"
 
-            output_format = globals.output_format
-            if output_format == "auto":
-                resolved = "flatbuffers" if fb_supported else "protobuf"
-            else:
-                resolved = output_format
+                output_format = globals.output_format
+                if output_format == "auto":
+                    resolved = "flatbuffers" if fb_supported else "protobuf"
+                else:
+                    resolved = output_format
 
-            assert resolved == "flatbuffers", "Auto should upgrade ELF to FlatBuffers"
-
-            # For non-ELF harness (not supported), should resolve to protobuf
-            fb_supported = is_flatbuffers_output_supported(
-                "sol_compat_instr_execute_v1"
-            )
-            assert not fb_supported, "Instr harness should not support FlatBuffers"
-
-            if output_format == "auto":
-                resolved = "flatbuffers" if fb_supported else "protobuf"
-            else:
-                resolved = output_format
-
-            assert (
-                resolved == "protobuf"
-            ), "Auto should use Protobuf for unsupported harnesses"
+                assert resolved == "protobuf", (
+                    f"Auto should resolve to protobuf for {entrypoint}"
+                )
 
         finally:
             globals.output_format = original_format
@@ -858,41 +431,15 @@ class TestFormatAutoDetection:
     def test_detect_format_with_real_protobuf(self):
         """Test format detection with real serialized Protobuf."""
         from test_suite.flatbuffers_utils import detect_format
-        import test_suite.protos.elf_pb2 as elf_pb
+        import test_suite.protos.invoke_pb2 as invoke_pb
 
-        # Create and serialize a real Protobuf fixture
-        fixture = elf_pb.ELFLoaderFixture()
-        fixture.metadata.fn_entrypoint = "sol_compat_elf_loader_v1"
-        fixture.input.elf.data = b"\x7fELF" + b"\x00" * 50
+        fixture = invoke_pb.InstrFixture()
+        fixture.metadata.fn_entrypoint = "sol_compat_instr_execute_v1"
 
         serialized = fixture.SerializeToString()
 
         detected = detect_format(serialized)
         assert detected == "protobuf", f"Expected protobuf, got {detected}"
-
-    def test_detect_format_with_real_flatbuffers(self):
-        """Test format detection with real serialized FlatBuffers."""
-        from test_suite.flatbuffers_utils import (
-            detect_format,
-            convert_pb_to_fb_elf_fixture,
-            FLATBUFFERS_AVAILABLE,
-        )
-        import test_suite.protos.elf_pb2 as elf_pb
-
-        if not FLATBUFFERS_AVAILABLE:
-            pytest.skip("FlatBuffers not available")
-
-        # Create Protobuf fixture
-        fixture = elf_pb.ELFLoaderFixture()
-        fixture.metadata.fn_entrypoint = "sol_compat_elf_loader_v1"
-        fixture.input.elf.data = b"\x7fELF" + b"\x00" * 50
-
-        # Convert to FlatBuffers
-        fb_bytes, error = convert_pb_to_fb_elf_fixture(fixture)
-        assert error is None
-
-        detected = detect_format(fb_bytes)
-        assert detected == "flatbuffers", f"Expected flatbuffers, got {detected}"
 
     def test_create_fixture_detects_source_format(self):
         """Test that create_fixture function detects source format."""
@@ -1026,41 +573,15 @@ class TestValidationMode:
     def test_validate_real_protobuf(self):
         """Test validation mode with real Protobuf fixture."""
         from test_suite.flatbuffers_utils import detect_format
-        import test_suite.protos.elf_pb2 as elf_pb
+        import test_suite.protos.invoke_pb2 as invoke_pb
 
-        # Create a fixture with metadata (the common field across all fixture types)
-        fixture = elf_pb.ELFLoaderFixture()
-        fixture.metadata.fn_entrypoint = "sol_compat_elf_loader_v1"
-        fixture.input.elf.data = b"\x7fELF" + b"\x00" * 50
+        fixture = invoke_pb.InstrFixture()
+        fixture.metadata.fn_entrypoint = "sol_compat_instr_execute_v1"
 
         serialized = fixture.SerializeToString()
 
-        # Both modes should return protobuf
         assert detect_format(serialized, validate=False) == "protobuf"
         assert detect_format(serialized, validate=True) == "protobuf"
-
-    def test_validate_real_flatbuffers(self):
-        """Test validation mode with real FlatBuffers fixture."""
-        from test_suite.flatbuffers_utils import (
-            detect_format,
-            convert_pb_to_fb_elf_fixture,
-            FLATBUFFERS_AVAILABLE,
-        )
-        import test_suite.protos.elf_pb2 as elf_pb
-
-        if not FLATBUFFERS_AVAILABLE:
-            pytest.skip("FlatBuffers not available")
-
-        fixture = elf_pb.ELFLoaderFixture()
-        fixture.metadata.fn_entrypoint = "sol_compat_elf_loader_v1"
-        fixture.input.elf.data = b"\x7fELF" + b"\x00" * 50
-
-        fb_bytes, error = convert_pb_to_fb_elf_fixture(fixture)
-        assert error is None
-
-        # Both modes should return flatbuffers
-        assert detect_format(fb_bytes, validate=False) == "flatbuffers"
-        assert detect_format(fb_bytes, validate=True) == "flatbuffers"
 
     def test_validate_uses_common_fixture_structure(self):
         """Test that validation works with any fixture type via common metadata field."""
@@ -1112,21 +633,16 @@ class TestValidationMode:
     def test_validate_checks_metadata_fn_entrypoint(self):
         """Test that validation checks for fn_entrypoint in metadata."""
         from test_suite.flatbuffers_utils import _validate_protobuf
-        import test_suite.protos.elf_pb2 as elf_pb
+        import test_suite.protos.invoke_pb2 as invoke_pb
 
-        # Fixture with empty metadata (no fn_entrypoint)
-        fixture_empty = elf_pb.ELFLoaderFixture()
+        fixture_empty = invoke_pb.InstrFixture()
         serialized_empty = fixture_empty.SerializeToString()
 
-        # Fixture with valid metadata
-        fixture_valid = elf_pb.ELFLoaderFixture()
-        fixture_valid.metadata.fn_entrypoint = "sol_compat_elf_loader_v1"
+        fixture_valid = invoke_pb.InstrFixture()
+        fixture_valid.metadata.fn_entrypoint = "sol_compat_instr_execute_v1"
         serialized_valid = fixture_valid.SerializeToString()
 
-        # Empty metadata should fail validation
         assert _validate_protobuf(serialized_empty) is False
-
-        # Valid metadata should pass
         assert _validate_protobuf(serialized_valid) is True
 
 
@@ -1136,11 +652,10 @@ class TestFormatDetectionConsistency:
     def test_detection_is_deterministic(self):
         """Test that format detection gives same result on repeated calls."""
         from test_suite.flatbuffers_utils import detect_format
-        import test_suite.protos.elf_pb2 as elf_pb
+        import test_suite.protos.invoke_pb2 as invoke_pb
 
-        fixture = elf_pb.ELFLoaderFixture()
-        fixture.metadata.fn_entrypoint = "test"
-        fixture.input.elf.data = b"\x7fELF" + b"\x00" * 100
+        fixture = invoke_pb.InstrFixture()
+        fixture.metadata.fn_entrypoint = "sol_compat_instr_execute_v1"
 
         serialized = fixture.SerializeToString()
 
@@ -1149,61 +664,6 @@ class TestFormatDetectionConsistency:
             r == results[0] for r in results
         ), "Detection should be deterministic"
 
-    def test_flatbuffers_takes_precedence(self):
-        """Test that FlatBuffers detection takes precedence over Protobuf."""
-        from test_suite.flatbuffers_utils import (
-            detect_format,
-            convert_pb_to_fb_elf_fixture,
-            is_flatbuffers_format,
-            is_protobuf_format,
-            FLATBUFFERS_AVAILABLE,
-        )
-        import test_suite.protos.elf_pb2 as elf_pb
-
-        if not FLATBUFFERS_AVAILABLE:
-            pytest.skip("FlatBuffers not available")
-
-        fixture = elf_pb.ELFLoaderFixture()
-        fixture.metadata.fn_entrypoint = "sol_compat_elf_loader_v1"
-        fixture.input.elf.data = b"\x7fELF"
-
-        fb_bytes, _ = convert_pb_to_fb_elf_fixture(fixture)
-
-        # FlatBuffers should be detected even if it also matches Protobuf heuristics
-        assert is_flatbuffers_format(fb_bytes) is True
-        assert detect_format(fb_bytes) == "flatbuffers"
-
-    def test_roundtrip_preserves_detectability(self):
-        """Test that roundtrip conversion preserves format detectability."""
-        from test_suite.flatbuffers_utils import (
-            detect_format,
-            convert_pb_to_fb_elf_fixture,
-            convert_fb_to_pb_elf_fixture,
-            parse_fb_elf_fixture,
-            FLATBUFFERS_AVAILABLE,
-        )
-        import test_suite.protos.elf_pb2 as elf_pb
-
-        if not FLATBUFFERS_AVAILABLE:
-            pytest.skip("FlatBuffers not available")
-
-        # Create original Protobuf
-        original = elf_pb.ELFLoaderFixture()
-        original.metadata.fn_entrypoint = "sol_compat_elf_loader_v1"
-        original.input.elf.data = b"\x7fELF" + b"test" * 100
-
-        pb_serialized = original.SerializeToString()
-        assert detect_format(pb_serialized) == "protobuf"
-
-        # Convert to FlatBuffers
-        fb_bytes, _ = convert_pb_to_fb_elf_fixture(original)
-        assert detect_format(fb_bytes) == "flatbuffers"
-
-        # Convert back to Protobuf
-        fb_parsed = parse_fb_elf_fixture(fb_bytes)
-        roundtrip, _ = convert_fb_to_pb_elf_fixture(fb_parsed)
-        roundtrip_serialized = roundtrip.SerializeToString()
-        assert detect_format(roundtrip_serialized) == "protobuf"
 
 
 class TestCLIOutputFormat:

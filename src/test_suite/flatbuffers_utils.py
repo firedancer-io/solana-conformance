@@ -1,13 +1,10 @@
 """
-FlatBuffers to Protobuf conversion utilities for solana-conformance.
+FlatBuffers utilities for solana-conformance.
 
 This module provides:
 1. Detection of FlatBuffers vs Protobuf format
 2. Parsing of FlatBuffers files
-3. Conversion from FlatBuffers to Protobuf for downstream processing
-
-This consolidates and extends the existing elf_proto_converter.py functionality
-to support both Protobuf and FlatBuffers input formats.
+3. Unified fixture loading (FixtureLoader)
 """
 
 import sys
@@ -133,8 +130,40 @@ if str(_FB_PATH) not in sys.path:
     sys.path.insert(0, str(_FB_PATH))
 
 # Import Protobuf types
-import test_suite.protos.elf_pb2 as elf_pb
 import test_suite.protos.metadata_pb2 as metadata_pb
+from google.protobuf import descriptor_pool, descriptor_pb2, message_factory
+
+
+def _create_metadata_only_fixture():
+    """
+    Create a minimal fixture message class that only parses the metadata field.
+    All fixture types share metadata as field 1 (FixtureMetadata), so this can
+    parse metadata from any fixture type regardless of the actual harness.
+    """
+    file_proto = descriptor_pb2.FileDescriptorProto()
+    file_proto.name = "flatbuffers_utils_metadata_only.proto"
+    file_proto.package = "org.solana.sealevel.v1"
+    file_proto.syntax = "proto3"
+    file_proto.dependency.append("metadata.proto")
+
+    msg = file_proto.message_type.add()
+    msg.name = "FBUtilsMetadataOnlyFixture"
+
+    field = msg.field.add()
+    field.name = "metadata"
+    field.number = 1
+    field.label = descriptor_pb2.FieldDescriptorProto.LABEL_OPTIONAL
+    field.type = descriptor_pb2.FieldDescriptorProto.TYPE_MESSAGE
+    field.type_name = ".org.solana.sealevel.v1.FixtureMetadata"
+
+    descriptor_pool.Default().AddSerializedFile(file_proto.SerializeToString())
+    msg_descriptor = descriptor_pool.Default().FindMessageTypeByName(
+        "org.solana.sealevel.v1.FBUtilsMetadataOnlyFixture"
+    )
+    return message_factory.GetMessageClass(msg_descriptor)
+
+
+_MetadataOnlyFixture = _create_metadata_only_fixture()
 
 # Check if flatbuffers package is installed
 _FB_PKG_OK, _FB_PKG_VER = _check_flatbuffers_package()
@@ -534,84 +563,6 @@ def parse_fb_elf_fixture(data: bytes) -> Optional[Any]:
 # ============================================================================
 
 
-def convert_fb_to_pb_elf_fixture(
-    fb_fixture,
-) -> Tuple[Optional[elf_pb.ELFLoaderFixture], Optional[str]]:
-    """
-    Convert a FlatBuffers ELFLoaderFixture to Protobuf ELFLoaderFixture.
-
-    Args:
-        fb_fixture: Parsed FlatBuffers ELFLoaderFixture
-
-    Returns:
-        Tuple of (Protobuf ELFLoaderFixture, error_message).
-        On success: (fixture, None)
-        On failure: (None, error_message)
-    """
-    try:
-        pb_fixture = elf_pb.ELFLoaderFixture()
-
-        # Convert metadata
-        fb_metadata = fb_fixture.Metadata()
-        if fb_metadata:
-            fn_entrypoint = fb_metadata.FnEntrypoint()
-            if fn_entrypoint:
-                entrypoint_str = (
-                    fn_entrypoint.decode("utf-8")
-                    if isinstance(fn_entrypoint, bytes)
-                    else fn_entrypoint
-                )
-                # Convert v2 entrypoint to v1 for Protobuf format
-                # Convention: _v1 = Protobuf, _v2 = FlatBuffers
-                pb_fixture.metadata.fn_entrypoint = entrypoint_to_v1(entrypoint_str)
-
-        # Convert input (ELFLoaderCtx)
-        fb_input = fb_fixture.Input()
-        if fb_input:
-            # Get ELF data (use numpy method when available for speed)
-            elf_data_len = fb_input.ElfDataLength()
-            if elf_data_len > 0:
-                elf_data = _get_fb_byte_array(
-                    fb_input,
-                    fb_input.ElfData,
-                    fb_input.ElfDataLength,
-                    numpy_fn=(
-                        fb_input.ElfDataAsNumpy
-                        if hasattr(fb_input, "ElfDataAsNumpy")
-                        else None
-                    ),
-                )
-                pb_fixture.input.elf.data = elf_data
-
-            # Get features
-            fb_features = fb_input.Features()
-            if fb_features:
-                features_len = fb_features.FeaturesLength()
-                for i in range(features_len):
-                    pb_fixture.input.features.features.append(fb_features.Features(i))
-
-            # Get deploy_checks
-            pb_fixture.input.deploy_checks = fb_input.DeployChecks()
-
-        # Convert output (ELFLoaderEffects)
-        fb_output = fb_fixture.Output()
-        if fb_output:
-            pb_fixture.output.error = fb_output.ErrCode()
-            pb_fixture.output.text_cnt = fb_output.TextCnt()
-            pb_fixture.output.text_off = fb_output.TextOff()
-            pb_fixture.output.entry_pc = fb_output.EntryPc()
-
-            # Get rodata_hash (XXHash is 8 bytes) - use as rodata placeholder
-            fb_rodata_hash = fb_output.RodataHash()
-            if fb_rodata_hash:
-                rodata_hash_bytes = bytes(fb_rodata_hash.Hash())
-                pb_fixture.output.rodata = rodata_hash_bytes
-
-        return pb_fixture, None
-    except Exception as e:
-        return None, f"FlatBuffers conversion error: {type(e).__name__}: {e}"
-
-
 # ============================================================================
 # FlatBuffers Native Operations (no Protobuf intermediary)
 # ============================================================================
@@ -957,62 +908,6 @@ def is_flatbuffers_output_supported(fn_entrypoint: str) -> bool:
     return is_flatbuffers_supported(fn_entrypoint)
 
 
-def convert_pb_to_fb_elf_fixture(pb_fixture) -> Tuple[Optional[bytes], Optional[str]]:
-    """
-    Convert a Protobuf ELFLoaderFixture to FlatBuffers format.
-
-    Note: Only ELFLoaderFixture is supported. Other fixture types
-    (InstrFixture, TxnFixture, etc.) do not have FlatBuffers schemas.
-
-    Args:
-        pb_fixture: Protobuf ELFLoaderFixture
-
-    Returns:
-        Tuple of (FlatBuffers bytes, error_message).
-        On success: (bytes, None)
-        On failure: (None, error_message)
-    """
-    if not FLATBUFFERS_AVAILABLE:
-        return None, "FlatBuffers support not available"
-
-    # Check if this is a supported fixture type
-    if hasattr(pb_fixture, "metadata") and pb_fixture.metadata.fn_entrypoint:
-        if not is_flatbuffers_output_supported(pb_fixture.metadata.fn_entrypoint):
-            return (
-                None,
-                f"FlatBuffers output not supported for {pb_fixture.metadata.fn_entrypoint} (only ELFLoaderFixture has FlatBuffers schema)",
-            )
-
-    try:
-        fn_entrypoint = entrypoint_to_v2(pb_fixture.metadata.fn_entrypoint)
-        elf_data = pb_fixture.input.elf.data if pb_fixture.input.elf else b""
-        features_list = (
-            list(pb_fixture.input.features.features)
-            if pb_fixture.input.features
-            else []
-        )
-        deploy_checks = pb_fixture.input.deploy_checks
-
-        effects = {
-            "err_code": pb_fixture.output.error,
-            "rodata_hash": (
-                pb_fixture.output.rodata if pb_fixture.output.rodata else None
-            ),
-            "text_cnt": pb_fixture.output.text_cnt,
-            "text_off": pb_fixture.output.text_off,
-            "entry_pc": pb_fixture.output.entry_pc,
-            "calldests_hash": None,
-        }
-
-        fb_bytes = build_fb_elf_fixture(
-            fn_entrypoint, elf_data, features_list, deploy_checks, effects
-        )
-        return fb_bytes, None
-
-    except Exception as e:
-        return None, f"FlatBuffers build error: {type(e).__name__}: {e}"
-
-
 # ============================================================================
 # Unified Fixture Loading (supports both formats)
 # ============================================================================
@@ -1021,9 +916,6 @@ def convert_pb_to_fb_elf_fixture(pb_fixture) -> Tuple[Optional[bytes], Optional[
 class FixtureLoader:
     """
     Unified fixture loader that handles both Protobuf and FlatBuffers formats.
-
-    This consolidates the functionality from elf_proto_converter.py and adds
-    FlatBuffers support.
 
     Example:
         >>> loader = FixtureLoader(Path('fixture.fix'))
@@ -1043,7 +935,7 @@ class FixtureLoader:
         """
         self.filepath = filepath
         self.format_type = "unknown"
-        self.pb_fixture: Optional[elf_pb.ELFLoaderFixture] = None
+        self.pb_fixture: Optional[Any] = None
         self.raw_data: bytes = b""
         self.error_message: Optional[str] = None
 
@@ -1091,48 +983,51 @@ class FixtureLoader:
                     )
 
     def _load_protobuf(self) -> bool:
-        """Try to load as Protobuf."""
+        """Try to load as Protobuf, using harness-specific fixture type."""
         try:
-            self.pb_fixture = elf_pb.ELFLoaderFixture()
+            from test_suite.fuzz_context import get_harness_for_entrypoint
+
+            meta_msg = _MetadataOnlyFixture()
+            meta_msg.ParseFromString(self.raw_data)
+
+            if not meta_msg.HasField("metadata") or not meta_msg.metadata.fn_entrypoint:
+                return False
+
+            harness = get_harness_for_entrypoint(meta_msg.metadata.fn_entrypoint)
+            self.pb_fixture = harness.fixture_type()
             self.pb_fixture.ParseFromString(self.raw_data)
             self.format_type = "protobuf"
             self.error_message = None
             return True
-        except DecodeError as e:
+        except (DecodeError, KeyError):
             self.pb_fixture = None
-            # Don't set error_message here - let caller try FlatBuffers
+            if hasattr(self, "fb_fixture"):
+                self.fb_fixture = None
             return False
 
     def _load_flatbuffers(self) -> bool:
-        """Try to load as FlatBuffers and convert to Protobuf."""
+        """Try to load as FlatBuffers."""
         if not FLATBUFFERS_AVAILABLE:
-            self.error_message = (
-                "FlatBuffers support not available.\n"
-                "  To install package: pip install flatbuffers\n"
-                "  To generate bindings: ./generate_flatbuffers.sh"
-            )
-            if _FB_IMPORT_ERROR:
-                self.error_message += f"\n  Import error: {_FB_IMPORT_ERROR}"
+            self.fb_fixture = None
+            self.error_message = f"FlatBuffers package not available; cannot parse fixture: {self.filepath}"
             return False
 
         fb_fixture = parse_fb_elf_fixture(self.raw_data)
+        self.fb_fixture = fb_fixture
         if fb_fixture is None:
             self.error_message = f"Failed to parse FlatBuffers fixture: {self.filepath}"
             return False
 
-        self.pb_fixture, convert_error = convert_fb_to_pb_elf_fixture(fb_fixture)
-        if self.pb_fixture:
-            self.format_type = "flatbuffers"
-            self.error_message = None
-            return True
-
-        self.error_message = f"Failed to convert FlatBuffers to Protobuf: {self.filepath}\n  {convert_error}"
-        return False
+        self.format_type = "flatbuffers"
+        self.error_message = None
+        return True
 
     @property
     def is_valid(self) -> bool:
         """Check if the fixture was loaded successfully."""
-        return self.pb_fixture is not None
+        return (
+            self.pb_fixture is not None or getattr(self, "fb_fixture", None) is not None
+        )
 
     @property
     def metadata(self):
@@ -1143,31 +1038,30 @@ class FixtureLoader:
 
     @property
     def input(self):
-        """Get fixture input (ELFLoaderCtx)."""
+        """Get fixture input."""
         if self.pb_fixture:
             return self.pb_fixture.input
         return None
 
     @property
     def output(self):
-        """Get fixture output (ELFLoaderEffects)."""
+        """Get fixture output."""
         if self.pb_fixture:
             return self.pb_fixture.output
         return None
 
     @property
-    def fn_entrypoint(self) -> Optional[str]:
-        """Get the function entrypoint from metadata."""
-        if self.metadata:
-            return self.metadata.fn_entrypoint
-        return None
+    def elf_data(self) -> bytes:
+        """Backward-compatible accessor for raw fixture bytes."""
+        return self.raw_data
 
     @property
-    def elf_data(self) -> bytes:
-        """Get the ELF binary data."""
-        if self.input and self.input.elf:
-            return self.input.elf.data
-        return b""
+    def fn_entrypoint(self) -> Optional[str]:
+        """Get the function entrypoint from metadata."""
+        meta = self.metadata
+        if meta is not None and hasattr(meta, "fn_entrypoint"):
+            return meta.fn_entrypoint
+        return None
 
     def serialize_protobuf(self) -> bytes:
         """Serialize the fixture to Protobuf format."""
@@ -1193,7 +1087,7 @@ class FixtureLoader:
         return True
 
 
-def load_fixture_file(filepath: Path) -> Tuple[str, Optional[elf_pb.ELFLoaderFixture]]:
+def load_fixture_file(filepath: Path) -> Tuple[str, Optional[Any]]:
     """
     Load a fixture file, automatically detecting format and converting if needed.
 

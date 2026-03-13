@@ -26,9 +26,7 @@ from pathlib import Path
 from test_suite.fuzz_interface import ContextType, FixtureType
 from test_suite.fuzz_context import entrypoint_to_v2
 from test_suite.flatbuffers_utils import (
-    convert_pb_to_fb_elf_fixture,
     detect_format,
-    is_flatbuffers_output_supported,
     FLATBUFFERS_AVAILABLE,
     parse_fb_elf_fixture,
     extract_fb_elf_features,
@@ -140,11 +138,6 @@ def write_fixture_to_disk(
     Writes instruction fixtures to disk. This function outputs in binary format unless
     specified otherwise with the --readable flag.
 
-    Output format is controlled by globals.output_format:
-    - 'auto': Upgrade to FlatBuffers when supported, otherwise Protobuf
-    - 'protobuf': Binary Protobuf format (.fix) or human-readable (.fix.txt with -r)
-    - 'flatbuffers': FlatBuffers binary format (.fix)
-
     Args:
         - harness_ctx (HarnessCtx): Harness context
         - file_stem (str): File stem
@@ -166,52 +159,7 @@ def write_fixture_to_disk(
         output_dir = output_dir / program_type
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Determine output format
-    output_format = getattr(globals, "output_format", "auto")
-
-    # Check if FlatBuffers output is supported for this harness type
-    # Currently only ELFLoaderFixture has FlatBuffers schema
-    fb_supported = is_flatbuffers_output_supported(harness_ctx.fuzz_fn_name)
-
-    # Handle 'auto' mode: upgrade to FlatBuffers when supported
-    # This helps migrate the corpus to the newer format
-    if output_format == "auto":
-        if fb_supported:
-            if source_format == "protobuf":
-                print(f"Upgrading {file_stem} from Protobuf to FlatBuffers format")
-            output_format = "flatbuffers"
-        else:
-            output_format = "protobuf"
-
-    if output_format == "flatbuffers":
-        # Check if FlatBuffers is available
-        if not FLATBUFFERS_AVAILABLE:
-            print(
-                f"Warning: FlatBuffers output requested but not available. Falling back to Protobuf."
-            )
-            output_format = "protobuf"
-        # Check if this fixture type supports FlatBuffers
-        elif not fb_supported:
-            # Only warn once per harness type (not for every file)
-            output_format = "protobuf"
-        else:
-            # Deserialize Protobuf fixture
-            fixture = harness_ctx.fixture_type()
-            fixture.ParseFromString(serialized_fixture)
-
-            # Convert to FlatBuffers
-            fb_data, error = convert_pb_to_fb_elf_fixture(fixture)
-            if error:
-                print(
-                    f"Warning: FlatBuffers conversion failed for {file_stem}: {error}. Falling back to Protobuf."
-                )
-                output_format = "protobuf"
-            else:
-                with open(output_dir / (file_stem + FIXTURE_EXTENSION), "wb") as f:
-                    f.write(fb_data)
-                return 1
-
-    # Protobuf output (default)
+    # Protobuf output
     if globals.readable:
         # Deserialize fixture
         fixture = invoke_pb.InstrFixture()
@@ -332,7 +280,6 @@ def _regenerate_fb_fixture(test_file: Path, raw_data: bytes) -> int:
         print(f"Failed to parse FlatBuffers fixture: {test_file}")
         return 0
 
-    # Extract fields from the parsed FlatBuffers fixture
     entrypoint = extract_fb_elf_entrypoint(fb_fixture)
     ctx_fields = extract_fb_elf_ctx_fields(fb_fixture)
     original_features = ctx_fields["features"]
@@ -347,13 +294,11 @@ def _regenerate_fb_fixture(test_file: Path, raw_data: bytes) -> int:
     if globals.regenerate_verbose:
         print(f"Regenerating {test_file}")
 
-    # Build FlatBuffers context with updated features for re-execution
     v2_entrypoint = entrypoint_to_v2(entrypoint)
     ctx_bytes = build_fb_elf_ctx(
         ctx_fields["elf_data"], new_features, ctx_fields["deploy_checks"]
     )
 
-    # Re-execute through the reference shared library
     reference_lib = globals.target_libraries.get(globals.reference_shared_library)
     if reference_lib is None:
         print(f"Reference shared library not found: {globals.reference_shared_library}")
@@ -390,7 +335,6 @@ def _regenerate_fb_fixture(test_file: Path, raw_data: bytes) -> int:
         print(f"Failed to parse FlatBuffers effects for {test_file}")
         return 0
 
-    # Build the complete FlatBuffers fixture and write to disk
     fixture_bytes = build_fb_elf_fixture(
         entrypoint,
         ctx_fields["elf_data"],
@@ -420,7 +364,6 @@ def regenerate_fixture(test_file: Path) -> int:
     if source_format == "flatbuffers" and FLATBUFFERS_AVAILABLE:
         return _regenerate_fb_fixture(test_file, raw_data)
 
-    # Existing Protobuf path for all other fixture types
     fixture = read_fixture(test_file)
     harness_ctx = get_harness_for_entrypoint(fixture.metadata.fn_entrypoint)
 

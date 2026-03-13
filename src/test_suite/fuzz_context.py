@@ -7,11 +7,9 @@ import test_suite.txn.diff_utils as txn_diff
 import test_suite.txn.transform_utils as txn_transform
 
 import test_suite.protos.invoke_pb2 as invoke_pb
-import test_suite.protos.elf_pb2 as elf_pb
 import test_suite.protos.vm_pb2 as vm_pb
 import test_suite.protos.block_pb2 as block_pb
 import test_suite.protos.pack_pb2 as pack_pb
-import test_suite.protos.type_pb2 as type_pb
 
 import test_suite.block.codec_utils as block_codec
 
@@ -22,20 +20,6 @@ import test_suite.instr.diff_utils as instr_diff
 
 import test_suite.syscall.codec_utils as syscall_codec
 import test_suite.syscall.transform_utils as syscall_transform
-
-import test_suite.elf_loader.codec_utils as elf_codec
-
-import test_suite.type.diff_utils as type_diff
-
-ElfLoaderHarness = HarnessCtx(
-    fuzz_fn_name="sol_compat_elf_loader_v2",
-    fixture_desc=elf_pb.ELFLoaderFixture.DESCRIPTOR,
-    context_extension=".elfctx",
-    context_human_encode_fn=elf_codec.encode_input,
-    context_human_decode_fn=elf_codec.decode_input,
-    effects_human_encode_fn=elf_codec.encode_output,
-    supports_flatbuffers=True,
-)
 
 InstrHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_instr_execute_v1",
@@ -103,13 +87,6 @@ BlockHarness = HarnessCtx(
     context_human_decode_fn=block_codec.decode_input,
     effects_human_encode_fn=block_codec.encode_output,
     # TODO: Fill in other fields...
-)
-
-TypeHarness = HarnessCtx(
-    fuzz_fn_name="sol_compat_type_execute_v1",
-    fixture_desc=type_pb.TypeFixture.DESCRIPTOR,
-    context_extension=".typectx",
-    diff_effect_fn=type_diff.diff_type_effects,
 )
 
 ENTRYPOINT_HARNESS_MAP = {
