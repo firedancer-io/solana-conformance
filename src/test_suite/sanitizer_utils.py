@@ -112,7 +112,10 @@ def locate_sancov_stub() -> Optional[str]:
             pass
 
         # Build a stub library in a temp location
-        stub_dir = Path(tempfile.gettempdir()) / "solana_conformance_sancov_stub"
+        stub_dir = (
+            Path(os.environ.get("TMPDIR", tempfile.gettempdir()))
+            / "solana_conformance_sancov_stub"
+        )
         stub_so = stub_dir / "libsancov_stub.so"
         stub_c = stub_dir / "sancov_stub.c"
 
