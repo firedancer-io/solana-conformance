@@ -1009,17 +1009,13 @@ class FixtureLoader:
         """Try to load as FlatBuffers."""
         if not FLATBUFFERS_AVAILABLE:
             self.fb_fixture = None
-            self.error_message = (
-                f"FlatBuffers package not available; cannot parse fixture: {self.filepath}"
-            )
+            self.error_message = f"FlatBuffers package not available; cannot parse fixture: {self.filepath}"
             return False
 
         fb_fixture = parse_fb_elf_fixture(self.raw_data)
         self.fb_fixture = fb_fixture
         if fb_fixture is None:
-            self.error_message = (
-                f"Failed to parse FlatBuffers fixture: {self.filepath}"
-            )
+            self.error_message = f"Failed to parse FlatBuffers fixture: {self.filepath}"
             return False
 
         self.format_type = "flatbuffers"
@@ -1029,7 +1025,9 @@ class FixtureLoader:
     @property
     def is_valid(self) -> bool:
         """Check if the fixture was loaded successfully."""
-        return self.pb_fixture is not None or getattr(self, "fb_fixture", None) is not None
+        return (
+            self.pb_fixture is not None or getattr(self, "fb_fixture", None) is not None
+        )
 
     @property
     def metadata(self):
