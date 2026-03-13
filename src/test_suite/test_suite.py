@@ -1539,6 +1539,18 @@ def debug_mismatches(
     if num_duplicates > 0:
         print(f"Removed {num_duplicates} duplicate(s)")
 
+    for section_name in section_names_list:
+        harness = _infer_raw_binary_harness(section_name)
+        if harness is not None:
+            converted = _convert_raw_crashes_to_contexts(globals.inputs_dir, harness)
+            if converted > 0:
+                default_harness_ctx = next(
+                    name for name, obj in HARNESS_MAP.items() if obj is harness
+                )
+                print(
+                    f"Converted {converted} raw crash file(s) to {harness.context_extension} context(s)"
+                )
+
     create_fixtures_dir = globals.output_dir / "create_fixtures"
     if create_fixtures_dir.exists():
         shutil.rmtree(create_fixtures_dir)
@@ -1585,6 +1597,55 @@ def debug_mismatches(
         debug_mode=debug_mode,
         fail_early=False,
     )
+
+
+def _infer_raw_binary_harness(lineage: str) -> "HarnessCtx | None":
+    """If *lineage* maps to a raw_binary_io harness, return it.
+    Returns None otherwise (including for normal protobuf harnesses)."""
+    for entrypoint, harness in ENTRYPOINT_HARNESS_MAP.items():
+        if not harness.raw_binary_io:
+            continue
+        core = (
+            entrypoint.removeprefix("sol_compat_")
+            .removesuffix("_v1")
+            .removesuffix("_v2")
+        )
+        if core and core in lineage:
+            return harness
+    return None
+
+
+def _convert_raw_crashes_to_contexts(inputs_dir: Path, harness: "HarnessCtx") -> int:
+    """Convert raw (non-protobuf) .fix files in *inputs_dir* into context
+    protobuf files that a raw_binary_io harness can consume.  Returns
+    the number of files converted."""
+    from test_suite.multiprocessing_utils import _MetadataOnlyFixture
+
+    converted = 0
+    for fix_file in list(inputs_dir.rglob(f"*{FIXTURE_EXTENSION}")):
+        try:
+            with open(fix_file, "rb") as f:
+                raw = f.read()
+            meta = _MetadataOnlyFixture()
+            meta.ParseFromString(raw)
+            if meta.HasField("metadata") and meta.metadata.fn_entrypoint:
+                continue
+        except Exception:
+            pass
+
+        try:
+            with open(fix_file, "rb") as f:
+                crash_data = f.read()
+            ctx = harness.context_type()
+            ctx.data = crash_data
+            ctx_path = fix_file.with_suffix(harness.context_extension)
+            with open(ctx_path, "wb") as f:
+                f.write(ctx.SerializeToString(deterministic=True))
+            fix_file.unlink()
+            converted += 1
+        except Exception as e:
+            print(f"  Warning: failed to convert {fix_file.name}: {e}")
+    return converted
 
 
 @app.command(help="Debug a single repro by hash.")
@@ -1678,6 +1739,24 @@ def debug_mismatch(
                 print(f"[ERROR] {result}")
                 raise typer.Exit(code=1)
             print(f"{result}\n")
+
+        # Convert raw crash files to context protobufs if needed.
+        # Targets like gossip (raw_binary_io) use raw binary inputs, not
+        # protobuf fixtures.
+        harness_ctx_for_lineage = _infer_raw_binary_harness(lineage)
+        if harness_ctx_for_lineage is not None:
+            converted = _convert_raw_crashes_to_contexts(
+                globals.inputs_dir, harness_ctx_for_lineage
+            )
+            if converted > 0:
+                default_harness_ctx = next(
+                    name
+                    for name, obj in HARNESS_MAP.items()
+                    if obj is harness_ctx_for_lineage
+                )
+                print(
+                    f"Converted {converted} raw crash file(s) to {harness_ctx_for_lineage.context_extension} context(s)"
+                )
 
         # Deduplicate
         print("Deduplicating fixtures...")

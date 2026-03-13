@@ -176,12 +176,13 @@ def process_target(
         - invoke_pb.InstrEffects | None: Result of instruction execution.
     """
 
-    serialized_instruction_context = context.SerializeToString(deterministic=True)
-    if serialized_instruction_context is None:
-        return None
-
-    # Prepare input data and output buffers
-    in_data = serialized_instruction_context
+    if harness_ctx.raw_binary_io:
+        in_data = context.data
+    else:
+        serialized_instruction_context = context.SerializeToString(deterministic=True)
+        if serialized_instruction_context is None:
+            return None
+        in_data = serialized_instruction_context
     in_ptr = (ctypes.c_uint8 * len(in_data))(*in_data)
     in_sz = len(in_data)
     out_sz = ctypes.c_uint64(OUTPUT_BUFFER_SIZE)
@@ -209,7 +210,14 @@ def process_target(
     # Process the output
     output_data = bytearray(globals.output_buffer_pointer[: out_sz.value])
     output_object = harness_ctx.effects_type()
-    output_object.ParseFromString(output_data)
+
+    if harness_ctx.raw_binary_io and len(output_data) == 1:
+        for field_desc in output_object.DESCRIPTOR.fields:
+            if field_desc.type == field_desc.TYPE_BOOL:
+                setattr(output_object, field_desc.name, output_data[0] != 0)
+                break
+    else:
+        output_object.ParseFromString(output_data)
 
     return output_object
 

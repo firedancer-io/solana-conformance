@@ -123,6 +123,86 @@ class TestVendoredTools:
         assert result.returncode == 0
 
 
+class TestRawBinaryIO:
+    """Tests for the raw_binary_io harness flag (gossip support)."""
+
+    def test_gossip_harness_has_flag(self):
+        """GossipHarness must have raw_binary_io=True."""
+        from test_suite.fuzz_context import GossipHarness
+
+        assert GossipHarness.raw_binary_io is True
+
+    def test_other_harnesses_no_flag(self):
+        """All harnesses except GossipHarness must have raw_binary_io=False."""
+        from test_suite.fuzz_context import HARNESS_MAP, GossipHarness
+
+        for name, harness in HARNESS_MAP.items():
+            if harness is GossipHarness:
+                continue
+            assert (
+                harness.raw_binary_io is False
+            ), f"{name} unexpectedly has raw_binary_io=True"
+
+    def test_infer_raw_binary_harness_gossip(self):
+        """_infer_raw_binary_harness finds GossipHarness for gossip lineages."""
+        from test_suite.test_suite import _infer_raw_binary_harness
+        from test_suite.fuzz_context import GossipHarness
+
+        assert (
+            _infer_raw_binary_harness("sol_gossip_message_deserialize_diff")
+            is GossipHarness
+        )
+        assert (
+            _infer_raw_binary_harness("sol_gossip_message_deserialize_diff_hf")
+            is GossipHarness
+        )
+
+    def test_infer_raw_binary_harness_non_gossip(self):
+        """_infer_raw_binary_harness returns None for non-raw-binary lineages."""
+        from test_suite.test_suite import _infer_raw_binary_harness
+
+        assert _infer_raw_binary_harness("sol_vm_syscall_cpi_rust_diff") is None
+        assert _infer_raw_binary_harness("sol_compat_instr_execute") is None
+
+    def test_convert_raw_crash_to_context(self, tmp_path):
+        """Raw .fix crash files are converted to .gossipctx context files."""
+        from test_suite.test_suite import _convert_raw_crashes_to_contexts
+        from test_suite.fuzz_context import GossipHarness, FIXTURE_EXTENSION
+        import test_suite.protos.gossip_pb2 as gossip_pb
+
+        crash_data = b"\x01\x00\x00\x00" + b"\x00" * 156
+        fix_path = tmp_path / f"test_crash{FIXTURE_EXTENSION}"
+        fix_path.write_bytes(crash_data)
+
+        converted = _convert_raw_crashes_to_contexts(tmp_path, GossipHarness)
+        assert converted == 1
+        assert not fix_path.exists(), ".fix file should have been removed"
+
+        ctx_path = tmp_path / "test_crash.gossipctx"
+        assert ctx_path.exists(), ".gossipctx file should have been created"
+
+        ctx = gossip_pb.GossipMessageBinary()
+        ctx.ParseFromString(ctx_path.read_bytes())
+        assert ctx.data == crash_data
+
+    def test_convert_skips_valid_fixtures(self, tmp_path):
+        """Valid protobuf fixtures are not converted."""
+        from test_suite.test_suite import _convert_raw_crashes_to_contexts
+        from test_suite.fuzz_context import GossipHarness, FIXTURE_EXTENSION
+        import test_suite.protos.gossip_pb2 as gossip_pb
+        import test_suite.protos.metadata_pb2 as metadata_pb
+
+        fixture = gossip_pb.GossipMessageFixture()
+        fixture.metadata.fn_entrypoint = "sol_compat_gossip_message_deserialize_v1"
+        fixture.input.data = b"\x04\x00\x00\x00"
+        fix_path = tmp_path / f"valid{FIXTURE_EXTENSION}"
+        fix_path.write_bytes(fixture.SerializeToString(deterministic=True))
+
+        converted = _convert_raw_crashes_to_contexts(tmp_path, GossipHarness)
+        assert converted == 0
+        assert fix_path.exists(), "valid .fix file should NOT have been removed"
+
+
 class TestGeneratedCode:
     """Tests for generated code (when available)."""
 
