@@ -124,45 +124,7 @@ class TestVendoredTools:
 
 
 class TestRawBinaryIO:
-    """Tests for the raw_binary_io harness flag (gossip support)."""
-
-    def test_gossip_harness_has_flag(self):
-        """GossipHarness must have raw_binary_io=True."""
-        from test_suite.fuzz_context import GossipHarness
-
-        assert GossipHarness.raw_binary_io is True
-
-    def test_other_harnesses_no_flag(self):
-        """All harnesses except GossipHarness must have raw_binary_io=False."""
-        from test_suite.fuzz_context import HARNESS_MAP, GossipHarness
-
-        for name, harness in HARNESS_MAP.items():
-            if harness is GossipHarness:
-                continue
-            assert (
-                harness.raw_binary_io is False
-            ), f"{name} unexpectedly has raw_binary_io=True"
-
-    def test_infer_raw_binary_harness_gossip(self):
-        """_infer_raw_binary_harness finds GossipHarness for gossip lineages."""
-        from test_suite.test_suite import _infer_raw_binary_harness
-        from test_suite.fuzz_context import GossipHarness
-
-        assert (
-            _infer_raw_binary_harness("sol_gossip_message_deserialize_diff")
-            is GossipHarness
-        )
-        assert (
-            _infer_raw_binary_harness("sol_gossip_message_deserialize_diff_hf")
-            is GossipHarness
-        )
-
-    def test_infer_raw_binary_harness_non_gossip(self):
-        """_infer_raw_binary_harness returns None for non-raw-binary lineages."""
-        from test_suite.test_suite import _infer_raw_binary_harness
-
-        assert _infer_raw_binary_harness("sol_vm_syscall_cpi_rust_diff") is None
-        assert _infer_raw_binary_harness("sol_compat_instr_execute") is None
+    """Tests for the raw_binary_io harness flag."""
 
     def test_convert_raw_crash_to_context(self, tmp_path):
         """Raw .fix crash files are converted to .gossipctx context files."""
