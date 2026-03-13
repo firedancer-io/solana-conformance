@@ -5,4 +5,4 @@
 [submodule "shlr/protosol"]
 	path = shlr/protosol
 	url = https://github.com/firedancer-io/protosol.git
-	branch = v3.0.0
+	branch = v5.0.0
