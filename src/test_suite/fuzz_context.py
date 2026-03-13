@@ -10,8 +10,10 @@ import test_suite.protos.invoke_pb2 as invoke_pb
 import test_suite.protos.vm_pb2 as vm_pb
 import test_suite.protos.block_pb2 as block_pb
 import test_suite.protos.pack_pb2 as pack_pb
+import test_suite.protos.gossip_pb2 as gossip_pb
 
 import test_suite.block.codec_utils as block_codec
+import test_suite.gossip.codec_utils as gossip_codec
 
 import test_suite.instr.codec_utils as instr_codec
 import test_suite.instr.prune_utils as instr_prune
@@ -88,6 +90,16 @@ BlockHarness = HarnessCtx(
     effects_human_encode_fn=block_codec.encode_output,
     # TODO: Fill in other fields...
 )
+
+GossipHarness = HarnessCtx(
+    fuzz_fn_name="sol_compat_gossip_message_deserialize_v1",
+    fixture_desc=gossip_pb.GossipMessageFixture.DESCRIPTOR,
+    context_extension=".gossipctx",
+    context_human_encode_fn=gossip_codec.encode_input,
+    context_human_decode_fn=gossip_codec.decode_input,
+    effects_human_encode_fn=gossip_codec.encode_output,
+)
+
 
 ENTRYPOINT_HARNESS_MAP = {
     obj.fuzz_fn_name: obj for obj in globals().values() if isinstance(obj, HarnessCtx)
