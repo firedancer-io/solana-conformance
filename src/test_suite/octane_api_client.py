@@ -8,11 +8,12 @@ Native API endpoints used:
 - /api/bugs - List all bugs with full metadata (supports filters: lineages, hashes, statuses, run_id, bundle_id)
 - /api/bugs/<hash> - Get single bug by hash
 - /api/bugs/<hash>/artifact - Get artifact download URLs
+- /api/artifact/download - Proxy endpoint for downloading artifacts
 - /api/health - Health check
 
 Key features:
 - Server-side filtering: lineages, hashes, statuses, run_id all combined with AND logic
-- Direct GCS/S3 downloads: artifacts are downloaded directly from cloud storage
+- Artifact downloads: proxied through the API server by default, with optional direct GCS/S3 fallback
 - Reproducible bugs: use statuses=REPRO_BUG_STATUSES or get_reproducible_bugs()
 
 Default API endpoint: gusc1b-fdfuzz-orchestrator1.jumpisolated.com:5000
@@ -425,12 +426,10 @@ class OctaneAPIClient:
     API client for the native Octane orchestrator API.
 
     This client uses the native Octane API endpoints (/api/bugs, etc.)
-    IMPORTANT: All artifact downloads are performed directly from cloud storage
-    (GCS/S3). The Octane API only provides metadata and download URLs, it never
-    proxies artifact bytes.
+    Artifact downloads use direct GCS/S3 access when the SDK and credentials
+    are available, and fall back to proxying through the API server otherwise.
 
-    Requires google-cloud-storage and/or boto3 for direct cloud downloads.
-    Install with: pip install "solana-conformance[octane]"
+    For direct downloads, install optional deps: pip install "solana-conformance[octane]"
     """
 
     def __init__(
@@ -688,10 +687,7 @@ class OctaneAPIClient:
         progress_callback: Optional[Callable[[int, int], None]] = None,
     ) -> bytes:
         """
-        Download bug artifact by first getting URLs from API, then downloading directly from GCS/S3.
-
-        This is the preferred method as it downloads directly from cloud storage
-        without proxying through the Octane server.
+        Download bug artifact by first getting URLs from API, then downloading.
 
         Args:
             bug_hash: The bug fingerprint hash.
@@ -969,32 +965,56 @@ class OctaneAPIClient:
 
         return data
 
+    def _download_via_http(
+        self,
+        url: str,
+    ) -> bytes:
+        """Download from an HTTP/HTTPS URL."""
+        response = self.client.get(url)
+        response.raise_for_status()
+        data = response.content
+
+        # Update shared progress bar
+        try:
+            import test_suite.globals as globals
+
+            if globals.download_progress_bar is not None:
+                globals.download_progress_bar.update(len(data))
+        except:
+            pass
+
+        return data
+
+    def _proxy_url(self, cloud_url: str) -> str:
+        """Convert a gs:// or s3:// URL to an API-proxied HTTP URL."""
+        return f"{self.api_origin}/api/artifact/download?url={urllib.parse.quote(cloud_url, safe='')}"
+
     def _download_from_url(
         self,
         url: str,
         progress_callback: Optional[Callable[[int, int], None]] = None,
     ) -> bytes:
-        """Download from a URL (GCS, S3, or HTTP)."""
-        if url.startswith("gs://"):
-            return self._download_from_gcs(url, progress_callback)
-        elif url.startswith("s3://"):
-            return self._download_from_s3(url, progress_callback)
-        elif url.startswith("http://") or url.startswith("https://"):
-            # HTTP download
-            response = self.client.get(url)
-            response.raise_for_status()
-            data = response.content
+        """Download from a URL (GCS, S3, or HTTP).
 
-            # Update shared progress bar
+        For gs:// and s3:// URLs, attempts direct download first if the
+        appropriate SDK is installed (google-cloud-storage or boto3).
+        Falls back to proxying through the API server if the SDK is missing
+        or direct download fails (e.g. missing credentials).
+        """
+        if url.startswith("gs://") or url.startswith("s3://"):
+            # Try direct download if SDK is available
             try:
-                import test_suite.globals as globals
-
-                if globals.download_progress_bar is not None:
-                    globals.download_progress_bar.update(len(data))
-            except:
+                if url.startswith("gs://"):
+                    return self._download_from_gcs(url, progress_callback)
+                else:
+                    return self._download_from_s3(url, progress_callback)
+            except (ImportError, Exception):
                 pass
 
-            return data
+            # Fall back to API proxy (no SDK/credentials needed)
+            return self._download_via_http(self._proxy_url(url))
+        elif url.startswith("http://") or url.startswith("https://"):
+            return self._download_via_http(url)
         else:
             raise ValueError(f"Unsupported URL scheme: {url}")
 
@@ -1151,7 +1171,7 @@ class OctaneAPIClient:
         Download repro data by hash: .fix first, then .fuzz as fallback.
 
         Use this for download-repro / download-repros commands.
-        Downloads directly from cloud storage (GCS/S3), never proxied through Octane.
+        Uses direct GCS/S3 download if available, otherwise proxied through the API server.
 
         Args:
             repro_hash: Hash of the repro to download.
@@ -1180,7 +1200,7 @@ class OctaneAPIClient:
         Download fixture data (.fix file) ONLY by hash - no fallback to .fuzz.
 
         Use this for download-fixture / download-fixtures commands.
-        Downloads directly from cloud storage (GCS/S3), never proxied through Octane.
+        Uses direct GCS/S3 download if available, otherwise proxied through the API server.
 
         Args:
             artifact_hash: Hash of the artifact (bug hash) to download.
@@ -1212,7 +1232,7 @@ class OctaneAPIClient:
         Download crash data (.fuzz file) ONLY by hash - no fallback to .fix.
 
         Use this for download-crash / download-crashes commands.
-        Downloads directly from cloud storage (GCS/S3), never proxied through Octane.
+        Uses direct GCS/S3 download if available, otherwise proxied through the API server.
 
         Args:
             crash_hash: Hash of the crash (bug hash) to download.

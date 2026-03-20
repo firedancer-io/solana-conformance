@@ -216,26 +216,20 @@ Fixtures and crash inputs produced by the fuzzing infrastructure can be download
 
 ### Setup
 
-1. **Install dependencies:**
-   ```sh
-   pip install -e ".[octane]"
-   ```
+Artifact downloads are proxied through the API server by default — no cloud
+credentials are required.
 
-2. **GCS credentials** (for downloading artifacts from Google Cloud Storage):
-   
-   Credentials are auto-detected in this order:
-   1. `GOOGLE_APPLICATION_CREDENTIALS` environment variable
-   2. gcloud legacy credentials (`~/.config/gcloud/legacy_credentials/<account>/adc.json`)
-   3. GCE metadata service (when running on Google Compute Engine)
-   
-   For manual setup:
-   ```sh
-   # Option 1: Use gcloud CLI (recommended)
-   gcloud auth application-default login
-   
-   # Option 2: Set credentials path explicitly
-   export GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
-   ```
+For **optional** direct GCS/S3 downloads (faster, avoids the API proxy hop),
+install the extra dependencies and configure credentials:
+
+```sh
+pip install -e ".[octane]"
+```
+
+Credentials are auto-detected in this order:
+1. `GOOGLE_APPLICATION_CREDENTIALS` environment variable
+2. gcloud legacy credentials (`~/.config/gcloud/legacy_credentials/<account>/adc.json`)
+3. GCE metadata service (when running on Google Compute Engine)
 
 ### Debugging workflow
 
@@ -260,26 +254,6 @@ solana-conformance debug-mismatch <hash> -l sol_elf_loader_diff \
 solana-conformance debug-mismatches -n sol_elf_loader_diff -l 5 \
     -s $SOLFUZZ_TARGET -t $FIREDANCER_TARGET -o debug_output/
 ```
-
-### GCS Authentication Troubleshooting
-
-GCS credentials are auto-detected from gcloud legacy credentials, so most users won't need manual setup. If you still see authentication errors:
-
-```sh
-# Check if gcloud is authenticated
-gcloud auth list
-
-# Check for legacy credentials (auto-detected)
-ls ~/.config/gcloud/legacy_credentials/*/adc.json
-
-# Re-authenticate if needed
-gcloud auth application-default login
-
-# Or set credentials explicitly
-export GOOGLE_APPLICATION_CREDENTIALS=~/.config/gcloud/legacy_credentials/<account>/adc.json
-```
-
-**Note:** On GCE VMs without a service account attached, the metadata service won't work. The tool will automatically fall back to gcloud legacy credentials if available.
 
 ## Setting up Environment
 To setup the `solana-conformance` environment, run the following command and you will be all set:

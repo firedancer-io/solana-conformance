@@ -1025,9 +1025,9 @@ def download_and_process(source):
                     api_origin=api_origin,
                     http2=True,
                 ) as client:
-                    # If we have cached metadata with a BugRecord, download
-                    # directly from the GCS/S3 URLs to avoid a redundant
-                    # /api/bugs/<hash> round-trip.
+                    # If we have cached metadata with a BugRecord, use its
+                    # URLs directly to avoid a redundant /api/bugs/<hash>
+                    # round-trip.
                     bug_record = (
                         getattr(repro_metadata, "bug_record", None)
                         if repro_metadata
@@ -1120,10 +1120,9 @@ def download_single_crash(source):
             api_origin=api_origin,
             http2=True,
         ) as client:
-            # If we have cached metadata with a BugRecord, download directly
-            # from the GCS/S3 URLs to avoid a redundant /api/bugs/<hash>
-            # round-trip (which can 404 due to bundle_id scoping in
-            # standalone mode).
+            # If we have cached metadata with a BugRecord, use its URLs
+            # directly to avoid a redundant /api/bugs/<hash> round-trip
+            # (which can 404 due to bundle_id scoping in standalone mode).
             cached_meta = None
             if hasattr(globals, "repro_metadata_cache") and crash_hash in getattr(
                 globals, "repro_metadata_cache", {}
