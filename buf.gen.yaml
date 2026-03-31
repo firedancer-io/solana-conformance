@@ -1,4 +1,4 @@
 version: v1
 plugins:
-  - plugin: buf.build/protocolbuffers/python
+  - plugin: buf.build/protocolbuffers/python:v34.0
     out: src/test_suite/protos
