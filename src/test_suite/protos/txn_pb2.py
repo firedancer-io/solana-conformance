@@ -9,13 +9,9 @@ from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 _runtime_version.ValidateProtobufRuntimeVersion(
-    _runtime_version.Domain.PUBLIC,
-    7,
-    34,
-    1,
-    '',
-    'txn.proto'
+    _runtime_version.Domain.PUBLIC, 7, 34, 1, "", "txn.proto"
 )
 # @@protoc_insertion_point(imports)
 
@@ -26,31 +22,33 @@ from . import context_pb2 as context__pb2
 from . import metadata_pb2 as metadata__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ttxn.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\x0emetadata.proto\"\xcd\x01\n\rMessageHeader\x12\x36\n\x17num_required_signatures\x18\x01 \x01(\rR\x15numRequiredSignatures\x12?\n\x1cnum_readonly_signed_accounts\x18\x02 \x01(\rR\x19numReadonlySignedAccounts\x12\x43\n\x1enum_readonly_unsigned_accounts\x18\x03 \x01(\rR\x1bnumReadonlyUnsignedAccounts\"o\n\x13\x43ompiledInstruction\x12(\n\x10program_id_index\x18\x01 \x01(\rR\x0eprogramIdIndex\x12\x1a\n\x08\x61\x63\x63ounts\x18\x02 \x03(\rR\x08\x61\x63\x63ounts\x12\x12\n\x04\x64\x61ta\x18\x03 \x01(\x0cR\x04\x64\x61ta\"\x92\x01\n\x19MessageAddressTableLookup\x12\x1f\n\x0b\x61\x63\x63ount_key\x18\x01 \x01(\x0cR\naccountKey\x12)\n\x10writable_indexes\x18\x02 \x03(\rR\x0fwritableIndexes\x12)\n\x10readonly_indexes\x18\x03 \x03(\rR\x0freadonlyIndexes\"\xf6\x02\n\x12TransactionMessage\x12\x1b\n\tis_legacy\x18\x01 \x01(\x08R\x08isLegacy\x12=\n\x06header\x18\x02 \x01(\x0b\x32%.org.solana.sealevel.v1.MessageHeaderR\x06header\x12!\n\x0c\x61\x63\x63ount_keys\x18\x03 \x03(\x0cR\x0b\x61\x63\x63ountKeys\x12)\n\x10recent_blockhash\x18\x05 \x01(\x0cR\x0frecentBlockhash\x12O\n\x0cinstructions\x18\x06 \x03(\x0b\x32+.org.solana.sealevel.v1.CompiledInstructionR\x0cinstructions\x12\x65\n\x15\x61\x64\x64ress_table_lookups\x18\x07 \x03(\x0b\x32\x31.org.solana.sealevel.v1.MessageAddressTableLookupR\x13\x61\x64\x64ressTableLookups\"\x9f\x01\n\x14SanitizedTransaction\x12\x44\n\x07message\x18\x01 \x01(\x0b\x32*.org.solana.sealevel.v1.TransactionMessageR\x07message\x12!\n\x0cmessage_hash\x18\x02 \x01(\x0cR\x0bmessageHash\x12\x1e\n\nsignatures\x18\x04 \x03(\x0cR\nsignatures\"\xb7\x03\n\x07TxnBank\x12T\n\x0f\x62lockhash_queue\x18\x01 \x03(\x0b\x32+.org.solana.sealevel.v1.BlockhashQueueEntryR\x0e\x62lockhashQueue\x12;\n\x1arbh_lamports_per_signature\x18\x02 \x01(\rR\x17rbhLamportsPerSignature\x12S\n\x11\x66\x65\x65_rate_governor\x18\x03 \x01(\x0b\x32\'.org.solana.sealevel.v1.FeeRateGovernorR\x0f\x66\x65\x65RateGovernor\x12*\n\x11total_epoch_stake\x18\x04 \x01(\x04R\x0ftotalEpochStake\x12L\n\x0e\x65poch_schedule\x18\x05 \x01(\x0b\x32%.org.solana.sealevel.v1.EpochScheduleR\repochSchedule\x12>\n\x08\x66\x65\x61tures\x18\x07 \x01(\x0b\x32\".org.solana.sealevel.v1.FeatureSetR\x08\x66\x65\x61turesJ\x04\x08\x06\x10\x07J\x04\x08\x08\x10\t\"\xe4\x01\n\nTxnContext\x12<\n\x02tx\x18\x01 \x01(\x0b\x32,.org.solana.sealevel.v1.SanitizedTransactionR\x02tx\x12Q\n\x13\x61\x63\x63ount_shared_data\x18\x02 \x03(\x0b\x32!.org.solana.sealevel.v1.AcctStateR\x11\x61\x63\x63ountSharedData\x12\x33\n\x04\x62\x61nk\x18\x06 \x01(\x0b\x32\x1f.org.solana.sealevel.v1.TxnBankR\x04\x62\x61nkJ\x04\x08\x03\x10\x04J\x04\x08\x04\x10\x05J\x04\x08\x05\x10\x06\"d\n\nFeeDetails\x12\'\n\x0ftransaction_fee\x18\x01 \x01(\x04R\x0etransactionFee\x12-\n\x12prioritization_fee\x18\x02 \x01(\x04R\x11prioritizationFee\"\xff\x04\n\tTxnResult\x12\x1a\n\x08\x65xecuted\x18\x01 \x01(\x08R\x08\x65xecuted\x12-\n\x12sanitization_error\x18\x02 \x01(\x08R\x11sanitizationError\x12\x13\n\x05is_ok\x18\x05 \x01(\x08R\x04isOk\x12\x16\n\x06status\x18\x06 \x01(\rR\x06status\x12+\n\x11instruction_error\x18\x07 \x01(\rR\x10instructionError\x12\x36\n\x17instruction_error_index\x18\x08 \x01(\rR\x15instructionErrorIndex\x12!\n\x0c\x63ustom_error\x18\t \x01(\rR\x0b\x63ustomError\x12\x1f\n\x0breturn_data\x18\n \x01(\x0cR\nreturnData\x12%\n\x0e\x65xecuted_units\x18\x0b \x01(\x04R\rexecutedUnits\x12\x43\n\x0b\x66\x65\x65_details\x18\x0c \x01(\x0b\x32\".org.solana.sealevel.v1.FeeDetailsR\nfeeDetails\x12\x39\n\x19loaded_accounts_data_size\x18\r \x01(\x04R\x16loadedAccountsDataSize\x12N\n\x11modified_accounts\x18\x0e \x03(\x0b\x32!.org.solana.sealevel.v1.AcctStateR\x10modifiedAccounts\x12N\n\x11rollback_accounts\x18\x0f \x03(\x0b\x32!.org.solana.sealevel.v1.AcctStateR\x10rollbackAccountsJ\x04\x08\x03\x10\x04J\x04\x08\x04\x10\x05\"\xc6\x01\n\nTxnFixture\x12\x43\n\x08metadata\x18\x01 \x01(\x0b\x32\'.org.solana.sealevel.v1.FixtureMetadataR\x08metadata\x12\x38\n\x05input\x18\x02 \x01(\x0b\x32\".org.solana.sealevel.v1.TxnContextR\x05input\x12\x39\n\x06output\x18\x03 \x01(\x0b\x32!.org.solana.sealevel.v1.TxnResultR\x06outputb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\ttxn.proto\x12\x16org.solana.sealevel.v1\x1a\rcontext.proto\x1a\x0emetadata.proto"\xcd\x01\n\rMessageHeader\x12\x36\n\x17num_required_signatures\x18\x01 \x01(\rR\x15numRequiredSignatures\x12?\n\x1cnum_readonly_signed_accounts\x18\x02 \x01(\rR\x19numReadonlySignedAccounts\x12\x43\n\x1enum_readonly_unsigned_accounts\x18\x03 \x01(\rR\x1bnumReadonlyUnsignedAccounts"o\n\x13\x43ompiledInstruction\x12(\n\x10program_id_index\x18\x01 \x01(\rR\x0eprogramIdIndex\x12\x1a\n\x08\x61\x63\x63ounts\x18\x02 \x03(\rR\x08\x61\x63\x63ounts\x12\x12\n\x04\x64\x61ta\x18\x03 \x01(\x0cR\x04\x64\x61ta"\x92\x01\n\x19MessageAddressTableLookup\x12\x1f\n\x0b\x61\x63\x63ount_key\x18\x01 \x01(\x0cR\naccountKey\x12)\n\x10writable_indexes\x18\x02 \x03(\rR\x0fwritableIndexes\x12)\n\x10readonly_indexes\x18\x03 \x03(\rR\x0freadonlyIndexes"\xf6\x02\n\x12TransactionMessage\x12\x1b\n\tis_legacy\x18\x01 \x01(\x08R\x08isLegacy\x12=\n\x06header\x18\x02 \x01(\x0b\x32%.org.solana.sealevel.v1.MessageHeaderR\x06header\x12!\n\x0c\x61\x63\x63ount_keys\x18\x03 \x03(\x0cR\x0b\x61\x63\x63ountKeys\x12)\n\x10recent_blockhash\x18\x05 \x01(\x0cR\x0frecentBlockhash\x12O\n\x0cinstructions\x18\x06 \x03(\x0b\x32+.org.solana.sealevel.v1.CompiledInstructionR\x0cinstructions\x12\x65\n\x15\x61\x64\x64ress_table_lookups\x18\x07 \x03(\x0b\x32\x31.org.solana.sealevel.v1.MessageAddressTableLookupR\x13\x61\x64\x64ressTableLookups"\x9f\x01\n\x14SanitizedTransaction\x12\x44\n\x07message\x18\x01 \x01(\x0b\x32*.org.solana.sealevel.v1.TransactionMessageR\x07message\x12!\n\x0cmessage_hash\x18\x02 \x01(\x0cR\x0bmessageHash\x12\x1e\n\nsignatures\x18\x04 \x03(\x0cR\nsignatures"\xb7\x03\n\x07TxnBank\x12T\n\x0f\x62lockhash_queue\x18\x01 \x03(\x0b\x32+.org.solana.sealevel.v1.BlockhashQueueEntryR\x0e\x62lockhashQueue\x12;\n\x1arbh_lamports_per_signature\x18\x02 \x01(\rR\x17rbhLamportsPerSignature\x12S\n\x11\x66\x65\x65_rate_governor\x18\x03 \x01(\x0b\x32\'.org.solana.sealevel.v1.FeeRateGovernorR\x0f\x66\x65\x65RateGovernor\x12*\n\x11total_epoch_stake\x18\x04 \x01(\x04R\x0ftotalEpochStake\x12L\n\x0e\x65poch_schedule\x18\x05 \x01(\x0b\x32%.org.solana.sealevel.v1.EpochScheduleR\repochSchedule\x12>\n\x08\x66\x65\x61tures\x18\x07 \x01(\x0b\x32".org.solana.sealevel.v1.FeatureSetR\x08\x66\x65\x61turesJ\x04\x08\x06\x10\x07J\x04\x08\x08\x10\t"\xe4\x01\n\nTxnContext\x12<\n\x02tx\x18\x01 \x01(\x0b\x32,.org.solana.sealevel.v1.SanitizedTransactionR\x02tx\x12Q\n\x13\x61\x63\x63ount_shared_data\x18\x02 \x03(\x0b\x32!.org.solana.sealevel.v1.AcctStateR\x11\x61\x63\x63ountSharedData\x12\x33\n\x04\x62\x61nk\x18\x06 \x01(\x0b\x32\x1f.org.solana.sealevel.v1.TxnBankR\x04\x62\x61nkJ\x04\x08\x03\x10\x04J\x04\x08\x04\x10\x05J\x04\x08\x05\x10\x06"d\n\nFeeDetails\x12\'\n\x0ftransaction_fee\x18\x01 \x01(\x04R\x0etransactionFee\x12-\n\x12prioritization_fee\x18\x02 \x01(\x04R\x11prioritizationFee"\xff\x04\n\tTxnResult\x12\x1a\n\x08\x65xecuted\x18\x01 \x01(\x08R\x08\x65xecuted\x12-\n\x12sanitization_error\x18\x02 \x01(\x08R\x11sanitizationError\x12\x13\n\x05is_ok\x18\x05 \x01(\x08R\x04isOk\x12\x16\n\x06status\x18\x06 \x01(\rR\x06status\x12+\n\x11instruction_error\x18\x07 \x01(\rR\x10instructionError\x12\x36\n\x17instruction_error_index\x18\x08 \x01(\rR\x15instructionErrorIndex\x12!\n\x0c\x63ustom_error\x18\t \x01(\rR\x0b\x63ustomError\x12\x1f\n\x0breturn_data\x18\n \x01(\x0cR\nreturnData\x12%\n\x0e\x65xecuted_units\x18\x0b \x01(\x04R\rexecutedUnits\x12\x43\n\x0b\x66\x65\x65_details\x18\x0c \x01(\x0b\x32".org.solana.sealevel.v1.FeeDetailsR\nfeeDetails\x12\x39\n\x19loaded_accounts_data_size\x18\r \x01(\x04R\x16loadedAccountsDataSize\x12N\n\x11modified_accounts\x18\x0e \x03(\x0b\x32!.org.solana.sealevel.v1.AcctStateR\x10modifiedAccounts\x12N\n\x11rollback_accounts\x18\x0f \x03(\x0b\x32!.org.solana.sealevel.v1.AcctStateR\x10rollbackAccountsJ\x04\x08\x03\x10\x04J\x04\x08\x04\x10\x05"\xc6\x01\n\nTxnFixture\x12\x43\n\x08metadata\x18\x01 \x01(\x0b\x32\'.org.solana.sealevel.v1.FixtureMetadataR\x08metadata\x12\x38\n\x05input\x18\x02 \x01(\x0b\x32".org.solana.sealevel.v1.TxnContextR\x05input\x12\x39\n\x06output\x18\x03 \x01(\x0b\x32!.org.solana.sealevel.v1.TxnResultR\x06outputb\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'txn_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "txn_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
-  DESCRIPTOR._loaded_options = None
-  _globals['_MESSAGEHEADER']._serialized_start=69
-  _globals['_MESSAGEHEADER']._serialized_end=274
-  _globals['_COMPILEDINSTRUCTION']._serialized_start=276
-  _globals['_COMPILEDINSTRUCTION']._serialized_end=387
-  _globals['_MESSAGEADDRESSTABLELOOKUP']._serialized_start=390
-  _globals['_MESSAGEADDRESSTABLELOOKUP']._serialized_end=536
-  _globals['_TRANSACTIONMESSAGE']._serialized_start=539
-  _globals['_TRANSACTIONMESSAGE']._serialized_end=913
-  _globals['_SANITIZEDTRANSACTION']._serialized_start=916
-  _globals['_SANITIZEDTRANSACTION']._serialized_end=1075
-  _globals['_TXNBANK']._serialized_start=1078
-  _globals['_TXNBANK']._serialized_end=1517
-  _globals['_TXNCONTEXT']._serialized_start=1520
-  _globals['_TXNCONTEXT']._serialized_end=1748
-  _globals['_FEEDETAILS']._serialized_start=1750
-  _globals['_FEEDETAILS']._serialized_end=1850
-  _globals['_TXNRESULT']._serialized_start=1853
-  _globals['_TXNRESULT']._serialized_end=2492
-  _globals['_TXNFIXTURE']._serialized_start=2495
-  _globals['_TXNFIXTURE']._serialized_end=2693
+    DESCRIPTOR._loaded_options = None
+    _globals["_MESSAGEHEADER"]._serialized_start = 69
+    _globals["_MESSAGEHEADER"]._serialized_end = 274
+    _globals["_COMPILEDINSTRUCTION"]._serialized_start = 276
+    _globals["_COMPILEDINSTRUCTION"]._serialized_end = 387
+    _globals["_MESSAGEADDRESSTABLELOOKUP"]._serialized_start = 390
+    _globals["_MESSAGEADDRESSTABLELOOKUP"]._serialized_end = 536
+    _globals["_TRANSACTIONMESSAGE"]._serialized_start = 539
+    _globals["_TRANSACTIONMESSAGE"]._serialized_end = 913
+    _globals["_SANITIZEDTRANSACTION"]._serialized_start = 916
+    _globals["_SANITIZEDTRANSACTION"]._serialized_end = 1075
+    _globals["_TXNBANK"]._serialized_start = 1078
+    _globals["_TXNBANK"]._serialized_end = 1517
+    _globals["_TXNCONTEXT"]._serialized_start = 1520
+    _globals["_TXNCONTEXT"]._serialized_end = 1748
+    _globals["_FEEDETAILS"]._serialized_start = 1750
+    _globals["_FEEDETAILS"]._serialized_end = 1850
+    _globals["_TXNRESULT"]._serialized_start = 1853
+    _globals["_TXNRESULT"]._serialized_end = 2492
+    _globals["_TXNFIXTURE"]._serialized_start = 2495
+    _globals["_TXNFIXTURE"]._serialized_end = 2693
 # @@protoc_insertion_point(module_scope)
