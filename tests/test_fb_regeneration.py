@@ -237,13 +237,13 @@ class TestParseFbElfEffects:
         FB_Effects_mod.Start(builder)
         FB_Effects_mod.AddErrCode(builder, effects_dict.get("err_code", 0))
         if rodata_hash and len(rodata_hash) >= 8:
-            offset = FB_XXHash_mod.CreateXXHash(builder, list(rodata_hash[:8]))
+            offset = FB_XXHash_mod.CreateXxhash(builder, list(rodata_hash[:8]))
             FB_Effects_mod.AddRodataHash(builder, offset)
         FB_Effects_mod.AddTextCnt(builder, effects_dict.get("text_cnt", 0))
         FB_Effects_mod.AddTextOff(builder, effects_dict.get("text_off", 0))
         FB_Effects_mod.AddEntryPc(builder, effects_dict.get("entry_pc", 0))
         if calldests_hash and len(calldests_hash) >= 8:
-            offset = FB_XXHash_mod.CreateXXHash(builder, list(calldests_hash[:8]))
+            offset = FB_XXHash_mod.CreateXxhash(builder, list(calldests_hash[:8]))
             FB_Effects_mod.AddCalldestsHash(builder, offset)
         effects_offset = FB_Effects_mod.End(builder)
 
@@ -812,13 +812,13 @@ class TestRegenerateFbFixture:
         FB_Effects_mod.Start(builder)
         FB_Effects_mod.AddErrCode(builder, effects_dict.get("err_code", 0))
         if rodata_hash and len(rodata_hash) >= 8:
-            offset = FB_XXHash_mod.CreateXXHash(builder, list(rodata_hash[:8]))
+            offset = FB_XXHash_mod.CreateXxhash(builder, list(rodata_hash[:8]))
             FB_Effects_mod.AddRodataHash(builder, offset)
         FB_Effects_mod.AddTextCnt(builder, effects_dict.get("text_cnt", 0))
         FB_Effects_mod.AddTextOff(builder, effects_dict.get("text_off", 0))
         FB_Effects_mod.AddEntryPc(builder, effects_dict.get("entry_pc", 0))
         if calldests_hash and len(calldests_hash) >= 8:
-            offset = FB_XXHash_mod.CreateXXHash(builder, list(calldests_hash[:8]))
+            offset = FB_XXHash_mod.CreateXxhash(builder, list(calldests_hash[:8]))
             FB_Effects_mod.AddCalldestsHash(builder, offset)
         effects_offset = FB_Effects_mod.End(builder)
 

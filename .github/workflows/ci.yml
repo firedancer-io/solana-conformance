@@ -54,6 +54,10 @@ jobs:
           source test_suite_env/bin/activate
           ./fetch_and_generate.sh
 
+      - name: Verify generated code is up to date
+        run: |
+          git diff --exit-code src/test_suite/protos/ src/test_suite/flatbuffers/
+
       - name: Check dependencies
         run: |
           source test_suite_env/bin/activate

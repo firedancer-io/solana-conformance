@@ -18,20 +18,6 @@ def _encode_prev_vote_account(pva):
         pva.node_pubkey = fd58.enc32(pva.node_pubkey)
 
 
-def _decode_stake_delegation(sd):
-    if sd.stake_account:
-        sd.stake_account = fd58.dec32(sd.stake_account)
-    if sd.vote_account:
-        sd.vote_account = fd58.dec32(sd.vote_account)
-
-
-def _encode_stake_delegation(sd):
-    if sd.stake_account:
-        sd.stake_account = fd58.enc32(sd.stake_account)
-    if sd.vote_account:
-        sd.vote_account = fd58.enc32(sd.vote_account)
-
-
 def decode_input(context: block_pb.BlockContext):
     """
     Decode BlockContext fields in-place into human-readable format.
@@ -59,10 +45,6 @@ def decode_input(context: block_pb.BlockContext):
     # T-2 Vote accounts
     for i in range(len(context.bank.vote_accounts_t_2)):
         _decode_prev_vote_account(context.bank.vote_accounts_t_2[i])
-
-    # T-1 Stake delegations
-    for i in range(len(context.bank.stake_delegations_t_1)):
-        _decode_stake_delegation(context.bank.stake_delegations_t_1[i])
 
     # Blockhash queue
     for i in range(len(context.bank.blockhash_queue)):
@@ -98,10 +80,6 @@ def encode_input(context: block_pb.BlockContext):
     # T-2 Vote accounts
     for i in range(len(context.bank.vote_accounts_t_2)):
         _encode_prev_vote_account(context.bank.vote_accounts_t_2[i])
-
-    # T-1 Stake delegations
-    for i in range(len(context.bank.stake_delegations_t_1)):
-        _encode_stake_delegation(context.bank.stake_delegations_t_1[i])
 
     # Blockhash queue
     for i in range(len(context.bank.blockhash_queue)):

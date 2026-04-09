@@ -24,3 +24,15 @@ repos:
         entry: test -d src/test_suite/flatbuffers/org
         files: \.fbs$
         pass_filenames: false
+      - id: check-protobuf-version
+        name: Check protobuf generated code matches pinned runtime
+        language: system
+        entry: bash scripts/check_protobuf_version.sh
+        files: (_pb2\.py$|pyproject\.toml$|buf\.gen\.yaml$)
+        pass_filenames: false
+      - id: check-quick-import
+        name: Quick Python import check
+        language: system
+        entry: bash scripts/check_quick_import.sh
+        files: (_pb2\.py$|flatbuffers_utils\.py$|/flatbuffers/)
+        pass_filenames: false

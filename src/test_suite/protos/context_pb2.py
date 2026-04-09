@@ -19,7 +19,7 @@ _sym_db = _symbol_database.Default()
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\rcontext.proto\x12\x16org.solana.sealevel.v1"(\n\nFeatureSet\x12\x1a\n\x08\x66\x65\x61tures\x18\x01 \x03(\x06R\x08\x66\x65\x61tures"\x97\x01\n\tAcctState\x12\x18\n\x07\x61\x64\x64ress\x18\x01 \x01(\x0cR\x07\x61\x64\x64ress\x12\x1a\n\x08lamports\x18\x02 \x01(\x04R\x08lamports\x12\x12\n\x04\x64\x61ta\x18\x03 \x01(\x0cR\x04\x64\x61ta\x12\x1e\n\nexecutable\x18\x04 \x01(\x08R\nexecutable\x12\x14\n\x05owner\x18\x06 \x01(\x0cR\x05ownerJ\x04\x08\x05\x10\x06J\x04\x08\x07\x10\x08"\xae\x02\n\x0f\x46\x65\x65RateGovernor\x12\x41\n\x1dtarget_lamports_per_signature\x18\x01 \x01(\x04R\x1atargetLamportsPerSignature\x12;\n\x1atarget_signatures_per_slot\x18\x02 \x01(\x04R\x17targetSignaturesPerSlot\x12;\n\x1amin_lamports_per_signature\x18\x03 \x01(\x04R\x17minLamportsPerSignature\x12;\n\x1amax_lamports_per_signature\x18\x04 \x01(\x04R\x17maxLamportsPerSignature\x12!\n\x0c\x62urn_percent\x18\x05 \x01(\rR\x0b\x62urnPercent"\xe8\x01\n\rEpochSchedule\x12&\n\x0fslots_per_epoch\x18\x01 \x01(\x04R\rslotsPerEpoch\x12=\n\x1bleader_schedule_slot_offset\x18\x02 \x01(\x04R\x18leaderScheduleSlotOffset\x12\x16\n\x06warmup\x18\x03 \x01(\x08R\x06warmup\x12,\n\x12\x66irst_normal_epoch\x18\x04 \x01(\x04R\x10\x66irstNormalEpoch\x12*\n\x11\x66irst_normal_slot\x18\x05 \x01(\x04R\x0f\x66irstNormalSlot"\x8f\x01\n\x04Rent\x12\x33\n\x16lamports_per_byte_year\x18\x01 \x01(\x04R\x13lamportsPerByteYear\x12/\n\x13\x65xemption_threshold\x18\x02 \x01(\x01R\x12\x65xemptionThreshold\x12!\n\x0c\x62urn_percent\x18\x03 \x01(\rR\x0b\x62urnPercent"i\n\x13\x42lockhashQueueEntry\x12\x1c\n\tblockhash\x18\x01 \x01(\x0cR\tblockhash\x12\x34\n\x16lamports_per_signature\x18\x02 \x01(\x04R\x14lamportsPerSignatureb\x06proto3'
+    b'\n\rcontext.proto\x12\x16org.solana.sealevel.v1"(\n\nFeatureSet\x12\x1a\n\x08\x66\x65\x61tures\x18\x01 \x03(\x06R\x08\x66\x65\x61tures"\x97\x01\n\tAcctState\x12\x18\n\x07\x61\x64\x64ress\x18\x01 \x01(\x0cR\x07\x61\x64\x64ress\x12\x1a\n\x08lamports\x18\x02 \x01(\x04R\x08lamports\x12\x12\n\x04\x64\x61ta\x18\x03 \x01(\x0cR\x04\x64\x61ta\x12\x1e\n\nexecutable\x18\x04 \x01(\x08R\nexecutable\x12\x14\n\x05owner\x18\x06 \x01(\x0cR\x05ownerJ\x04\x08\x05\x10\x06J\x04\x08\x07\x10\x08"\xae\x02\n\x0f\x46\x65\x65RateGovernor\x12\x41\n\x1dtarget_lamports_per_signature\x18\x01 \x01(\x04R\x1atargetLamportsPerSignature\x12;\n\x1atarget_signatures_per_slot\x18\x02 \x01(\x04R\x17targetSignaturesPerSlot\x12;\n\x1amin_lamports_per_signature\x18\x03 \x01(\x04R\x17minLamportsPerSignature\x12;\n\x1amax_lamports_per_signature\x18\x04 \x01(\x04R\x17maxLamportsPerSignature\x12!\n\x0c\x62urn_percent\x18\x05 \x01(\rR\x0b\x62urnPercent"\xe8\x01\n\rEpochSchedule\x12&\n\x0fslots_per_epoch\x18\x01 \x01(\x04R\rslotsPerEpoch\x12=\n\x1bleader_schedule_slot_offset\x18\x02 \x01(\x04R\x18leaderScheduleSlotOffset\x12\x16\n\x06warmup\x18\x03 \x01(\x08R\x06warmup\x12,\n\x12\x66irst_normal_epoch\x18\x04 \x01(\x04R\x10\x66irstNormalEpoch\x12*\n\x11\x66irst_normal_slot\x18\x05 \x01(\x04R\x0f\x66irstNormalSlot"i\n\x13\x42lockhashQueueEntry\x12\x1c\n\tblockhash\x18\x01 \x01(\x0cR\tblockhash\x12\x34\n\x16lamports_per_signature\x18\x02 \x01(\x04R\x14lamportsPerSignatureb\x06proto3'
 )
 
 _globals = globals()
@@ -35,8 +35,6 @@ if not _descriptor._USE_C_DESCRIPTORS:
     _globals["_FEERATEGOVERNOR"]._serialized_end = 540
     _globals["_EPOCHSCHEDULE"]._serialized_start = 543
     _globals["_EPOCHSCHEDULE"]._serialized_end = 775
-    _globals["_RENT"]._serialized_start = 778
-    _globals["_RENT"]._serialized_end = 921
-    _globals["_BLOCKHASHQUEUEENTRY"]._serialized_start = 923
-    _globals["_BLOCKHASHQUEUEENTRY"]._serialized_end = 1028
+    _globals["_BLOCKHASHQUEUEENTRY"]._serialized_start = 777
+    _globals["_BLOCKHASHQUEUEENTRY"]._serialized_end = 882
 # @@protoc_insertion_point(module_scope)
