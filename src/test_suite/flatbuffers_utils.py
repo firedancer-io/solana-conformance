@@ -838,7 +838,7 @@ def build_fb_elf_fixture(
     input_offset = FB_ELFLoaderCtx_mod.End(builder)
 
     # Build output (ELFLoaderEffects)
-    # XXHash is an inline struct -- CreateXXHash must be called immediately
+    # XXHash is an inline struct -- CreateXxhash must be called immediately
     # before the corresponding Add call (between Start and End).
     output_offset = None
     if effects is not None:
@@ -848,7 +848,7 @@ def build_fb_elf_fixture(
         FB_ELFLoaderEffects_mod.Start(builder)
         FB_ELFLoaderEffects_mod.AddErrCode(builder, effects.get("err_code", 0))
         if rodata_hash_bytes and len(rodata_hash_bytes) >= 8:
-            rodata_hash_offset = FB_XXHash_mod.CreateXXHash(
+            rodata_hash_offset = FB_XXHash_mod.CreateXxhash(
                 builder, list(rodata_hash_bytes[:8])
             )
             FB_ELFLoaderEffects_mod.AddRodataHash(builder, rodata_hash_offset)
@@ -856,7 +856,7 @@ def build_fb_elf_fixture(
         FB_ELFLoaderEffects_mod.AddTextOff(builder, effects.get("text_off", 0))
         FB_ELFLoaderEffects_mod.AddEntryPc(builder, effects.get("entry_pc", 0))
         if calldests_hash_bytes and len(calldests_hash_bytes) >= 8:
-            calldests_hash_offset = FB_XXHash_mod.CreateXXHash(
+            calldests_hash_offset = FB_XXHash_mod.CreateXxhash(
                 builder, list(calldests_hash_bytes[:8])
             )
             FB_ELFLoaderEffects_mod.AddCalldestsHash(builder, calldests_hash_offset)
