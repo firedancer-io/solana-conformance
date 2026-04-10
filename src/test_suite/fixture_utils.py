@@ -166,16 +166,15 @@ def write_fixture_to_disk(
         fixture.ParseFromString(serialized_fixture)
 
         # Encode fields for instruction context and effects
-        context = harness_ctx.context_type()
-        context.CopyFrom(fixture.input)
-        # encode_input(context)
-        harness_ctx.context_human_encode_fn(context)
+        if harness_ctx.context_type is not None:
+            context = harness_ctx.context_type()
+            context.CopyFrom(fixture.input)
+            harness_ctx.context_human_encode_fn(context)
+            fixture.input.CopyFrom(context)
 
         instr_effects = harness_ctx.effects_type()
         instr_effects.CopyFrom(fixture.output)
         harness_ctx.effects_human_encode_fn(instr_effects)
-
-        fixture.input.CopyFrom(context)
         fixture.output.CopyFrom(instr_effects)
 
         with open(output_dir / (file_stem + ".fix.txt"), "w") as f:
@@ -366,6 +365,9 @@ def regenerate_fixture(test_file: Path) -> int:
 
     fixture = read_fixture(test_file)
     harness_ctx = get_harness_for_entrypoint(fixture.metadata.fn_entrypoint)
+
+    if harness_ctx.context_type is None:
+        return  # Scalar-input harnesses do not support feature regeneration
 
     features_path = pb_utils.find_field_with_type(
         harness_ctx.context_type.DESCRIPTOR, context_pb.FeatureSet.DESCRIPTOR

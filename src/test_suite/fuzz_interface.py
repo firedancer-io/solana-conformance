@@ -90,9 +90,14 @@ class HarnessCtx:
 
     def __post_init__(self, fixture_desc):
         self.fixture_type = message_factory.GetMessageClass(fixture_desc)
-        self.context_type = message_factory.GetMessageClass(
-            fixture_desc.fields_by_name["input"].message_type
-        )
+        input_field = fixture_desc.fields_by_name["input"]
+        if input_field.message_type is not None:
+            self.context_type = message_factory.GetMessageClass(
+                input_field.message_type
+            )
+        else:
+            # Scalar input (e.g. bytes) - no message class to derive
+            self.context_type = None
         self.effects_type = message_factory.GetMessageClass(
             fixture_desc.fields_by_name["output"].message_type
         )
