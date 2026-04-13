@@ -84,6 +84,9 @@ class HarnessCtx:
     effects_human_decode_fn: Callable[[EffectsType], None] = generic_human_decode
     regenerate_transformation_fn: Callable[[FixtureType], None] = generic_transform
     supports_flatbuffers: bool = False
+    raw_binary_io: bool = (
+        False  # context.data passed as raw bytes; output is a raw single-byte bool
+    )
     fixture_type: Type[FixtureType] = field(init=False)
     context_type: Type[ContextType] = field(init=False)
     effects_type: Type[EffectsType] = field(init=False)

@@ -92,6 +92,7 @@ GossipHarness = HarnessCtx(
     context_human_encode_fn=gossip_codec.encode_input,
     context_human_decode_fn=gossip_codec.decode_input,
     effects_human_encode_fn=gossip_codec.encode_output,
+    raw_binary_io=True,
 )
 
 GossipDecodeHarness = HarnessCtx(
