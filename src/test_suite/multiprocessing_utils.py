@@ -326,6 +326,9 @@ def read_context(harness_ctx: HarnessCtx, test_file: Path) -> message.Message | 
     Returns:
         - message.Message | None: Instruction context, or None if reading failed.
     """
+    if harness_ctx.context_type is None:
+        return None
+
     # Try to read in first as binary-encoded Protobuf messages
     try:
         # Read in binary Protobuf messages
@@ -448,8 +451,10 @@ def decode_single_test_case(test_file: Path) -> int:
     # Encode the input fields to be human readable
     if test_file.suffix == FIXTURE_EXTENSION:
         output = harness_ctx.fixture_type()
-    else:
+    elif harness_ctx.context_type is not None:
         output = harness_ctx.context_type()
+    else:
+        return 0
 
     output.ParseFromString(serialized_protobuf)
 

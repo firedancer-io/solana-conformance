@@ -9,7 +9,7 @@ import test_suite.txn.transform_utils as txn_transform
 import test_suite.protos.invoke_pb2 as invoke_pb
 import test_suite.protos.vm_pb2 as vm_pb
 import test_suite.protos.block_pb2 as block_pb
-import test_suite.protos.pack_pb2 as pack_pb
+
 import test_suite.protos.gossip_pb2 as gossip_pb
 
 import test_suite.block.codec_utils as block_codec
@@ -75,12 +75,6 @@ TxnHarness = HarnessCtx(
     consensus_diff_effect_fn=txn_diff.consensus_txn_diff_effects,
 )
 
-PackComputeBudgetHarness = HarnessCtx(
-    fuzz_fn_name="sol_compat_pack_compute_budget_v1",
-    fixture_desc=pack_pb.PackComputeBudgetFixture.DESCRIPTOR,
-    context_extension=".packctx",
-)
-
 BlockHarness = HarnessCtx(
     fuzz_fn_name="sol_compat_block_execute_v1",
     fixture_desc=block_pb.BlockFixture.DESCRIPTOR,
@@ -99,6 +93,13 @@ GossipHarness = HarnessCtx(
     context_human_decode_fn=gossip_codec.decode_input,
     effects_human_encode_fn=gossip_codec.encode_output,
     raw_binary_io=True,
+)
+
+GossipDecodeHarness = HarnessCtx(
+    fuzz_fn_name="sol_compat_gossip_decode_v1",
+    fixture_desc=gossip_pb.GossipFixture.DESCRIPTOR,
+    context_extension=".gossipdecodectx",
+    effects_human_encode_fn=gossip_codec.encode_effects,
 )
 
 

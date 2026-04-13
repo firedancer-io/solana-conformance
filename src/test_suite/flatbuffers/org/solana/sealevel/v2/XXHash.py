@@ -39,7 +39,7 @@ class XXHash(object):
         return False
 
 
-def CreateXxhash(builder, hash):
+def CreateXXHash(builder, hash):
     builder.Prep(1, 8)
     for _idx0 in range(8 , 0, -1):
         builder.PrependUint8(hash[_idx0-1])

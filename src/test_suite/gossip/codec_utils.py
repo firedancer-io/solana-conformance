@@ -38,3 +38,8 @@ def decode_input(msg: gossip_pb.GossipMessageBinary):
 def encode_output(effects: gossip_pb.AcceptsGossipMessage):
     """No-op: output is just a bool, already human-readable."""
     pass
+
+
+def encode_effects(effects: gossip_pb.GossipEffects):
+    """No-op: GossipEffects fields are already human-readable."""
+    pass
